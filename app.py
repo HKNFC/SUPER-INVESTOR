@@ -15,6 +15,11 @@ from filters import (
     get_preset_names, get_preset_info,
 )
 from utils import format_number, format_percentage, format_large_number, format_market_cap, format_pct_value
+from watchlist import (
+    get_watchlist, get_watchlist_tickers, is_in_watchlist,
+    add_to_watchlist, remove_from_watchlist, clear_watchlist,
+    update_watchlist_scores, export_watchlist_csv,
+)
 
 st.set_page_config(
     page_title="Stock Screener",
@@ -182,6 +187,16 @@ def _render_diagnostics() -> None:
 with st.sidebar:
     st.header("Stock Screener")
 
+    watchlist_count = len(get_watchlist_tickers())
+    page = st.radio(
+        "View",
+        options=["Screener", "Watchlist"],
+        format_func=lambda x: f"{x} ({watchlist_count})" if x == "Watchlist" else x,
+        horizontal=True,
+    )
+
+    st.divider()
+
     market = st.selectbox(
         "Market",
         options=list(SUPPORTED_MARKETS.keys()),
@@ -231,28 +246,113 @@ with st.sidebar:
     api_status = "Live Data" if TWELVE_DATA_API_KEY else "Demo Data"
     st.caption(f"Data: {api_status}")
 
-run_screening = st.button("Run Screening", type="primary", use_container_width=True)
+if page == "Watchlist":
+    st.markdown("### Watchlist")
 
-if run_screening:
-    market_info = SUPPORTED_MARKETS[market]
+    wl_items = get_watchlist()
 
-    try:
-        with st.spinner(f"Fetching {market_info['label']} data..."):
-            cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
-            raw_data = _cached_fetch(market, cache_bust)
+    if not wl_items:
+        st.info("Your watchlist is empty. Run the screener and add stocks to track them here.")
+    else:
+        wl_df = pd.DataFrame(wl_items)
+        display_wl_cols = ["ticker", "company_name", "rs_score", "rs_category", "price", "market"]
+        display_wl = wl_df[[c for c in display_wl_cols if c in wl_df.columns]].copy()
 
-        validation = validate_dataframe(raw_data)
-        if not validation["valid"]:
-            st.warning(f"Data quality notice: missing columns {validation['missing_columns']}")
+        if "rs_score" in display_wl.columns:
+            display_wl["rs_score"] = display_wl["rs_score"].apply(
+                lambda x: round(x, 1) if x is not None and not (isinstance(x, float) and np.isnan(x)) else None
+            )
+        if "price" in display_wl.columns:
+            display_wl["price"] = display_wl["price"].apply(
+                lambda x: round(x, 2) if x is not None and not (isinstance(x, float) and np.isnan(x)) else None
+            )
 
-        with st.spinner("Scoring..."):
-            scored_data = compute_rs_scores(raw_data)
-
-        filtered_data = apply_preset_filter(
-            scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
+        st.dataframe(
+            display_wl,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "ticker": st.column_config.TextColumn("Ticker", width="small"),
+                "company_name": st.column_config.TextColumn("Company"),
+                "rs_score": st.column_config.ProgressColumn(
+                    "RS Score", min_value=0, max_value=100, format="%.1f",
+                ),
+                "rs_category": st.column_config.TextColumn("Category", width="small"),
+                "price": st.column_config.NumberColumn("Price", format="%.2f"),
+                "market": st.column_config.TextColumn("Market", width="small"),
+            },
         )
-        passed_count = len(filtered_data)
-        filtered_data = rank_and_limit(filtered_data, top_n=top_n)
+
+        col_csv, col_clear = st.columns([1, 1])
+        with col_csv:
+            csv_wl = export_watchlist_csv()
+            st.download_button(
+                label="Export Watchlist CSV",
+                data=csv_wl,
+                file_name="watchlist.csv",
+                mime="text/csv",
+            )
+        with col_clear:
+            if st.button("Clear Watchlist", type="secondary"):
+                cleared = clear_watchlist()
+                st.success(f"Removed {cleared} stocks from watchlist.")
+                st.rerun()
+
+        st.divider()
+        st.markdown("**Remove individual stocks**")
+        for item in wl_items:
+            t = item["ticker"]
+            col_t, col_btn = st.columns([3, 1])
+            col_t.text(f"{t} — {item.get('company_name', '')} | RS {_score_fmt(item.get('rs_score'))}")
+            if col_btn.button("Remove", key=f"wl_remove_{t}"):
+                remove_from_watchlist(t)
+                st.rerun()
+
+elif page == "Screener":
+    run_screening = st.button("Run Screening", type="primary", use_container_width=True)
+
+    if run_screening:
+        market_info = SUPPORTED_MARKETS[market]
+
+        try:
+            with st.spinner(f"Fetching {market_info['label']} data..."):
+                cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
+                raw_data = _cached_fetch(market, cache_bust)
+
+            validation = validate_dataframe(raw_data)
+            if not validation["valid"]:
+                st.warning(f"Data quality notice: missing columns {validation['missing_columns']}")
+
+            with st.spinner("Scoring..."):
+                scored_data = compute_rs_scores(raw_data)
+
+            scored_rows = scored_data.to_dict("records")
+            updated = update_watchlist_scores(scored_rows)
+            if updated > 0:
+                st.toast(f"Updated scores for {updated} watchlist stock(s)")
+
+            filtered_data = apply_preset_filter(
+                scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
+            )
+            passed_count = len(filtered_data)
+            filtered_data = rank_and_limit(filtered_data, top_n=top_n)
+
+            st.session_state["screener_scored"] = scored_data
+            st.session_state["screener_filtered"] = filtered_data
+            st.session_state["screener_passed_count"] = passed_count
+            st.session_state["screener_market"] = market
+            st.session_state["screener_preset"] = selected_preset
+
+        except Exception as e:
+            st.error(f"An error occurred during screening: {e}")
+            _render_diagnostics()
+
+    if "screener_filtered" in st.session_state:
+        scored_data = st.session_state["screener_scored"]
+        filtered_data = st.session_state["screener_filtered"]
+        passed_count = st.session_state["screener_passed_count"]
+        stored_market = st.session_state["screener_market"]
+        stored_preset = st.session_state["screener_preset"]
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Stocks Scanned", len(scored_data))
@@ -331,7 +431,7 @@ if run_screening:
             st.download_button(
                 label="Download CSV",
                 data=csv_data,
-                file_name=f"screener_{market}_{selected_preset}.csv",
+                file_name=f"screener_{stored_market}_{stored_preset}.csv",
                 mime="text/csv",
             )
 
@@ -343,23 +443,42 @@ if run_screening:
                 name = row.get("company_name", "")
                 cat = row.get("rs_category", "N/A")
                 rs = row.get("rs_score", 0)
-                label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat})"
+                in_wl = is_in_watchlist(ticker)
+                wl_icon = " [W]" if in_wl else ""
+                label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat}){wl_icon}"
 
                 with st.expander(label, expanded=False):
+                    if not in_wl:
+                        if st.button(f"Add {ticker} to Watchlist", key=f"wl_add_{ticker}"):
+                            ok = add_to_watchlist(
+                                ticker=ticker,
+                                rs_score=rs,
+                                rs_category=cat,
+                                price=row.get("price"),
+                                company_name=name,
+                                market=stored_market,
+                            )
+                            if ok:
+                                st.success(f"Added {ticker} to watchlist")
+                            else:
+                                st.error(f"Failed to save {ticker} to watchlist")
+                            st.rerun()
+                    else:
+                        st.caption(f"{ticker} is in your watchlist")
+                        if st.button(f"Remove {ticker} from Watchlist", key=f"wl_rem_{ticker}"):
+                            remove_from_watchlist(ticker)
+                            st.rerun()
+
                     _render_detail(row)
 
-    except Exception as e:
-        st.error(f"An error occurred during screening: {e}")
-        _render_diagnostics()
+    else:
+        st.markdown("### Stock Screener")
+        st.markdown("Select a market and click **Run Screening** to rank stocks by RS Score.")
 
-else:
-    st.markdown("### Stock Screener")
-    st.markdown("Select a market and click **Run Screening** to rank stocks by RS Score.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            """
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(
+                """
 **RS Score** ranks stocks 0–100 across five dimensions:
 
 - **Financial Strength** — ROIC, leverage, asset quality
@@ -367,19 +486,19 @@ else:
 - **Margin Quality** — Gross, operating, net, EBITDA margins + trend
 - **Valuation** — P/E, P/B, EV/EBITDA, PEG
 - **Momentum** — Multi-period returns, 52W high, relative strength
-            """
-        )
-    with col2:
-        st.markdown("**Available Markets**")
-        for key, info in SUPPORTED_MARKETS.items():
-            bench = BENCHMARK_INDEX.get(key, "—")
-            st.markdown(f"- **{info['label']}** — {len(info['symbols'])} stocks, benchmark: {bench}")
+                """
+            )
+        with col2:
+            st.markdown("**Available Markets**")
+            for key, info in SUPPORTED_MARKETS.items():
+                bench = BENCHMARK_INDEX.get(key, "—")
+                st.markdown(f"- **{info['label']}** — {len(info['symbols'])} stocks, benchmark: {bench}")
 
-        st.markdown(
-            """
+            st.markdown(
+                """
 **Quality Presets** pre-screen stocks before ranking:
 - **No Filter** — full universe
 - **Basic** — profitable, positive equity, reasonable leverage
 - **Strict** — high ROIC, strong margins, positive momentum
-            """
-        )
+                """
+            )
