@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import time
 from config import (
     SUPPORTED_MARKETS, DEFAULT_TOP_N,
     TWELVE_DATA_API_KEY, BENCHMARK_INDEX,
+    CACHE_TTL_MARKET_DATA, REQUIRED_FIELDS_FOR_SCORING,
 )
 from data_model import validate_dataframe
-from data_fetcher import fetch_market_data
+from data_fetcher import fetch_market_data, get_last_diagnostics
 from scoring_engine import compute_rs_scores, get_score_breakdown
 from filters import (
     apply_preset_filter, rank_and_limit,
@@ -20,6 +22,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+@st.cache_data(ttl=CACHE_TTL_MARKET_DATA, show_spinner=False)
+def _cached_fetch(market: str, _cache_bust: int) -> pd.DataFrame:
+    return fetch_market_data(market)
 
 
 def _fmt_rule(rule_key: str, threshold: float) -> str:
@@ -49,8 +56,22 @@ def _score_fmt(val) -> str:
     return f"{val:.1f}"
 
 
+def _missing_metric_warnings(stock_row: pd.Series) -> list:
+    warnings = []
+    for f in REQUIRED_FIELDS_FOR_SCORING:
+        val = stock_row.get(f)
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            warnings.append(f)
+    return warnings
+
+
 def _render_detail(stock_row: pd.Series) -> None:
     bd = get_score_breakdown(stock_row)
+
+    missing = _missing_metric_warnings(stock_row)
+    if missing:
+        readable = [f.replace("_", " ").title() for f in missing]
+        st.warning(f"Missing data: {', '.join(readable)} — scores may be less reliable")
 
     st.markdown(
         f"**{stock_row.get('company_name', '')}** · "
@@ -125,6 +146,39 @@ def _render_detail(stock_row: pd.Series) -> None:
             st.line_chart(chart_data, height=250)
 
 
+def _render_diagnostics() -> None:
+    diag = get_last_diagnostics()
+    if diag is None:
+        return
+
+    with st.expander("Diagnostics", expanded=False):
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("Fetched", f"{diag.fetched_tickers}/{diag.total_tickers}")
+        d2.metric("Failed", str(diag.failed_tickers))
+        d3.metric("Incomplete Data", str(diag.incomplete_rows))
+        d4.metric("Last Refresh", diag.timestamp_str)
+
+        info_parts = []
+        if diag.used_mock:
+            info_parts.append("Using demo/mock data")
+        if diag.fallback_triggered:
+            info_parts.append("Fallback triggered — API returned no data")
+        info_parts.append(f"Fetch duration: {diag.duration_seconds:.1f}s")
+        st.caption(" · ".join(info_parts))
+
+        if diag.failed_symbols:
+            st.error(f"Failed tickers: {', '.join(diag.failed_symbols)}")
+
+        if diag.missing_fields_summary:
+            missing_lines = [f"{k.replace('_', ' ').title()}: {v} stocks" for k, v in sorted(diag.missing_fields_summary.items(), key=lambda x: -x[1])]
+            st.warning("Missing fields across universe: " + " · ".join(missing_lines))
+
+        if diag.errors:
+            with st.expander("Error details", expanded=False):
+                for err in diag.errors[:20]:
+                    st.text(err)
+
+
 with st.sidebar:
     st.header("Stock Screener")
 
@@ -182,113 +236,121 @@ run_screening = st.button("Run Screening", type="primary", use_container_width=T
 if run_screening:
     market_info = SUPPORTED_MARKETS[market]
 
-    with st.spinner(f"Fetching {market_info['label']} data..."):
-        raw_data = fetch_market_data(market)
+    try:
+        with st.spinner(f"Fetching {market_info['label']} data..."):
+            cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
+            raw_data = _cached_fetch(market, cache_bust)
 
-    validation = validate_dataframe(raw_data)
-    if not validation["valid"]:
-        st.warning(f"Data quality notice: missing columns {validation['missing_columns']}")
+        validation = validate_dataframe(raw_data)
+        if not validation["valid"]:
+            st.warning(f"Data quality notice: missing columns {validation['missing_columns']}")
 
-    with st.spinner("Scoring..."):
-        scored_data = compute_rs_scores(raw_data)
+        with st.spinner("Scoring..."):
+            scored_data = compute_rs_scores(raw_data)
 
-    filtered_data = apply_preset_filter(
-        scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
-    )
-    passed_count = len(filtered_data)
-    filtered_data = rank_and_limit(filtered_data, top_n=top_n)
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Stocks Scanned", len(scored_data))
-    c2.metric("Passed Filter", passed_count)
-    if not filtered_data.empty:
-        c3.metric("Highest RS", f"{filtered_data['rs_score'].max():.1f}")
-        c4.metric("Avg RS", f"{filtered_data['rs_score'].mean():.1f}")
-    else:
-        c3.metric("Highest RS", "—")
-        c4.metric("Avg RS", "—")
-
-    st.divider()
-
-    if filtered_data.empty:
-        st.warning("No stocks match the current filters. Try relaxing the quality preset or lowering the volume threshold.")
-    else:
-        display_cols = [
-            "ticker", "sector", "price",
-            "rs_score", "rs_category",
-            "financial_strength", "growth", "margin_quality",
-            "valuation", "momentum",
-        ]
-        display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
-
-        for col in ["rs_score", "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
-            if col in display_df.columns:
-                display_df[col] = display_df[col].apply(
-                    lambda x: round(x, 1) if x is not None and np.isfinite(x) else None
-                )
-        if "price" in display_df.columns:
-            display_df["price"] = display_df["price"].apply(
-                lambda x: round(x, 2) if x is not None and np.isfinite(x) else None
-            )
-
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "ticker": st.column_config.TextColumn("Ticker", width="small"),
-                "sector": st.column_config.TextColumn("Sector"),
-                "price": st.column_config.NumberColumn("Price", format="%.2f"),
-                "rs_score": st.column_config.ProgressColumn(
-                    "RS Score", min_value=0, max_value=100, format="%.1f",
-                ),
-                "rs_category": st.column_config.TextColumn("Category", width="small"),
-                "financial_strength": st.column_config.ProgressColumn(
-                    "Financial", min_value=0, max_value=100, format="%.1f",
-                ),
-                "growth": st.column_config.ProgressColumn(
-                    "Growth", min_value=0, max_value=100, format="%.1f",
-                ),
-                "margin_quality": st.column_config.ProgressColumn(
-                    "Margins", min_value=0, max_value=100, format="%.1f",
-                ),
-                "valuation": st.column_config.ProgressColumn(
-                    "Valuation", min_value=0, max_value=100, format="%.1f",
-                ),
-                "momentum": st.column_config.ProgressColumn(
-                    "Momentum", min_value=0, max_value=100, format="%.1f",
-                ),
-            },
+        filtered_data = apply_preset_filter(
+            scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
         )
+        passed_count = len(filtered_data)
+        filtered_data = rank_and_limit(filtered_data, top_n=top_n)
 
-        csv_cols = [
-            "rank", "ticker", "company_name", "sector", "price", "market_cap",
-            "rs_score", "rs_category",
-            "financial_strength", "growth", "margin_quality", "valuation", "momentum",
-            "return_1m", "return_3m", "return_6m", "return_12m",
-        ]
-        csv_df = filtered_data[[c for c in csv_cols if c in filtered_data.columns]].copy()
-        csv_data = csv_df.to_csv(index=False)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Stocks Scanned", len(scored_data))
+        c2.metric("Passed Filter", passed_count)
+        if not filtered_data.empty:
+            c3.metric("Highest RS", f"{filtered_data['rs_score'].max():.1f}")
+            c4.metric("Avg RS", f"{filtered_data['rs_score'].mean():.1f}")
+        else:
+            c3.metric("Highest RS", "—")
+            c4.metric("Avg RS", "—")
 
-        st.download_button(
-            label="Download CSV",
-            data=csv_data,
-            file_name=f"screener_{market}_{selected_preset}.csv",
-            mime="text/csv",
-        )
+        _render_diagnostics()
 
         st.divider()
-        st.subheader("Stock Details")
 
-        for _, row in filtered_data.iterrows():
-            ticker = row.get("ticker", "?")
-            name = row.get("company_name", "")
-            cat = row.get("rs_category", "N/A")
-            rs = row.get("rs_score", 0)
-            label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat})"
+        if filtered_data.empty:
+            st.warning("No stocks match the current filters. Try relaxing the quality preset or lowering the volume threshold.")
+        else:
+            display_cols = [
+                "ticker", "sector", "price",
+                "rs_score", "rs_category",
+                "financial_strength", "growth", "margin_quality",
+                "valuation", "momentum",
+            ]
+            display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
 
-            with st.expander(label, expanded=False):
-                _render_detail(row)
+            for col in ["rs_score", "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
+                if col in display_df.columns:
+                    display_df[col] = display_df[col].apply(
+                        lambda x: round(x, 1) if x is not None and np.isfinite(x) else None
+                    )
+            if "price" in display_df.columns:
+                display_df["price"] = display_df["price"].apply(
+                    lambda x: round(x, 2) if x is not None and np.isfinite(x) else None
+                )
+
+            st.dataframe(
+                display_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "ticker": st.column_config.TextColumn("Ticker", width="small"),
+                    "sector": st.column_config.TextColumn("Sector"),
+                    "price": st.column_config.NumberColumn("Price", format="%.2f"),
+                    "rs_score": st.column_config.ProgressColumn(
+                        "RS Score", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "rs_category": st.column_config.TextColumn("Category", width="small"),
+                    "financial_strength": st.column_config.ProgressColumn(
+                        "Financial", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "growth": st.column_config.ProgressColumn(
+                        "Growth", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "margin_quality": st.column_config.ProgressColumn(
+                        "Margins", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "valuation": st.column_config.ProgressColumn(
+                        "Valuation", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "momentum": st.column_config.ProgressColumn(
+                        "Momentum", min_value=0, max_value=100, format="%.1f",
+                    ),
+                },
+            )
+
+            csv_cols = [
+                "rank", "ticker", "company_name", "sector", "price", "market_cap",
+                "rs_score", "rs_category",
+                "financial_strength", "growth", "margin_quality", "valuation", "momentum",
+                "return_1m", "return_3m", "return_6m", "return_12m",
+            ]
+            csv_df = filtered_data[[c for c in csv_cols if c in filtered_data.columns]].copy()
+            csv_data = csv_df.to_csv(index=False)
+
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name=f"screener_{market}_{selected_preset}.csv",
+                mime="text/csv",
+            )
+
+            st.divider()
+            st.subheader("Stock Details")
+
+            for _, row in filtered_data.iterrows():
+                ticker = row.get("ticker", "?")
+                name = row.get("company_name", "")
+                cat = row.get("rs_category", "N/A")
+                rs = row.get("rs_score", 0)
+                label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat})"
+
+                with st.expander(label, expanded=False):
+                    _render_detail(row)
+
+    except Exception as e:
+        st.error(f"An error occurred during screening: {e}")
+        _render_diagnostics()
 
 else:
     st.markdown("### Stock Screener")

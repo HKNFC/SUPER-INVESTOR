@@ -7,13 +7,13 @@ import requests
 from typing import Optional, Dict, Any
 from urllib.parse import urlencode
 from price_provider import PriceProvider
-from config import CACHE_TTL_HISTORY, CACHE_TTL_QUOTE
+from config import CACHE_TTL_HISTORY, CACHE_TTL_QUOTE, API_REQUEST_TIMEOUT, API_MAX_RETRIES, API_RETRY_DELAY
 
 logger = logging.getLogger("stock_screener.twelve_data")
 
 _CACHE: Dict[str, Dict[str, Any]] = {}
 
-REQUEST_TIMEOUT = 20
+REQUEST_TIMEOUT = API_REQUEST_TIMEOUT
 
 
 def _cache_key(prefix: str, **kwargs) -> str:
@@ -101,8 +101,8 @@ class TwelveDataProvider(PriceProvider):
             response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
 
             if response.status_code == 429:
-                logger.warning("Rate limit hit for Twelve Data API — waiting before retry")
-                time.sleep(10)
+                logger.warning("Rate limit hit — waiting %ds before retry", API_RETRY_DELAY)
+                time.sleep(API_RETRY_DELAY)
                 response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
 
             response.raise_for_status()

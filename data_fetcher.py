@@ -1,34 +1,62 @@
 import logging
+import time
 import pandas as pd
 import numpy as np
-from typing import Optional
-from config import TWELVE_DATA_API_KEY, TWELVE_DATA_BASE_URL, SUPPORTED_MARKETS
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
+from config import (
+    TWELVE_DATA_API_KEY, TWELVE_DATA_BASE_URL, SUPPORTED_MARKETS,
+    API_REQUEST_TIMEOUT, FALLBACK_TO_MOCK, LOG_LEVEL,
+    REQUIRED_FIELDS_FOR_SCORING, MIN_ROWS_FOR_SCORING,
+)
 from data_model import (
     ensure_columns, coerce_numeric_columns, get_mock_data,
     safe_float, ALL_COLUMNS,
 )
 from price_provider import PriceProvider
 
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
 logger = logging.getLogger("stock_screener.fetcher")
 
 _provider_instance: Optional[PriceProvider] = None
 
 
+@dataclass
+class FetchDiagnostics:
+    market: str = ""
+    total_tickers: int = 0
+    fetched_tickers: int = 0
+    failed_tickers: int = 0
+    failed_symbols: List[str] = field(default_factory=list)
+    incomplete_rows: int = 0
+    incomplete_symbols: List[str] = field(default_factory=list)
+    missing_fields_summary: Dict[str, int] = field(default_factory=dict)
+    used_mock: bool = False
+    fallback_triggered: bool = False
+    timestamp: float = 0.0
+    duration_seconds: float = 0.0
+    errors: List[str] = field(default_factory=list)
+
+    @property
+    def timestamp_str(self) -> str:
+        if self.timestamp == 0:
+            return "N/A"
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.timestamp))
+
+
+_last_diagnostics: Optional[FetchDiagnostics] = None
+
+
+def get_last_diagnostics() -> Optional[FetchDiagnostics]:
+    return _last_diagnostics
+
+
 def get_provider() -> Optional[PriceProvider]:
-    """
-    Get or create the active price data provider.
-
-    Returns None if no API key is configured (mock data will be used instead).
-    Provider instance is reused across calls to preserve cache.
-    """
     global _provider_instance
-
     if _provider_instance is not None:
         return _provider_instance
-
     if not TWELVE_DATA_API_KEY:
         return None
-
     try:
         from twelve_data_provider import TwelveDataProvider
         _provider_instance = TwelveDataProvider(
@@ -43,7 +71,6 @@ def get_provider() -> Optional[PriceProvider]:
 
 
 def reset_provider() -> None:
-    """Reset the provider instance (useful for testing or key rotation)."""
     global _provider_instance
     _provider_instance = None
 
@@ -53,69 +80,46 @@ def fetch_price_history(
     outputsize: int = 252,
     market: Optional[str] = None,
 ) -> pd.DataFrame:
-    """
-    Fetch daily OHLCV history for a ticker.
-
-    Uses the configured provider if available, otherwise returns placeholder data.
-    """
     provider = get_provider()
     if provider is None:
         return _generate_placeholder_price_data(ticker, outputsize)
-
     try:
         history = provider.get_daily_history(ticker, outputsize=outputsize, market=market)
-
         if history.empty:
-            logger.warning("Provider returned empty history for %s — using placeholder", ticker)
+            logger.warning("Empty history for %s — using placeholder", ticker)
             return _generate_placeholder_price_data(ticker, outputsize)
-
         return history
-
     except Exception as e:
-        logger.error("Error fetching history for %s: %s", ticker, type(e).__name__)
+        logger.error("Error fetching history for %s: %s — %s", ticker, type(e).__name__, e)
         return _generate_placeholder_price_data(ticker, outputsize)
 
 
 def fetch_latest_price(ticker: str, market: Optional[str] = None) -> Optional[float]:
-    """
-    Get the most recent price for a ticker.
-
-    Uses the provider's quote endpoint with fallback to last close.
-    """
     provider = get_provider()
     if provider is None:
         return None
-
     try:
         return provider.get_latest_price(ticker, market=market)
     except Exception as e:
-        logger.error("Error fetching latest price for %s: %s", ticker, type(e).__name__)
+        logger.error("Error fetching price for %s: %s", ticker, type(e).__name__)
         return None
 
 
 def fetch_period_returns(ticker: str, market: Optional[str] = None) -> dict:
-    """
-    Calculate 1M, 3M, 6M, 12M returns for a ticker.
-
-    Returns a dict with keys return_1m, return_3m, return_6m, return_12m.
-    """
     provider = get_provider()
     if provider is None:
         return {}
-
     try:
         return provider.get_period_returns(ticker, market=market)
     except Exception as e:
-        logger.error("Error calculating returns for %s: %s", ticker, type(e).__name__)
+        logger.error("Error fetching returns for %s: %s", ticker, type(e).__name__)
         return {}
 
 
 def fetch_52w_high(ticker: str, market: Optional[str] = None) -> Optional[float]:
-    """Get the 52-week high price for a ticker."""
     provider = get_provider()
     if provider is None:
         return None
-
     try:
         return provider.get_52w_high(ticker, market=market)
     except Exception as e:
@@ -124,11 +128,9 @@ def fetch_52w_high(ticker: str, market: Optional[str] = None) -> Optional[float]
 
 
 def fetch_avg_volume_20d(ticker: str, market: Optional[str] = None) -> Optional[float]:
-    """Get the 20-day average volume for a ticker."""
     provider = get_provider()
     if provider is None:
         return None
-
     try:
         return provider.get_avg_volume_20d(ticker, market=market)
     except Exception as e:
@@ -137,32 +139,22 @@ def fetch_avg_volume_20d(ticker: str, market: Optional[str] = None) -> Optional[
 
 
 def fetch_fundamentals(symbol: str) -> dict:
-    """
-    Fetch fundamental data for a symbol from Twelve Data API.
-
-    Returns a dict with fields matching the unified data model.
-    Falls back to empty dict when the API key is not configured.
-    """
     if not TWELVE_DATA_API_KEY:
         return {}
-
     try:
         import requests
         url = f"{TWELVE_DATA_BASE_URL}/statistics"
-        params = {
-            "symbol": symbol,
-            "apikey": TWELVE_DATA_API_KEY,
-        }
-        response = requests.get(url, params=params, timeout=20)
+        params = {"symbol": symbol, "apikey": TWELVE_DATA_API_KEY}
+        response = requests.get(url, params=params, timeout=API_REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
 
         if "status" in data and data["status"] == "error":
-            logger.warning("Twelve Data statistics error for %s: %s", symbol, data.get("message", ""))
+            logger.warning("API error for %s: %s", symbol, data.get("message", ""))
             return {}
 
         if "statistics" not in data:
-            logger.warning("No statistics data for %s", symbol)
+            logger.warning("No statistics for %s", symbol)
             return {}
 
         stats = data["statistics"]
@@ -188,82 +180,126 @@ def fetch_fundamentals(symbol: str) -> dict:
             "eps": safe_float(financials.get("diluted_eps")),
         }
 
+    except requests.Timeout:
+        logger.error("Timeout fetching fundamentals for %s (limit=%ds)", symbol, API_REQUEST_TIMEOUT)
+        return {}
+    except requests.ConnectionError:
+        logger.error("Connection error fetching fundamentals for %s", symbol)
+        return {}
     except Exception as e:
-        logger.error("Error fetching fundamentals for %s: %s", symbol, type(e).__name__)
+        logger.error("Unexpected error fetching fundamentals for %s: %s — %s", symbol, type(e).__name__, e)
         return {}
 
 
+def _check_row_completeness(record: dict, diag: FetchDiagnostics) -> None:
+    ticker = record.get("ticker", "?")
+    missing = []
+    for f in REQUIRED_FIELDS_FOR_SCORING:
+        val = record.get(f)
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            missing.append(f)
+    if missing:
+        diag.incomplete_rows += 1
+        diag.incomplete_symbols.append(ticker)
+        for f in missing:
+            diag.missing_fields_summary[f] = diag.missing_fields_summary.get(f, 0) + 1
+        logger.info("Incomplete data for %s: missing %s", ticker, ", ".join(missing))
+
+
 def fetch_market_data(market: str) -> pd.DataFrame:
-    """
-    Fetch data for all symbols in a given market.
+    global _last_diagnostics
 
-    When no API key is configured, returns mock data from the unified data model.
-    With an API key, fetches live data via the provider and enriches with price fields.
-
-    Tickers that fail to fetch are skipped with a log warning.
-    """
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
 
     from momentum_metrics import append_momentum_fields, get_benchmark_history
 
+    start_time = time.time()
+    diag = FetchDiagnostics(market=market, timestamp=start_time)
+    symbols = SUPPORTED_MARKETS[market]["symbols"]
+    diag.total_tickers = len(symbols)
+
     provider = get_provider()
 
     if provider is None:
-        logger.info("No API key configured — using mock data for %s", market)
+        logger.info("No API key — using mock data for %s", market)
+        diag.used_mock = True
         df = get_mock_data(market)
         df["price_data"] = df["ticker"].apply(
             lambda t: _generate_placeholder_price_data(t)
         )
         benchmark = get_benchmark_history(market)
         df = append_momentum_fields(df, benchmark_history=benchmark)
+        diag.fetched_tickers = len(df)
+        for _, row in df.iterrows():
+            _check_row_completeness(row.to_dict(), diag)
+        diag.duration_seconds = time.time() - start_time
+        _last_diagnostics = diag
         return df
 
-    symbols = SUPPORTED_MARKETS[market]["symbols"]
     records = []
     skipped = []
 
     for symbol in symbols:
         try:
             fundamentals = fetch_fundamentals(symbol)
-
             if not fundamentals.get("ticker"):
                 fundamentals["ticker"] = symbol
-
             fundamentals["market"] = market
             fundamentals["sector"] = fundamentals.get("sector", "")
             fundamentals["industry"] = fundamentals.get("industry", "")
 
             enriched = provider.enrich_record(fundamentals)
+            _check_row_completeness(enriched, diag)
             records.append(enriched)
+            diag.fetched_tickers += 1
 
             logger.info(
-                "Fetched %s: price=%s, returns=%s/%s/%s/%s",
+                "Fetched %s: price=%s, rs_fields=%d/%d",
                 symbol,
                 enriched.get("price", "N/A"),
-                enriched.get("return_1m", "N/A"),
-                enriched.get("return_3m", "N/A"),
-                enriched.get("return_6m", "N/A"),
-                enriched.get("return_12m", "N/A"),
+                len(REQUIRED_FIELDS_FOR_SCORING) - sum(
+                    1 for f in REQUIRED_FIELDS_FOR_SCORING
+                    if enriched.get(f) is None or (isinstance(enriched.get(f), float) and np.isnan(enriched.get(f)))
+                ),
+                len(REQUIRED_FIELDS_FOR_SCORING),
             )
 
         except Exception as e:
-            logger.warning("Skipping %s due to error: %s", symbol, e)
+            logger.warning("Failed to fetch %s: %s — %s", symbol, type(e).__name__, e)
+            diag.failed_tickers += 1
+            diag.failed_symbols.append(symbol)
+            diag.errors.append(f"{symbol}: {type(e).__name__}: {e}")
             skipped.append(symbol)
-            continue
 
     if skipped:
-        logger.warning("Skipped %d tickers: %s", len(skipped), ", ".join(skipped))
+        logger.warning("Skipped %d/%d tickers: %s", len(skipped), len(symbols), ", ".join(skipped))
 
     if not records:
-        logger.error("No data fetched for market %s — falling back to mock data", market)
-        df = get_mock_data(market)
-        df["price_data"] = df["ticker"].apply(
-            lambda t: _generate_placeholder_price_data(t)
+        if FALLBACK_TO_MOCK:
+            logger.error("No data fetched for %s — falling back to mock data", market)
+            diag.fallback_triggered = True
+            diag.used_mock = True
+            df = get_mock_data(market)
+            df["price_data"] = df["ticker"].apply(
+                lambda t: _generate_placeholder_price_data(t)
+            )
+            benchmark = get_benchmark_history(market)
+            df = append_momentum_fields(df, benchmark_history=benchmark)
+            diag.fetched_tickers = len(df)
+            diag.duration_seconds = time.time() - start_time
+            _last_diagnostics = diag
+            return df
+        else:
+            diag.duration_seconds = time.time() - start_time
+            _last_diagnostics = diag
+            raise RuntimeError(f"No data could be fetched for market {market} and fallback is disabled")
+
+    if len(records) < MIN_ROWS_FOR_SCORING:
+        logger.warning(
+            "Only %d/%d tickers fetched for %s — below minimum %d for reliable scoring",
+            len(records), len(symbols), market, MIN_ROWS_FOR_SCORING,
         )
-        benchmark = get_benchmark_history(market)
-        df = append_momentum_fields(df, benchmark_history=benchmark)
-        return df
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
@@ -272,11 +308,12 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     benchmark = get_benchmark_history(market)
     df = append_momentum_fields(df, benchmark_history=benchmark)
 
+    diag.duration_seconds = time.time() - start_time
+    _last_diagnostics = diag
     return df
 
 
 def _generate_placeholder_price_data(symbol: str, days: int = 260) -> pd.DataFrame:
-    """Generate realistic placeholder price data for demonstration."""
     np.random.seed(hash(symbol) % (2**31))
     dates = pd.bdate_range(end=pd.Timestamp.now(), periods=days)
     base_price = np.random.uniform(20, 500)
