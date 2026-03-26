@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Optional
+from data_model import safe_ratio
 
 
 def filter_by_score(
@@ -51,6 +52,8 @@ def filter_by_fundamentals(
     max_debt_to_equity: Optional[float] = None,
     min_roe: Optional[float] = None,
     min_gross_margin: Optional[float] = None,
+    min_market_cap: Optional[float] = None,
+    min_avg_volume: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Apply fundamental filters to the stock DataFrame.
@@ -58,32 +61,57 @@ def filter_by_fundamentals(
     """
     filtered = df.copy()
 
-    if max_pe is not None and "pe_ratio" in filtered.columns:
+    if max_pe is not None and "pe" in filtered.columns:
         filtered = filtered[
-            filtered["pe_ratio"].apply(
-                lambda x: x is None or (np.isfinite(x) and x <= max_pe)
+            filtered["pe"].apply(
+                lambda x: x is None or (isinstance(x, (int, float)) and (np.isnan(x) or x <= max_pe))
             )
         ]
 
-    if max_debt_to_equity is not None and "debt_to_equity" in filtered.columns:
+    if max_debt_to_equity is not None:
+        def _check_de(row):
+            de = safe_ratio(row.get("total_debt"), row.get("equity"))
+            return np.isnan(de) or de <= max_debt_to_equity
+        filtered = filtered[filtered.apply(_check_de, axis=1)]
+
+    if min_roe is not None:
+        def _check_roe(row):
+            roe = safe_ratio(row.get("net_income"), row.get("equity"))
+            return np.isfinite(roe) and roe >= min_roe
+        filtered = filtered[filtered.apply(_check_roe, axis=1)]
+
+    if min_gross_margin is not None:
+        def _check_gm(row):
+            gm = safe_ratio(row.get("gross_profit"), row.get("revenue"))
+            return np.isfinite(gm) and gm >= min_gross_margin
+        filtered = filtered[filtered.apply(_check_gm, axis=1)]
+
+    if min_market_cap is not None and "market_cap" in filtered.columns:
         filtered = filtered[
-            filtered["debt_to_equity"].apply(
-                lambda x: x is None or (np.isfinite(x) and x <= max_debt_to_equity)
+            filtered["market_cap"].apply(
+                lambda x: x is not None and np.isfinite(x) and x >= min_market_cap
             )
         ]
 
-    if min_roe is not None and "return_on_equity" in filtered.columns:
+    if min_avg_volume is not None and "avg_volume_20d" in filtered.columns:
         filtered = filtered[
-            filtered["return_on_equity"].apply(
-                lambda x: x is not None and np.isfinite(x) and x >= min_roe
-            )
-        ]
-
-    if min_gross_margin is not None and "gross_margin" in filtered.columns:
-        filtered = filtered[
-            filtered["gross_margin"].apply(
-                lambda x: x is not None and np.isfinite(x) and x >= min_gross_margin
+            filtered["avg_volume_20d"].apply(
+                lambda x: x is not None and np.isfinite(x) and x >= min_avg_volume
             )
         ]
 
     return filtered.reset_index(drop=True)
+
+
+def filter_by_sector(df: pd.DataFrame, sectors: list) -> pd.DataFrame:
+    """Filter stocks to only include specified sectors."""
+    if not sectors or "sector" not in df.columns:
+        return df
+    return df[df["sector"].isin(sectors)].reset_index(drop=True)
+
+
+def filter_by_market(df: pd.DataFrame, market: str) -> pd.DataFrame:
+    """Filter stocks to a specific market."""
+    if "market" not in df.columns:
+        return df
+    return df[df["market"] == market].reset_index(drop=True)

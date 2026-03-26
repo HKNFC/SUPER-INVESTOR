@@ -1,10 +1,15 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from config import SUPPORTED_MARKETS, SCORING_WEIGHTS, DEFAULT_TOP_N, TWELVE_DATA_API_KEY
+from data_model import validate_dataframe
 from data_fetcher import fetch_market_data
 from scoring_engine import compute_rs_scores, get_score_breakdown
-from filters import filter_by_score, filter_by_category_score, filter_by_fundamentals
-from utils import prepare_display_dataframe, format_market_cap, format_number, score_color
+from filters import filter_by_score, filter_by_category_score, filter_by_fundamentals, filter_by_sector
+from utils import (
+    prepare_display_dataframe, format_market_cap, format_number,
+    format_percentage, format_pct_value, format_large_number, score_color,
+)
 
 st.set_page_config(
     page_title="Stock Screener - RS Score",
@@ -62,6 +67,20 @@ with st.sidebar:
         )
 
     st.divider()
+    st.subheader("Fundamental Filters")
+
+    max_pe = st.number_input("Max P/E Ratio", min_value=0.0, value=0.0, step=5.0,
+                             help="Set to 0 to disable")
+    max_pe = max_pe if max_pe > 0 else None
+
+    min_market_cap_input = st.selectbox(
+        "Min Market Cap",
+        options=["Any", "$1B+", "$10B+", "$100B+", "$1T+"],
+    )
+    min_market_cap_map = {"Any": None, "$1B+": 1e9, "$10B+": 10e9, "$100B+": 100e9, "$1T+": 1e12}
+    min_market_cap = min_market_cap_map[min_market_cap_input]
+
+    st.divider()
     st.subheader("Scoring Weights")
     st.caption("Current weights used for RS Score calculation")
     for cat, weight in SCORING_WEIGHTS.items():
@@ -79,10 +98,14 @@ if run_screening:
     with st.spinner(f"Fetching data for {market_info['label']}..."):
         raw_data = fetch_market_data(market)
 
+    validation = validate_dataframe(raw_data)
+    if not validation["valid"]:
+        st.warning(f"Data validation: missing columns {validation['missing_columns']}")
+
     with st.spinner("Computing RS Scores..."):
         scored_data = compute_rs_scores(raw_data)
 
-    filtered_data = filter_by_score(scored_data, min_rs_score=min_rs_score, top_n=top_n)
+    filtered_data = filter_by_score(scored_data, min_rs_score=min_rs_score, top_n=None)
 
     if category_filter != "None":
         filtered_data = filter_by_category_score(
@@ -90,6 +113,15 @@ if run_screening:
             category=category_filter,
             min_score=category_min,
         )
+
+    filtered_data = filter_by_fundamentals(
+        filtered_data,
+        max_pe=max_pe,
+        min_market_cap=min_market_cap,
+    )
+
+    if top_n and top_n > 0:
+        filtered_data = filtered_data.head(top_n).reset_index(drop=True)
 
     st.header(f"Results: {market_info['label']}")
     st.caption(f"{market_info['exchange']} | Currency: {market_info['currency']}")
@@ -118,8 +150,11 @@ if run_screening:
             hide_index=True,
             column_config={
                 "rank": st.column_config.NumberColumn("Rank", width="small"),
-                "symbol": st.column_config.TextColumn("Symbol", width="small"),
-                "last_close": st.column_config.NumberColumn("Last Close", format="%.2f"),
+                "ticker": st.column_config.TextColumn("Ticker", width="small"),
+                "company_name": st.column_config.TextColumn("Company"),
+                "sector": st.column_config.TextColumn("Sector"),
+                "price": st.column_config.NumberColumn("Price", format="%.2f"),
+                "market_cap": st.column_config.NumberColumn("Mkt Cap", format="%.0f"),
                 "rs_score": st.column_config.ProgressColumn(
                     "RS Score", min_value=0, max_value=100, format="%.1f",
                 ),
@@ -138,46 +173,134 @@ if run_screening:
                 "momentum": st.column_config.ProgressColumn(
                     "Momentum", min_value=0, max_value=100, format="%.1f",
                 ),
+                "return_1m": st.column_config.NumberColumn("1M Ret%", format="%.1f%%"),
+                "return_3m": st.column_config.NumberColumn("3M Ret%", format="%.1f%%"),
+                "return_6m": st.column_config.NumberColumn("6M Ret%", format="%.1f%%"),
+                "return_12m": st.column_config.NumberColumn("12M Ret%", format="%.1f%%"),
             },
         )
 
         st.divider()
-        st.subheader("Stock Details")
 
-        selected_symbol = st.selectbox(
-            "Select a stock for detailed breakdown",
-            options=filtered_data["symbol"].tolist(),
-        )
+        tab_details, tab_fundamentals = st.tabs(["Score Details", "Fundamentals"])
 
-        if selected_symbol:
-            stock_row = filtered_data[filtered_data["symbol"] == selected_symbol].iloc[0]
-            breakdown = get_score_breakdown(stock_row)
+        with tab_details:
+            selected_symbol = st.selectbox(
+                "Select a stock for detailed breakdown",
+                options=filtered_data["ticker"].tolist(),
+                key="detail_select",
+            )
 
-            detail_cols = st.columns(3)
-            with detail_cols[0]:
-                st.metric("Symbol", breakdown["symbol"])
-                st.metric("RS Score", f"{breakdown['rs_score']:.1f}")
-            with detail_cols[1]:
-                fs = breakdown["financial_strength"]
-                g = breakdown["growth"]
-                st.metric("Financial Strength", f"{fs:.1f}" if fs is not None else "N/A")
-                st.metric("Growth", f"{g:.1f}" if g is not None else "N/A")
-            with detail_cols[2]:
-                mq = breakdown["margin_quality"]
-                v = breakdown["valuation"]
-                m = breakdown["momentum"]
-                st.metric("Margin Quality", f"{mq:.1f}" if mq is not None else "N/A")
-                st.metric("Valuation", f"{v:.1f}" if v is not None else "N/A")
-                st.metric("Momentum", f"{m:.1f}" if m is not None else "N/A")
+            if selected_symbol:
+                stock_row = filtered_data[filtered_data["ticker"] == selected_symbol].iloc[0]
+                breakdown = get_score_breakdown(stock_row)
 
-            if "price_data" in stock_row and isinstance(stock_row["price_data"], pd.DataFrame):
-                price_df = stock_row["price_data"]
-                if not price_df.empty:
-                    st.subheader(f"Price Chart: {selected_symbol}")
-                    chart_data = price_df.set_index("datetime")[["close"]].rename(
-                        columns={"close": "Close Price"}
-                    )
-                    st.line_chart(chart_data)
+                st.subheader(f"{breakdown['ticker']} — {breakdown['company_name']}")
+
+                score_cols = st.columns(6)
+                labels = ["RS Score", "Financial Strength", "Growth", "Margin Quality", "Valuation", "Momentum"]
+                keys = ["rs_score", "financial_strength", "growth", "margin_quality", "valuation", "momentum"]
+
+                for col, label, key in zip(score_cols, labels, keys):
+                    with col:
+                        val = breakdown[key]
+                        st.metric(label, f"{val:.1f}" if val is not None else "N/A")
+
+                st.divider()
+
+                metric_cols = st.columns(4)
+                with metric_cols[0]:
+                    st.markdown("**Margins**")
+                    gm = breakdown.get("gross_margin")
+                    om = breakdown.get("operating_margin")
+                    nm = breakdown.get("net_margin")
+                    st.text(f"Gross:      {format_percentage(gm)}")
+                    st.text(f"Operating:  {format_percentage(om)}")
+                    st.text(f"Net:        {format_percentage(nm)}")
+
+                with metric_cols[1]:
+                    st.markdown("**Returns on Capital**")
+                    roe = breakdown.get("roe")
+                    roa = breakdown.get("roa")
+                    st.text(f"ROE:  {format_percentage(roe)}")
+                    st.text(f"ROA:  {format_percentage(roa)}")
+
+                with metric_cols[2]:
+                    st.markdown("**Growth**")
+                    rg = breakdown.get("revenue_growth")
+                    eg = breakdown.get("earnings_growth")
+                    st.text(f"Revenue:   {format_percentage(rg)}")
+                    st.text(f"Earnings:  {format_percentage(eg)}")
+
+                with metric_cols[3]:
+                    st.markdown("**Leverage**")
+                    de = breakdown.get("debt_to_equity")
+                    st.text(f"D/E Ratio:  {format_number(de) if de is not None else 'N/A'}")
+
+                if "price_data" in stock_row and isinstance(stock_row["price_data"], pd.DataFrame):
+                    price_df = stock_row["price_data"]
+                    if not price_df.empty:
+                        st.subheader(f"Price Chart: {selected_symbol}")
+                        chart_data = price_df.set_index("datetime")[["close"]].rename(
+                            columns={"close": "Close Price"}
+                        )
+                        st.line_chart(chart_data)
+
+        with tab_fundamentals:
+            fund_symbol = st.selectbox(
+                "Select a stock",
+                options=filtered_data["ticker"].tolist(),
+                key="fund_select",
+            )
+
+            if fund_symbol:
+                stock = filtered_data[filtered_data["ticker"] == fund_symbol].iloc[0]
+
+                st.subheader(f"{stock.get('ticker')} — {stock.get('company_name', 'N/A')}")
+                st.caption(f"{stock.get('sector', 'N/A')} | {stock.get('industry', 'N/A')}")
+
+                fc1, fc2, fc3 = st.columns(3)
+
+                with fc1:
+                    st.markdown("**Income Statement**")
+                    st.text(f"Revenue:         {format_large_number(stock.get('revenue'))}")
+                    st.text(f"Rev Prev Year:   {format_large_number(stock.get('revenue_prev_year'))}")
+                    st.text(f"Rev 3Y Ago:      {format_large_number(stock.get('revenue_3y_ago'))}")
+                    st.text(f"Gross Profit:    {format_large_number(stock.get('gross_profit'))}")
+                    st.text(f"Operating Inc:   {format_large_number(stock.get('operating_income'))}")
+                    st.text(f"EBITDA:          {format_large_number(stock.get('ebitda'))}")
+                    st.text(f"Net Income:      {format_large_number(stock.get('net_income'))}")
+                    st.text(f"Net Inc Prev Yr: {format_large_number(stock.get('net_income_prev_year'))}")
+
+                with fc2:
+                    st.markdown("**Balance Sheet**")
+                    st.text(f"Total Assets:    {format_large_number(stock.get('total_assets'))}")
+                    st.text(f"Total Debt:      {format_large_number(stock.get('total_debt'))}")
+                    st.text(f"Equity:          {format_large_number(stock.get('equity'))}")
+                    st.text(f"Cash:            {format_large_number(stock.get('cash'))}")
+                    st.text(f"Invested Cap:    {format_large_number(stock.get('invested_capital'))}")
+                    st.text(f"EPS:             {format_number(stock.get('eps'))}")
+                    st.text(f"EPS 3Y Ago:      {format_number(stock.get('eps_3y_ago'))}")
+
+                with fc3:
+                    st.markdown("**Valuation & Market**")
+                    st.text(f"Market Cap:      {format_market_cap(stock.get('market_cap'))}")
+                    st.text(f"Price:           {format_number(stock.get('price'))}")
+                    st.text(f"P/E:             {format_number(stock.get('pe'))}")
+                    st.text(f"P/B:             {format_number(stock.get('pb'))}")
+                    st.text(f"EV/EBITDA:       {format_number(stock.get('ev_ebitda'))}")
+                    st.text(f"PEG:             {format_number(stock.get('peg'))}")
+                    st.text(f"Avg Vol (20d):   {format_number(stock.get('avg_volume_20d'), decimals=0)}")
+
+                st.divider()
+                st.markdown("**Price Returns**")
+                ret_cols = st.columns(4)
+                ret_labels = ["1 Month", "3 Months", "6 Months", "12 Months"]
+                ret_keys = ["return_1m", "return_3m", "return_6m", "return_12m"]
+                for col, label, key in zip(ret_cols, ret_labels, ret_keys):
+                    with col:
+                        val = stock.get(key)
+                        st.metric(label, format_pct_value(val))
 
 else:
     st.info("Select a market from the sidebar and click **Run Screening** to begin.")
@@ -190,11 +313,21 @@ else:
             The RS (Relative Strength) Score ranks stocks on a 0-100 scale
             by combining five key dimensions:
 
-            - **Financial Strength** — Balance sheet health (current ratio, D/E, ROE)
-            - **Growth** — Revenue and earnings growth rates
-            - **Margin Quality** — Gross, operating, and net margins
-            - **Valuation** — P/E, P/B, EV/EBITDA multiples
-            - **Momentum** — Price trends across multiple timeframes
+            - **Financial Strength** — D/E ratio, ROE, ROA, cash coverage
+            - **Growth** — Revenue & earnings growth (YoY and 3Y)
+            - **Margin Quality** — Gross, operating, net, and EBITDA margins
+            - **Valuation** — P/E, P/B, EV/EBITDA, PEG ratio
+            - **Momentum** — Multi-timeframe returns, 52W high distance, relative strength
+            """
+        )
+
+        st.subheader("Data Model")
+        st.markdown(
+            """
+            Each stock row includes:
+            - **Identity** — ticker, company name, market, sector, industry
+            - **Price** — price, market cap, volume, multi-period returns
+            - **Fundamentals** — revenue, income, margins, balance sheet, valuation ratios
             """
         )
 

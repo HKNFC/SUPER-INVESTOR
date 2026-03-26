@@ -3,6 +3,10 @@ import numpy as np
 import requests
 from typing import Optional
 from config import TWELVE_DATA_API_KEY, TWELVE_DATA_BASE_URL, SUPPORTED_MARKETS
+from data_model import (
+    ensure_columns, coerce_numeric_columns, get_mock_data,
+    safe_float, ALL_COLUMNS,
+)
 
 
 def fetch_price_history(
@@ -47,13 +51,13 @@ def fetch_price_history(
 
 def fetch_fundamentals(symbol: str) -> dict:
     """
-    Fetch fundamental data for a symbol.
+    Fetch fundamental data for a symbol from Twelve Data API.
 
-    Returns a dict with financial metrics.
-    Falls back to placeholder data when the API key is not configured.
+    Returns a dict with fields matching the unified data model.
+    Falls back to empty dict when the API key is not configured.
     """
     if not TWELVE_DATA_API_KEY:
-        return _generate_placeholder_fundamentals(symbol)
+        return {}
 
     try:
         url = f"{TWELVE_DATA_BASE_URL}/statistics"
@@ -66,68 +70,103 @@ def fetch_fundamentals(symbol: str) -> dict:
         data = response.json()
 
         if "statistics" not in data:
-            return _generate_placeholder_fundamentals(symbol)
+            return {}
 
         stats = data["statistics"]
+        financials = stats.get("financials", {})
+        valuations = stats.get("valuations_metrics", {})
+
         return {
-            "symbol": symbol,
-            "current_ratio": _safe_float(stats.get("financials", {}).get("current_ratio")),
-            "debt_to_equity": _safe_float(stats.get("financials", {}).get("debt_to_equity")),
-            "return_on_equity": _safe_float(stats.get("financials", {}).get("return_on_equity")),
-            "revenue_growth": _safe_float(stats.get("financials", {}).get("revenue_growth_yoy")),
-            "earnings_growth": _safe_float(stats.get("financials", {}).get("earnings_growth_yoy")),
-            "gross_margin": _safe_float(stats.get("financials", {}).get("gross_margin")),
-            "operating_margin": _safe_float(stats.get("financials", {}).get("operating_margin")),
-            "net_margin": _safe_float(stats.get("financials", {}).get("net_margin")),
-            "pe_ratio": _safe_float(stats.get("valuations_metrics", {}).get("trailing_pe")),
-            "pb_ratio": _safe_float(stats.get("valuations_metrics", {}).get("price_to_book")),
-            "ps_ratio": _safe_float(stats.get("valuations_metrics", {}).get("price_to_sales_ttm")),
-            "ev_to_ebitda": _safe_float(stats.get("valuations_metrics", {}).get("enterprise_to_ebitda")),
-            "market_cap": _safe_float(stats.get("valuations_metrics", {}).get("market_capitalization")),
+            "ticker": symbol,
+            "company_name": data.get("name", symbol),
+            "market_cap": safe_float(valuations.get("market_capitalization")),
+            "pe": safe_float(valuations.get("trailing_pe")),
+            "pb": safe_float(valuations.get("price_to_book")),
+            "ev_ebitda": safe_float(valuations.get("enterprise_to_ebitda")),
+            "revenue": safe_float(financials.get("revenue")),
+            "net_income": safe_float(financials.get("net_income")),
+            "gross_profit": safe_float(financials.get("gross_profit")),
+            "operating_income": safe_float(financials.get("operating_income")),
+            "ebitda": safe_float(financials.get("ebitda")),
+            "total_assets": safe_float(financials.get("total_assets")),
+            "total_debt": safe_float(financials.get("total_debt")),
+            "equity": safe_float(financials.get("stockholders_equity")),
+            "cash": safe_float(financials.get("cash_and_equivalents")),
+            "eps": safe_float(financials.get("diluted_eps")),
         }
 
     except (requests.RequestException, ValueError, KeyError):
-        return _generate_placeholder_fundamentals(symbol)
+        return {}
+
+
+def enrich_price_fields(row: dict, price_data: pd.DataFrame) -> dict:
+    """
+    Enrich a stock record with price-derived fields from historical data.
+
+    Computes: price, return_1m/3m/6m/12m, avg_volume_20d, distance_to_52w_high.
+    """
+    result = dict(row)
+
+    if price_data is None or price_data.empty:
+        return result
+
+    closes = price_data["close"].values
+    current = closes[-1]
+    result["price"] = round(current, 2)
+
+    periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
+    for field, days in periods.items():
+        if len(closes) >= days and closes[-days] != 0:
+            result[field] = round((current / closes[-days] - 1) * 100, 2)
+
+    if "volume" in price_data.columns and len(price_data) >= 20:
+        result["avg_volume_20d"] = round(price_data["volume"].tail(20).mean(), 0)
+
+    high_52w = price_data["high"].tail(252).max() if len(price_data) >= 21 else current
+    if high_52w > 0:
+        result["distance_to_52w_high"] = round((current / high_52w - 1) * 100, 2)
+
+    return result
 
 
 def fetch_market_data(market: str) -> pd.DataFrame:
     """
     Fetch data for all symbols in a given market.
 
-    Returns a DataFrame with fundamentals and price data for each symbol.
+    When no API key is configured, returns mock data from the unified data model.
+    With an API key, fetches live data and enriches it with price-derived fields.
     """
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
 
+    if not TWELVE_DATA_API_KEY:
+        df = get_mock_data(market)
+        df["price_data"] = df["ticker"].apply(
+            lambda t: _generate_placeholder_price_data(t)
+        )
+        return df
+
     symbols = SUPPORTED_MARKETS[market]["symbols"]
+    market_info = SUPPORTED_MARKETS[market]
     records = []
 
     for symbol in symbols:
         fundamentals = fetch_fundamentals(symbol)
         price_data = fetch_price_history(symbol)
 
-        if not price_data.empty:
-            fundamentals["last_close"] = price_data["close"].iloc[-1]
-            fundamentals["price_data"] = price_data
-        else:
-            fundamentals["last_close"] = np.nan
-            fundamentals["price_data"] = pd.DataFrame()
+        if not fundamentals.get("ticker"):
+            fundamentals["ticker"] = symbol
+
+        fundamentals["market"] = market
+        fundamentals = enrich_price_fields(fundamentals, price_data)
+        fundamentals["price_data"] = price_data
 
         records.append(fundamentals)
 
     df = pd.DataFrame(records)
+    df = ensure_columns(df)
+    df = coerce_numeric_columns(df)
     return df
-
-
-def _safe_float(value) -> Optional[float]:
-    """Safely convert a value to float, returning None on failure."""
-    if value is None:
-        return None
-    try:
-        result = float(value)
-        return result if np.isfinite(result) else None
-    except (ValueError, TypeError):
-        return None
 
 
 def _generate_placeholder_price_data(symbol: str, days: int = 252) -> pd.DataFrame:
@@ -147,24 +186,3 @@ def _generate_placeholder_price_data(symbol: str, days: int = 252) -> pd.DataFra
         "volume": np.random.randint(100_000, 10_000_000, size=days),
     })
     return df.round(2)
-
-
-def _generate_placeholder_fundamentals(symbol: str) -> dict:
-    """Generate realistic placeholder fundamental data for demonstration."""
-    np.random.seed(hash(symbol) % (2**31))
-    return {
-        "symbol": symbol,
-        "current_ratio": round(np.random.uniform(0.8, 3.5), 2),
-        "debt_to_equity": round(np.random.uniform(0.1, 2.5), 2),
-        "return_on_equity": round(np.random.uniform(-0.05, 0.45), 4),
-        "revenue_growth": round(np.random.uniform(-0.10, 0.40), 4),
-        "earnings_growth": round(np.random.uniform(-0.20, 0.50), 4),
-        "gross_margin": round(np.random.uniform(0.15, 0.75), 4),
-        "operating_margin": round(np.random.uniform(0.05, 0.40), 4),
-        "net_margin": round(np.random.uniform(0.02, 0.30), 4),
-        "pe_ratio": round(np.random.uniform(5, 60), 2),
-        "pb_ratio": round(np.random.uniform(0.5, 15), 2),
-        "ps_ratio": round(np.random.uniform(0.3, 20), 2),
-        "ev_to_ebitda": round(np.random.uniform(3, 30), 2),
-        "market_cap": round(np.random.uniform(1e9, 2e12), 0),
-    }

@@ -10,16 +10,28 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 
 ### Python Files
 
-- `app.py` — Streamlit UI entry point with sidebar market selector, filters, and results table
+- `app.py` — Streamlit UI entry point with sidebar market selector, filters, results table, and detail tabs
 - `config.py` — Market definitions, scoring weights, API configuration (uses `TWELVE_DATA_API_KEY` env var)
-- `data_fetcher.py` — Fetches price history and fundamentals from Twelve Data API (placeholder data when API key not set)
-- `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores
-- `momentum_metrics.py` — Calculates momentum sub-scores from price history (multi-timeframe returns + MA signals)
-- `scoring_engine.py` — Computes weighted composite RS Score and ranks stocks
-- `filters.py` — Applies score-based, category-based, and fundamental filters
-- `utils.py` — Formatting helpers for numbers, percentages, market cap, and display DataFrames
+- `data_model.py` — Unified DataFrame schema (33 columns), validation helpers, type coercion, derived field computation, and mock data (10 stocks per market)
+- `data_fetcher.py` — Fetches price history and fundamentals from Twelve Data API; falls back to mock data from data_model when API key not set
+- `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
+- `momentum_metrics.py` — Calculates momentum sub-scores from pre-computed returns and price data (MA signals)
+- `scoring_engine.py` — Computes derived fields, then weighted composite RS Score; ranks stocks
+- `filters.py` — Score-based, category-based, fundamental, sector, and market filters
+- `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and display DataFrames
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
 - `.streamlit/config.toml` — Streamlit server configuration (port 5000, headless)
+
+### Data Model (data_model.py)
+
+Unified DataFrame structure with 33 columns:
+- **Identity (5)**: ticker, company_name, market, sector, industry
+- **Price & Market (9)**: price, market_cap, avg_volume_20d, return_1m/3m/6m/12m, distance_to_52w_high, relative_return_vs_index
+- **Fundamentals (19)**: revenue (current/prev/3y), net_income (current/prev), eps (current/3y), gross_profit, operating_income, ebitda, total_assets, total_debt, equity, cash, invested_capital, pe, pb, ev_ebitda, peg
+
+Derived fields computed by `compute_derived_fields()`: gross_margin, operating_margin, net_margin, revenue_growth, revenue_growth_3y, earnings_growth, eps_growth_3y, roe, roa, roic, debt_to_equity
+
+Helper functions: `validate_dataframe()`, `coerce_numeric_columns()`, `ensure_columns()`, `safe_float()`, `safe_ratio()`
 
 ### Running
 
@@ -48,6 +60,7 @@ Set the `TWELVE_DATA_API_KEY` environment variable to connect to real market dat
 artifacts-monorepo/
 ├── app.py                 # Streamlit stock screener entry point
 ├── config.py              # Stock screener configuration
+├── data_model.py          # Unified DataFrame schema, validation, mock data
 ├── data_fetcher.py        # Market data fetching
 ├── financial_metrics.py   # Financial sub-score calculations
 ├── momentum_metrics.py    # Momentum sub-score calculations

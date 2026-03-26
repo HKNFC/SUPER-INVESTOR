@@ -12,10 +12,10 @@ SUPPORTED_MARKETS = {
         "exchange": "BIST",
         "currency": "TRY",
         "symbols": [
-            "THYAO.IS", "GARAN.IS", "AKBNK.IS", "EREGL.IS", "BIMAS.IS",
-            "KCHOL.IS", "SAHOL.IS", "SISE.IS", "TUPRS.IS", "ASELS.IS",
-            "TCELL.IS", "PGSUS.IS", "TOASO.IS", "FROTO.IS", "KOZAL.IS",
-            "HEKTS.IS", "MGROS.IS", "TAVHL.IS", "VESTL.IS", "ARCLK.IS",
+            "THYAO", "GARAN", "AKBNK", "EREGL", "BIMAS",
+            "KCHOL", "SAHOL", "SISE", "TUPRS", "ASELS",
+            "TCELL", "PGSUS", "TOASO", "FROTO", "KOZAL",
+            "HEKTS", "MGROS", "TAVHL", "VESTL", "ARCLK",
         ],
     },
     "USA": {
