@@ -360,7 +360,7 @@ with tab_screener:
                 st.warning(f"Veri kalitesi uyarısı: eksik sütunlar {validation['missing_columns']}")
 
             with st.spinner("Puanlama yapılıyor..."):
-                scored_data = compute_rs_scores(raw_data)
+                scored_data = compute_rs_scores(raw_data, market=market)
 
             scored_rows = scored_data.to_dict("records")
             updated = update_watchlist_scores(scored_rows)

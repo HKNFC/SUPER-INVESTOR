@@ -29,25 +29,29 @@ from config import (
     WINSORIZE_UPPER,
 )
 from data_model import compute_derived_fields
+from data_fetcher import build_technical_data
 from technical_signals import append_technical_scores
 
 
-def compute_rs_scores(df: pd.DataFrame) -> pd.DataFrame:
+def compute_rs_scores(df: pd.DataFrame, market: str = None) -> pd.DataFrame:
     """
     Compute the composite RS Score for each stock in the DataFrame.
 
     Steps:
       1. Compute derived fields (margins, growth rates, ratios)
-      2. Winsorize extreme values
-      3. Percentile-rank each metric across the universe
-      4. Compute weighted sub-scores for each category
-      5. Compute final weighted RS Score
-      6. Assign RS Category and rank
+      2. Compute all technical indicators from OHLCV (once)
+      3. Winsorize extreme values
+      4. Percentile-rank each metric across the universe
+      5. Compute weighted sub-scores for each category
+      6. Compute final weighted RS Score
+      7. Assign RS Category and rank
     """
     if df.empty:
         return df
 
     result = compute_derived_fields(df.copy())
+
+    result = build_technical_data(result, market=market)
 
     result = _compute_margin_trend(result)
 

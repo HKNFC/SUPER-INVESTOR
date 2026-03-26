@@ -353,7 +353,7 @@ def run_backtest(
                     bench_trunc = None
         truncated = append_momentum_fields(truncated, benchmark_history=bench_trunc)
 
-        scored = compute_rs_scores(truncated)
+        scored = compute_rs_scores(truncated, market=market)
 
         filtered = apply_preset_filter(
             scored, preset=quality_preset, min_avg_volume=min_avg_volume,

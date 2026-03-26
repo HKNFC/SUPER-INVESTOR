@@ -350,24 +350,70 @@ def calculate_returns(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
 
 
 def calculate_moving_averages(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
-    result: Dict[str, Optional[float]] = {"ma50": None, "ma200": None, "ma50_ratio": None, "ma200_ratio": None}
+    result: Dict[str, Optional[float]] = {
+        "ma20": None, "ma50": None, "ma200": None,
+        "ma20_ratio": None, "ma50_ratio": None, "ma200_ratio": None,
+    }
     if price_data is None or price_data.empty or "close" not in price_data.columns:
         return result
     closes = price_data["close"].values.astype(float)
     current = closes[-1] if len(closes) > 0 and np.isfinite(closes[-1]) else None
     if current is None:
         return result
-    if len(closes) >= 50:
-        ma50 = float(np.mean(closes[-50:]))
-        if np.isfinite(ma50) and ma50 > 0:
-            result["ma50"] = round(ma50, 4)
-            result["ma50_ratio"] = round(current / ma50, 4)
-    if len(closes) >= 200:
-        ma200 = float(np.mean(closes[-200:]))
-        if np.isfinite(ma200) and ma200 > 0:
-            result["ma200"] = round(ma200, 4)
-            result["ma200_ratio"] = round(current / ma200, 4)
+    for window, key in [(20, "ma20"), (50, "ma50"), (200, "ma200")]:
+        if len(closes) >= window:
+            ma = float(np.mean(closes[-window:]))
+            if np.isfinite(ma) and ma > 0:
+                result[key] = round(ma, 4)
+                result[f"{key}_ratio"] = round(current / ma, 4)
     return result
+
+
+def calculate_macd(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
+    result: Dict[str, Optional[float]] = {"macd_line": None, "macd_signal": None, "macd_histogram": None}
+    if price_data is None or price_data.empty or "close" not in price_data.columns:
+        return result
+    closes = price_data["close"].values.astype(float)
+    if len(closes) < 35:
+        return result
+    alpha12 = 2.0 / 13
+    alpha26 = 2.0 / 27
+    ema12 = np.empty_like(closes)
+    ema26 = np.empty_like(closes)
+    ema12[0] = closes[0]
+    ema26[0] = closes[0]
+    for i in range(1, len(closes)):
+        ema12[i] = alpha12 * closes[i] + (1 - alpha12) * ema12[i - 1]
+        ema26[i] = alpha26 * closes[i] + (1 - alpha26) * ema26[i - 1]
+    macd_line = ema12 - ema26
+    alpha9 = 2.0 / 10
+    signal = np.empty_like(macd_line)
+    signal[0] = macd_line[0]
+    for i in range(1, len(macd_line)):
+        signal[i] = alpha9 * macd_line[i] + (1 - alpha9) * signal[i - 1]
+    result["macd_line"] = round(float(macd_line[-1]), 4)
+    result["macd_signal"] = round(float(signal[-1]), 4)
+    result["macd_histogram"] = round(float(macd_line[-1] - signal[-1]), 4)
+    return result
+
+
+def calculate_atr(price_data: pd.DataFrame, period: int = 14) -> Optional[float]:
+    if price_data is None or price_data.empty:
+        return None
+    if not all(c in price_data.columns for c in ["high", "low", "close"]):
+        return None
+    if len(price_data) < period + 1:
+        return None
+    high = price_data["high"].values.astype(float)
+    low = price_data["low"].values.astype(float)
+    close = price_data["close"].values.astype(float)
+    tr_values = []
+    for i in range(1, len(high)):
+        tr = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
+        tr_values.append(tr)
+    if len(tr_values) < period:
+        return None
+    return round(float(np.mean(tr_values[-period:])), 4)
 
 
 def calculate_rsi(price_data: pd.DataFrame, period: int = 14) -> Optional[float]:
@@ -477,8 +523,11 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
 
     tech_cols = {
         "return_1m": [], "return_3m": [], "return_6m": [], "return_12m": [],
-        "ma50": [], "ma200": [], "ma50_ratio": [], "ma200_ratio": [],
+        "ma20": [], "ma50": [], "ma200": [],
+        "ma20_ratio": [], "ma50_ratio": [], "ma200_ratio": [],
         "rsi": [],
+        "macd_line": [], "macd_signal": [], "macd_histogram": [],
+        "atr": [],
         "volume_ratio": [],
         "mfi": [],
         "obv_latest": [], "obv_trend_positive": [], "obv_slope": [],
@@ -493,26 +542,31 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
             price_data = price_data.sort_values("datetime").reset_index(drop=True)
             result.at[idx, "price_data"] = price_data
 
-        rets = calculate_returns(price_data) if is_valid else {"return_1m": None, "return_3m": None, "return_6m": None, "return_12m": None}
-        tech_cols["return_1m"].append(rets.get("return_1m"))
-        tech_cols["return_3m"].append(rets.get("return_3m"))
-        tech_cols["return_6m"].append(rets.get("return_6m"))
-        tech_cols["return_12m"].append(rets.get("return_12m"))
+        empty_rets = {"return_1m": None, "return_3m": None, "return_6m": None, "return_12m": None}
+        rets = calculate_returns(price_data) if is_valid else empty_rets
+        for k in empty_rets:
+            tech_cols[k].append(rets.get(k))
 
-        mas = calculate_moving_averages(price_data) if is_valid else {"ma50": None, "ma200": None, "ma50_ratio": None, "ma200_ratio": None}
-        tech_cols["ma50"].append(mas.get("ma50"))
-        tech_cols["ma200"].append(mas.get("ma200"))
-        tech_cols["ma50_ratio"].append(mas.get("ma50_ratio"))
-        tech_cols["ma200_ratio"].append(mas.get("ma200_ratio"))
+        empty_mas = {"ma20": None, "ma50": None, "ma200": None, "ma20_ratio": None, "ma50_ratio": None, "ma200_ratio": None}
+        mas = calculate_moving_averages(price_data) if is_valid else empty_mas
+        for k in empty_mas:
+            tech_cols[k].append(mas.get(k))
 
         tech_cols["rsi"].append(calculate_rsi(price_data) if is_valid else None)
+
+        empty_macd = {"macd_line": None, "macd_signal": None, "macd_histogram": None}
+        macd = calculate_macd(price_data) if is_valid else empty_macd
+        for k in empty_macd:
+            tech_cols[k].append(macd.get(k))
+
+        tech_cols["atr"].append(calculate_atr(price_data) if is_valid else None)
         tech_cols["volume_ratio"].append(calculate_volume_ratio(price_data) if is_valid else None)
         tech_cols["mfi"].append(calculate_mfi(price_data) if is_valid else None)
 
-        obv = calculate_obv(price_data) if is_valid else {"obv_latest": None, "obv_trend_positive": None, "obv_slope": None}
-        tech_cols["obv_latest"].append(obv.get("obv_latest"))
-        tech_cols["obv_trend_positive"].append(obv.get("obv_trend_positive"))
-        tech_cols["obv_slope"].append(obv.get("obv_slope"))
+        empty_obv = {"obv_latest": None, "obv_trend_positive": None, "obv_slope": None}
+        obv = calculate_obv(price_data) if is_valid else empty_obv
+        for k in empty_obv:
+            tech_cols[k].append(obv.get(k))
 
         d52 = None
         if is_valid and "high" in price_data.columns and "close" in price_data.columns and len(price_data) >= 21:
@@ -526,10 +580,13 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
     for col, values in tech_cols.items():
         result[col] = values
 
-    for col in ["return_1m", "return_3m", "return_6m", "return_12m",
-                "ma50", "ma200", "ma50_ratio", "ma200_ratio",
-                "rsi", "volume_ratio", "mfi",
-                "obv_latest", "obv_slope", "distance_to_52w_high"]:
+    numeric_cols = [
+        "return_1m", "return_3m", "return_6m", "return_12m",
+        "ma20", "ma50", "ma200", "ma20_ratio", "ma50_ratio", "ma200_ratio",
+        "rsi", "macd_line", "macd_signal", "macd_histogram", "atr",
+        "volume_ratio", "mfi", "obv_latest", "obv_slope", "distance_to_52w_high",
+    ]
+    for col in numeric_cols:
         if col in result.columns:
             result[col] = pd.to_numeric(result[col], errors="coerce")
 
