@@ -17,7 +17,7 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, and BIST ticker resolution
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume)
 - `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
-- `momentum_metrics.py` — Calculates momentum sub-scores from pre-computed returns and price data (MA signals)
+- `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume, and composite momentum score
 - `scoring_engine.py` — Computes derived fields, then weighted composite RS Score; ranks stocks
 - `filters.py` — Score-based, category-based, fundamental, sector, and market filters
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and display DataFrames

@@ -205,6 +205,8 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
 
+    from momentum_metrics import append_momentum_fields, get_benchmark_history
+
     provider = get_provider()
 
     if provider is None:
@@ -213,6 +215,8 @@ def fetch_market_data(market: str) -> pd.DataFrame:
         df["price_data"] = df["ticker"].apply(
             lambda t: _generate_placeholder_price_data(t)
         )
+        benchmark = get_benchmark_history(market)
+        df = append_momentum_fields(df, benchmark_history=benchmark)
         return df
 
     symbols = SUPPORTED_MARKETS[market]["symbols"]
@@ -257,15 +261,21 @@ def fetch_market_data(market: str) -> pd.DataFrame:
         df["price_data"] = df["ticker"].apply(
             lambda t: _generate_placeholder_price_data(t)
         )
+        benchmark = get_benchmark_history(market)
+        df = append_momentum_fields(df, benchmark_history=benchmark)
         return df
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
+
+    benchmark = get_benchmark_history(market)
+    df = append_momentum_fields(df, benchmark_history=benchmark)
+
     return df
 
 
-def _generate_placeholder_price_data(symbol: str, days: int = 252) -> pd.DataFrame:
+def _generate_placeholder_price_data(symbol: str, days: int = 260) -> pd.DataFrame:
     """Generate realistic placeholder price data for demonstration."""
     np.random.seed(hash(symbol) % (2**31))
     dates = pd.bdate_range(end=pd.Timestamp.now(), periods=days)

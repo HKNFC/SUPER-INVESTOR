@@ -34,6 +34,11 @@ SUPPORTED_MARKETS = {
     },
 }
 
+BENCHMARK_INDEX = {
+    "USA": "SPX",
+    "BIST": "XU100",
+}
+
 SCORING_WEIGHTS = {
     "financial_strength": 0.20,
     "growth": 0.25,
