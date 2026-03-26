@@ -593,6 +593,109 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
     return result
 
 
+def fetch_backtest_data(market: str) -> pd.DataFrame:
+    from momentum_metrics import append_momentum_fields
+    from disk_cache import read_cache, needs_refresh, get_cached_or_fetch
+
+    if market not in SUPPORTED_MARKETS:
+        raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
+
+    symbols = SUPPORTED_MARKETS[market]["symbols"]
+    provider = get_provider()
+
+    records = []
+    has_any_cache = False
+
+    for symbol in symbols:
+        resolved = provider._resolve_symbol(symbol, market) if provider else symbol
+        cached = read_cache(resolved)
+
+        if cached is not None and not cached.empty:
+            has_any_cache = True
+            if not needs_refresh(resolved) or provider is None:
+                price_data = _ensure_sorted(cached)
+            else:
+                def _disk_fetch(sym, outputsize=300, start_date=None):
+                    return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+
+                fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
+                price_data = _ensure_sorted(fetched) if fetched is not None and not fetched.empty else _ensure_sorted(cached)
+        elif provider is not None:
+            def _disk_fetch(sym, outputsize=300, start_date=None):
+                return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+
+            fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
+            if fetched is not None and not fetched.empty:
+                price_data = _ensure_sorted(fetched)
+            else:
+                logger.warning("No cached data for %s, using placeholder", symbol)
+                price_data = _generate_placeholder_price_data(symbol)
+        else:
+            price_data = _generate_placeholder_price_data(symbol)
+
+        records.append({
+            "ticker": symbol,
+            "company_name": symbol,
+            "market": market,
+            "sector": "",
+            "industry": "",
+            "price_data": price_data,
+        })
+
+    if not has_any_cache and provider is None:
+        logger.info("No cache and no API key — backtest using mock data for %s", market)
+        df = get_mock_data(market)
+        df["price_data"] = df["ticker"].apply(
+            lambda t: _generate_placeholder_price_data(t)
+        )
+        benchmark = get_cached_benchmark(market)
+        df = append_momentum_fields(df, benchmark_history=benchmark)
+        return df
+
+    df = pd.DataFrame(records)
+    df = ensure_columns(df)
+    df = coerce_numeric_columns(df)
+
+    benchmark = get_cached_benchmark(market)
+    df = append_momentum_fields(df, benchmark_history=benchmark)
+
+    return df
+
+
+def get_cached_benchmark(market: str) -> pd.DataFrame:
+    from config import BENCHMARK_INDEX
+    from disk_cache import read_cache, needs_refresh, get_cached_or_fetch
+
+    index_ticker = BENCHMARK_INDEX.get(market)
+    if not index_ticker:
+        logger.warning("No benchmark configured for market %s", market)
+        return _generate_placeholder_price_data("BENCH", days=300)
+
+    provider = get_provider()
+    resolved = provider._resolve_symbol(index_ticker, market) if provider else index_ticker
+
+    cached = read_cache(resolved)
+
+    if cached is not None and not cached.empty:
+        if not needs_refresh(resolved) or provider is None:
+            return _ensure_sorted(cached)
+
+    if provider is None:
+        return _generate_placeholder_price_data(index_ticker, days=300)
+
+    def _disk_fetch(sym, outputsize=300, start_date=None):
+        return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+
+    fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
+    if fetched is not None and not fetched.empty:
+        return _ensure_sorted(fetched)
+
+    if cached is not None and not cached.empty:
+        return _ensure_sorted(cached)
+
+    return _generate_placeholder_price_data(index_ticker, days=300)
+
+
 def _generate_placeholder_price_data(symbol: str, days: int = 260) -> pd.DataFrame:
     np.random.seed(hash(symbol) % (2**31))
     dates = pd.bdate_range(end=pd.Timestamp.now(), periods=days)

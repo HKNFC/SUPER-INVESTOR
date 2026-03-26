@@ -19,8 +19,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Tuple
 from datetime import date, timedelta
 
-from data_fetcher import fetch_market_data, _generate_placeholder_price_data
-from momentum_metrics import append_momentum_fields, get_benchmark_history
+from data_fetcher import fetch_backtest_data, get_cached_benchmark, _generate_placeholder_price_data
+from momentum_metrics import append_momentum_fields
 from scoring_engine import compute_rs_scores
 from filters import apply_preset_filter, rank_and_limit
 
@@ -273,7 +273,7 @@ def run_backtest(
     min_avg_volume: Optional[float] = None,
     progress_callback=None,
 ) -> BacktestResult:
-    raw_data = fetch_market_data(market)
+    raw_data = fetch_backtest_data(market)
 
     raw_data = _apply_universe_filter(raw_data, market, universe)
 
@@ -298,7 +298,7 @@ def run_backtest(
             rebalance_history=[],
         )
 
-    benchmark_history = get_benchmark_history(market)
+    benchmark_history = get_cached_benchmark(market)
 
     benchmark_prices = None
     if benchmark_history is not None and not benchmark_history.empty:
