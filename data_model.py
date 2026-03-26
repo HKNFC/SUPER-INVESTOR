@@ -140,54 +140,17 @@ def safe_float(value, default=np.nan) -> float:
 
 def compute_derived_fields(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute derived fields from raw fundamental data where possible.
+    Compute all derived financial metrics from raw fundamental data.
 
-    Derived fields computed:
-      - gross_margin = gross_profit / revenue
-      - operating_margin = operating_income / revenue
-      - net_margin = net_income / revenue
-      - revenue_growth = (revenue - revenue_prev_year) / abs(revenue_prev_year)
-      - revenue_growth_3y = (revenue - revenue_3y_ago) / abs(revenue_3y_ago)
-      - earnings_growth = (net_income - net_income_prev_year) / abs(net_income_prev_year)
-      - eps_growth_3y = (eps - eps_3y_ago) / abs(eps_3y_ago)
-      - roe = net_income / equity
-      - roa = net_income / total_assets
-      - roic = operating_income / invested_capital
-      - debt_to_equity = total_debt / equity
-      - current_ratio approximation = cash / total_debt (simplified)
+    Delegates to `financial_metrics.append_all_derived_metrics` which computes:
+      - Balance sheet ratios: debt_to_equity, equity_to_assets, net_income_to_assets
+      - Return metrics: roe, roa, roic (NOPAT-based)
+      - Margins: gross_margin, operating_margin, net_margin, ebitda_margin
+      - Growth: revenue_growth (YoY), earnings_growth (YoY),
+                revenue_cagr_3y, eps_cagr_3y
     """
-    result = df.copy()
-
-    def _row_ratio(row, num_col, den_col):
-        return safe_ratio(row.get(num_col), row.get(den_col))
-
-    def _row_growth(row, current_col, prev_col):
-        cur = row.get(current_col)
-        prev = row.get(prev_col)
-        if cur is None or prev is None:
-            return np.nan
-        try:
-            c = float(cur)
-            p = float(prev)
-            if p == 0 or not np.isfinite(c) or not np.isfinite(p):
-                return np.nan
-            return (c - p) / abs(p)
-        except (ValueError, TypeError):
-            return np.nan
-
-    result["gross_margin"] = result.apply(lambda r: _row_ratio(r, "gross_profit", "revenue"), axis=1)
-    result["operating_margin"] = result.apply(lambda r: _row_ratio(r, "operating_income", "revenue"), axis=1)
-    result["net_margin"] = result.apply(lambda r: _row_ratio(r, "net_income", "revenue"), axis=1)
-    result["revenue_growth"] = result.apply(lambda r: _row_growth(r, "revenue", "revenue_prev_year"), axis=1)
-    result["revenue_growth_3y"] = result.apply(lambda r: _row_growth(r, "revenue", "revenue_3y_ago"), axis=1)
-    result["earnings_growth"] = result.apply(lambda r: _row_growth(r, "net_income", "net_income_prev_year"), axis=1)
-    result["eps_growth_3y"] = result.apply(lambda r: _row_growth(r, "eps", "eps_3y_ago"), axis=1)
-    result["roe"] = result.apply(lambda r: _row_ratio(r, "net_income", "equity"), axis=1)
-    result["roa"] = result.apply(lambda r: _row_ratio(r, "net_income", "total_assets"), axis=1)
-    result["roic"] = result.apply(lambda r: _row_ratio(r, "operating_income", "invested_capital"), axis=1)
-    result["debt_to_equity"] = result.apply(lambda r: _row_ratio(r, "total_debt", "equity"), axis=1)
-
-    return result
+    from financial_metrics import append_all_derived_metrics
+    return append_all_derived_metrics(df)
 
 
 MOCK_DATA_USA = [
