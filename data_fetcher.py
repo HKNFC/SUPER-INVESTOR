@@ -313,6 +313,229 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     return df
 
 
+def _ensure_sorted(price_data: pd.DataFrame) -> pd.DataFrame:
+    if price_data is not None and not price_data.empty and "datetime" in price_data.columns:
+        return price_data.sort_values("datetime").reset_index(drop=True)
+    return price_data
+
+
+def get_historical_data(
+    ticker: str,
+    market: Optional[str] = None,
+    outputsize: int = 252,
+) -> pd.DataFrame:
+    provider = get_provider()
+    if provider is not None:
+        try:
+            history = provider.get_daily_history(ticker, outputsize=outputsize, market=market)
+            if not history.empty:
+                return _ensure_sorted(history)
+        except Exception as e:
+            logger.warning("get_historical_data failed for %s: %s", ticker, e)
+    return _generate_placeholder_price_data(ticker, outputsize)
+
+
+def calculate_returns(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
+    if price_data is None or price_data.empty or "close" not in price_data.columns:
+        return {"return_1m": None, "return_3m": None, "return_6m": None, "return_12m": None}
+    closes = price_data["close"].values.astype(float)
+    result: Dict[str, Optional[float]] = {}
+    periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
+    for key, days in periods.items():
+        if len(closes) >= days + 1 and closes[-(days + 1)] != 0 and np.isfinite(closes[-(days + 1)]):
+            result[key] = round((closes[-1] / closes[-(days + 1)] - 1) * 100, 2)
+        else:
+            result[key] = None
+    return result
+
+
+def calculate_moving_averages(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
+    result: Dict[str, Optional[float]] = {"ma50": None, "ma200": None, "ma50_ratio": None, "ma200_ratio": None}
+    if price_data is None or price_data.empty or "close" not in price_data.columns:
+        return result
+    closes = price_data["close"].values.astype(float)
+    current = closes[-1] if len(closes) > 0 and np.isfinite(closes[-1]) else None
+    if current is None:
+        return result
+    if len(closes) >= 50:
+        ma50 = float(np.mean(closes[-50:]))
+        if np.isfinite(ma50) and ma50 > 0:
+            result["ma50"] = round(ma50, 4)
+            result["ma50_ratio"] = round(current / ma50, 4)
+    if len(closes) >= 200:
+        ma200 = float(np.mean(closes[-200:]))
+        if np.isfinite(ma200) and ma200 > 0:
+            result["ma200"] = round(ma200, 4)
+            result["ma200_ratio"] = round(current / ma200, 4)
+    return result
+
+
+def calculate_rsi(price_data: pd.DataFrame, period: int = 14) -> Optional[float]:
+    if price_data is None or price_data.empty or "close" not in price_data.columns:
+        return None
+    closes = price_data["close"].values.astype(float)
+    if len(closes) < period + 1:
+        return None
+    deltas = np.diff(closes[-(period + 1):])
+    gains = np.where(deltas > 0, deltas, 0.0)
+    losses = np.where(deltas < 0, -deltas, 0.0)
+    avg_gain = float(np.mean(gains))
+    avg_loss = float(np.mean(losses))
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return round(100.0 - (100.0 / (1.0 + rs)), 2)
+
+
+def calculate_volume_ratio(price_data: pd.DataFrame, window: int = 20) -> Optional[float]:
+    if price_data is None or price_data.empty or "volume" not in price_data.columns:
+        return None
+    volumes = price_data["volume"].values.astype(float)
+    if len(volumes) < window:
+        return None
+    avg_vol = float(np.mean(volumes[-window:]))
+    if avg_vol <= 0 or not np.isfinite(avg_vol):
+        return None
+    current_vol = volumes[-1]
+    if not np.isfinite(current_vol):
+        return None
+    return round(float(current_vol / avg_vol), 4)
+
+
+def calculate_obv(price_data: pd.DataFrame) -> Dict[str, Any]:
+    result: Dict[str, Any] = {"obv_latest": None, "obv_trend_positive": None, "obv_slope": None}
+    if price_data is None or price_data.empty:
+        return result
+    if "close" not in price_data.columns or "volume" not in price_data.columns:
+        return result
+    close = price_data["close"].values.astype(float)
+    volume = price_data["volume"].values.astype(float)
+    if len(close) < 5:
+        return result
+    obv = np.zeros(len(close))
+    obv[0] = volume[0]
+    for i in range(1, len(close)):
+        if close[i] > close[i - 1]:
+            obv[i] = obv[i - 1] + volume[i]
+        elif close[i] < close[i - 1]:
+            obv[i] = obv[i - 1] - volume[i]
+        else:
+            obv[i] = obv[i - 1]
+    result["obv_latest"] = float(obv[-1])
+    lookback = min(20, len(obv) - 1)
+    if lookback >= 5:
+        slope = obv[-1] - obv[-lookback]
+        result["obv_slope"] = float(slope)
+        result["obv_trend_positive"] = bool(slope > 0)
+    return result
+
+
+def calculate_mfi(price_data: pd.DataFrame, period: int = 14) -> Optional[float]:
+    if price_data is None or price_data.empty:
+        return None
+    required = ["high", "low", "close", "volume"]
+    if not all(c in price_data.columns for c in required):
+        return None
+    if len(price_data) < period + 1:
+        return None
+    data = price_data.tail(period + 1)
+    high = data["high"].values.astype(float)
+    low = data["low"].values.astype(float)
+    close = data["close"].values.astype(float)
+    volume = data["volume"].values.astype(float)
+    typical_price = (high + low + close) / 3.0
+    raw_money_flow = typical_price * volume
+    pos_flow = 0.0
+    neg_flow = 0.0
+    for i in range(1, len(typical_price)):
+        if typical_price[i] > typical_price[i - 1]:
+            pos_flow += raw_money_flow[i]
+        elif typical_price[i] < typical_price[i - 1]:
+            neg_flow += raw_money_flow[i]
+    if neg_flow == 0:
+        return 100.0
+    money_ratio = pos_flow / neg_flow
+    return round(100.0 - (100.0 / (1.0 + money_ratio)), 2)
+
+
+def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.DataFrame:
+    result = df.copy()
+
+    has_price_data = "price_data" in result.columns
+    tickers = result["ticker"].tolist() if "ticker" in result.columns else []
+
+    if not has_price_data and tickers:
+        price_frames = []
+        for ticker in tickers:
+            try:
+                hist = get_historical_data(ticker, market=market)
+            except Exception as e:
+                logger.warning("build_technical_data: failed to fetch %s: %s", ticker, e)
+                hist = _generate_placeholder_price_data(ticker)
+            price_frames.append(hist)
+        result["price_data"] = price_frames
+
+    tech_cols = {
+        "return_1m": [], "return_3m": [], "return_6m": [], "return_12m": [],
+        "ma50": [], "ma200": [], "ma50_ratio": [], "ma200_ratio": [],
+        "rsi": [],
+        "volume_ratio": [],
+        "mfi": [],
+        "obv_latest": [], "obv_trend_positive": [], "obv_slope": [],
+        "distance_to_52w_high": [],
+    }
+
+    for idx, row in result.iterrows():
+        price_data = row.get("price_data")
+        is_valid = isinstance(price_data, pd.DataFrame) and not price_data.empty
+
+        if is_valid and "datetime" in price_data.columns:
+            price_data = price_data.sort_values("datetime").reset_index(drop=True)
+            result.at[idx, "price_data"] = price_data
+
+        rets = calculate_returns(price_data) if is_valid else {"return_1m": None, "return_3m": None, "return_6m": None, "return_12m": None}
+        tech_cols["return_1m"].append(rets.get("return_1m"))
+        tech_cols["return_3m"].append(rets.get("return_3m"))
+        tech_cols["return_6m"].append(rets.get("return_6m"))
+        tech_cols["return_12m"].append(rets.get("return_12m"))
+
+        mas = calculate_moving_averages(price_data) if is_valid else {"ma50": None, "ma200": None, "ma50_ratio": None, "ma200_ratio": None}
+        tech_cols["ma50"].append(mas.get("ma50"))
+        tech_cols["ma200"].append(mas.get("ma200"))
+        tech_cols["ma50_ratio"].append(mas.get("ma50_ratio"))
+        tech_cols["ma200_ratio"].append(mas.get("ma200_ratio"))
+
+        tech_cols["rsi"].append(calculate_rsi(price_data) if is_valid else None)
+        tech_cols["volume_ratio"].append(calculate_volume_ratio(price_data) if is_valid else None)
+        tech_cols["mfi"].append(calculate_mfi(price_data) if is_valid else None)
+
+        obv = calculate_obv(price_data) if is_valid else {"obv_latest": None, "obv_trend_positive": None, "obv_slope": None}
+        tech_cols["obv_latest"].append(obv.get("obv_latest"))
+        tech_cols["obv_trend_positive"].append(obv.get("obv_trend_positive"))
+        tech_cols["obv_slope"].append(obv.get("obv_slope"))
+
+        d52 = None
+        if is_valid and "high" in price_data.columns and "close" in price_data.columns and len(price_data) >= 21:
+            lookback = min(252, len(price_data))
+            high_52w = float(price_data["high"].tail(lookback).max())
+            current = float(price_data["close"].iloc[-1])
+            if high_52w > 0 and np.isfinite(high_52w) and np.isfinite(current):
+                d52 = round((current / high_52w - 1) * 100, 2)
+        tech_cols["distance_to_52w_high"].append(d52)
+
+    for col, values in tech_cols.items():
+        result[col] = values
+
+    for col in ["return_1m", "return_3m", "return_6m", "return_12m",
+                "ma50", "ma200", "ma50_ratio", "ma200_ratio",
+                "rsi", "volume_ratio", "mfi",
+                "obv_latest", "obv_slope", "distance_to_52w_high"]:
+        if col in result.columns:
+            result[col] = pd.to_numeric(result[col], errors="coerce")
+
+    return result
+
+
 def _generate_placeholder_price_data(symbol: str, days: int = 260) -> pd.DataFrame:
     np.random.seed(hash(symbol) % (2**31))
     dates = pd.bdate_range(end=pd.Timestamp.now(), periods=days)
