@@ -1,11 +1,11 @@
 """
 Stock Screener — Streamlit Application
 
-Main entry point for the stock screening dashboard. Provides two views:
-  - Screener: fetch, score, filter, and display stocks ranked by RS Score
-  - Watchlist: manage a persistent watchlist of tracked stocks
+Main entry point for the stock screening dashboard. Provides two tabs:
+  - Hisse Tarama: fetch, score, filter, and display stocks ranked by score
+  - Backtest: simulate historical performance of screening strategies
 
-Sidebar controls: market selection, quality preset, volume filter, result count.
+Sidebar controls screening parameters; backtest has its own inline controls.
 """
 
 import streamlit as st
@@ -40,6 +40,31 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+SCAN_MODES = {
+    "standard": "Standart Tarama",
+    "smart_money": "Sadece Akıllı Para Girenler",
+    "early_accumulation": "Erken Accumulation Yakalama",
+}
+SCAN_MODE_DESCRIPTIONS = {
+    "standard": "Tüm skorlarla standart tarama.",
+    "smart_money": "Akıllı para girişi tespit edilen hisseler.",
+    "early_accumulation": "Erken birikim sinyali veren hisseler.",
+}
+QUALITY_LABELS = {"none": "Kapalı", "basic": "Temel", "strict": "Sıkı"}
+SORT_OPTIONS = {
+    "rs_score": "RS Score",
+    "technical_score": "Technical Score",
+    "combined_score": "Combined Score",
+}
+REBALANCE_LABELS = {
+    "1w": "1 Hafta",
+    "15d": "15 Gün",
+    "1m": "1 Ay",
+}
+WEIGHT_LABELS = {
+    "equal": "Eşit Ağırlık",
+}
+
 
 @st.cache_data(ttl=CACHE_TTL_MARKET_DATA, show_spinner=False)
 def _cached_fetch(market: str, _cache_bust: int) -> pd.DataFrame:
@@ -47,7 +72,6 @@ def _cached_fetch(market: str, _cache_bust: int) -> pd.DataFrame:
 
 
 def _fmt_rule(rule_key: str, threshold: float) -> str:
-    """Format a filter rule key and threshold into a human-readable label."""
     _pct_keys = {"roic_gt", "revenue_growth_gt", "net_margin_gt", "return_12m_gt"}
     labels = {
         "equity_gt": "Özkaynak > {:.0f}",
@@ -69,19 +93,16 @@ def _fmt_rule(rule_key: str, threshold: float) -> str:
 
 
 def _score_fmt(val) -> str:
-    """Format a score value for display, returning 'N/A' for missing values."""
     if is_na(val):
         return "N/A"
     return f"{val:.1f}"
 
 
 def _missing_metric_warnings(stock_row: pd.Series) -> list:
-    """Return a list of required scoring fields that are missing or NaN for a stock."""
     return [f for f in REQUIRED_FIELDS_FOR_SCORING if is_na(stock_row.get(f))]
 
 
 def _render_detail(stock_row: pd.Series) -> None:
-    """Render the full stock detail panel inside an expander."""
     bd = get_score_breakdown(stock_row)
 
     missing = _missing_metric_warnings(stock_row)
@@ -169,7 +190,6 @@ def _render_detail(stock_row: pd.Series) -> None:
 
 
 def _render_diagnostics() -> None:
-    """Render the fetch diagnostics panel (fetched/failed/incomplete counts)."""
     diag = get_last_diagnostics()
     if diag is None:
         return
@@ -205,17 +225,6 @@ def _render_diagnostics() -> None:
 with st.sidebar:
     st.header("Hisse Tarayıcı")
 
-    watchlist_count = len(get_watchlist_tickers())
-    _view_labels = {"Screener": "Tarayıcı", "Watchlist": "İzleme Listesi", "Backtest": "Backtest"}
-    page = st.radio(
-        "Görünüm",
-        options=["Screener", "Watchlist", "Backtest"],
-        format_func=lambda x: f"{_view_labels[x]} ({watchlist_count})" if x == "Watchlist" else _view_labels[x],
-        horizontal=False,
-    )
-
-    st.divider()
-
     market = st.radio(
         "Piyasa",
         options=list(SUPPORTED_MARKETS.keys()),
@@ -240,16 +249,6 @@ with st.sidebar:
 
     st.divider()
 
-    SCAN_MODES = {
-        "standard": "Standart Tarama",
-        "smart_money": "Sadece Akıllı Para Girenler",
-        "early_accumulation": "Erken Accumulation Yakalama",
-    }
-    SCAN_MODE_DESCRIPTIONS = {
-        "standard": "Tüm skorlarla standart tarama.",
-        "smart_money": "Akıllı para girişi tespit edilen hisseler.",
-        "early_accumulation": "Erken birikim sinyali veren hisseler.",
-    }
     scan_mode = st.selectbox(
         "Tarama Modu",
         options=list(SCAN_MODES.keys()),
@@ -260,12 +259,11 @@ with st.sidebar:
 
     st.divider()
 
-    _quality_labels = {"none": "Kapalı", "basic": "Temel", "strict": "Sıkı"}
     preset_options = get_preset_names()
     selected_preset = st.radio(
         "Temel Kalite Seviyesi",
         options=preset_options,
-        format_func=lambda x: _quality_labels.get(x, x),
+        format_func=lambda x: QUALITY_LABELS.get(x, x),
         index=0,
         horizontal=True,
     )
@@ -277,15 +275,10 @@ with st.sidebar:
 
     st.divider()
 
-    sort_options = {
-        "rs_score": "RS Score",
-        "technical_score": "Technical Score",
-        "combined_score": "Combined Score",
-    }
     sort_by = st.selectbox(
         "Sıralama Türü",
-        options=list(sort_options.keys()),
-        format_func=lambda x: sort_options[x],
+        options=list(SORT_OPTIONS.keys()),
+        format_func=lambda x: SORT_OPTIONS[x],
         index=2,
     )
 
@@ -335,69 +328,11 @@ with st.sidebar:
             """
         )
 
-if page == "Watchlist":
-    st.markdown("### İzleme Listesi")
+tab_screener, tab_backtest = st.tabs(["Hisse Tarama", "Backtest"])
 
-    wl_items = get_watchlist()
+with tab_screener:
+    watchlist_count = len(get_watchlist_tickers())
 
-    if not wl_items:
-        st.info("İzleme listeniz boş. Tarayıcıyı çalıştırın ve burada takip etmek için hisse ekleyin.")
-    else:
-        wl_df = pd.DataFrame(wl_items)
-        display_wl_cols = ["ticker", "company_name", "rs_score", "rs_category", "price", "market"]
-        display_wl = wl_df[[c for c in display_wl_cols if c in wl_df.columns]].copy()
-
-        if "rs_score" in display_wl.columns:
-            display_wl["rs_score"] = display_wl["rs_score"].apply(
-                lambda x: round(x, 1) if not is_na(x) else None
-            )
-        if "price" in display_wl.columns:
-            display_wl["price"] = display_wl["price"].apply(
-                lambda x: round(x, 2) if not is_na(x) else None
-            )
-
-        st.dataframe(
-            display_wl,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "ticker": st.column_config.TextColumn("Hisse", width="small"),
-                "company_name": st.column_config.TextColumn("Şirket"),
-                "rs_score": st.column_config.ProgressColumn(
-                    "RS Skoru", min_value=0, max_value=100, format="%.1f",
-                ),
-                "rs_category": st.column_config.TextColumn("Kategori", width="small"),
-                "price": st.column_config.NumberColumn("Fiyat", format="%.2f"),
-                "market": st.column_config.TextColumn("Piyasa", width="small"),
-            },
-        )
-
-        col_csv, col_clear = st.columns([1, 1])
-        with col_csv:
-            csv_wl = export_watchlist_csv()
-            st.download_button(
-                label="İzleme Listesini CSV Olarak İndir",
-                data=csv_wl,
-                file_name="izleme_listesi.csv",
-                mime="text/csv",
-            )
-        with col_clear:
-            if st.button("Listeyi Temizle", type="secondary"):
-                cleared = clear_watchlist()
-                st.success(f"{cleared} hisse izleme listesinden kaldırıldı.")
-                st.rerun()
-
-        st.divider()
-        st.markdown("**Tek tek hisse kaldır**")
-        for item in wl_items:
-            t = item["ticker"]
-            col_t, col_btn = st.columns([3, 1])
-            col_t.text(f"{t} — {item.get('company_name', '')} | RS {_score_fmt(item.get('rs_score'))}")
-            if col_btn.button("Kaldır", key=f"wl_remove_{t}"):
-                remove_from_watchlist(t)
-                st.rerun()
-
-elif page == "Screener":
     run_screening = st.button("Taramayı Başlat", type="primary", use_container_width=True)
 
     if run_screening:
@@ -638,34 +573,128 @@ elif page == "Screener":
                     _render_detail(row)
 
     else:
-        st.markdown("### Hisse Tarayıcı")
-        st.markdown("Bir piyasa seçin ve hisseleri RS Skoruna göre sıralamak için **Taramayı Başlat** butonuna tıklayın.")
+        st.markdown("Bir piyasa seçin ve hisseleri skorlarına göre sıralamak için **Taramayı Başlat** butonuna tıklayın.")
         st.info("Daha fazla bilgi için sol menüdeki **Hakkında** bölümüne göz atabilirsiniz.")
 
-elif page == "Backtest":
-    from backtest_engine import run_backtest, REBALANCE_BUSINESS_DAYS
+    st.divider()
+    wl_items = get_watchlist()
+    wl_count = len(wl_items)
+    with st.expander(f"İzleme Listesi ({wl_count})", expanded=False):
+        if not wl_items:
+            st.info("İzleme listeniz boş. Taramayı çalıştırın ve hisse ekleyin.")
+        else:
+            wl_df = pd.DataFrame(wl_items)
+            display_wl_cols = ["ticker", "company_name", "rs_score", "rs_category", "price", "market"]
+            display_wl = wl_df[[c for c in display_wl_cols if c in wl_df.columns]].copy()
+
+            if "rs_score" in display_wl.columns:
+                display_wl["rs_score"] = display_wl["rs_score"].apply(
+                    lambda x: round(x, 1) if not is_na(x) else None
+                )
+            if "price" in display_wl.columns:
+                display_wl["price"] = display_wl["price"].apply(
+                    lambda x: round(x, 2) if not is_na(x) else None
+                )
+
+            st.dataframe(
+                display_wl,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "ticker": st.column_config.TextColumn("Hisse", width="small"),
+                    "company_name": st.column_config.TextColumn("Şirket"),
+                    "rs_score": st.column_config.ProgressColumn(
+                        "RS Skoru", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "rs_category": st.column_config.TextColumn("Kategori", width="small"),
+                    "price": st.column_config.NumberColumn("Fiyat", format="%.2f"),
+                    "market": st.column_config.TextColumn("Piyasa", width="small"),
+                },
+            )
+
+            col_csv, col_clear = st.columns([1, 1])
+            with col_csv:
+                csv_wl = export_watchlist_csv()
+                st.download_button(
+                    label="İzleme Listesini CSV İndir",
+                    data=csv_wl,
+                    file_name="izleme_listesi.csv",
+                    mime="text/csv",
+                )
+            with col_clear:
+                if st.button("Listeyi Temizle", type="secondary"):
+                    cleared = clear_watchlist()
+                    st.success(f"{cleared} hisse izleme listesinden kaldırıldı.")
+                    st.rerun()
+
+            for item in wl_items:
+                t = item["ticker"]
+                col_t, col_btn = st.columns([3, 1])
+                col_t.text(f"{t} — {item.get('company_name', '')} | RS {_score_fmt(item.get('rs_score'))}")
+                if col_btn.button("Kaldır", key=f"wl_remove_{t}"):
+                    remove_from_watchlist(t)
+                    st.rerun()
+
+with tab_backtest:
+    from backtest_engine import run_backtest
     from datetime import date, timedelta
 
-    st.markdown("### Backtest")
     st.markdown("Tarama stratejisinin geçmiş performansını simüle edin.")
 
-    bt_col1, bt_col2 = st.columns(2)
+    bt_p1, bt_p2, bt_p3 = st.columns(3)
 
-    with bt_col1:
-        bt_market_label = SUPPORTED_MARKETS[market]["label"]
-        st.markdown(f"**Piyasa:** {bt_market_label}")
-        if market == "BIST":
-            bt_universe_label = BIST_SEGMENTS.get(bist_segment, bist_segment)
+    with bt_p1:
+        bt_market = st.radio(
+            "Piyasa",
+            options=list(SUPPORTED_MARKETS.keys()),
+            format_func=lambda x: SUPPORTED_MARKETS[x]["label"],
+            horizontal=True,
+            key="bt_market",
+        )
+
+        bt_bist_segment = "BISTTUM"
+        bt_usa_segment = "USA_ALL"
+        if bt_market == "BIST":
+            bt_bist_segment = st.selectbox(
+                "Evren Seçimi",
+                options=list(BIST_SEGMENTS.keys()),
+                format_func=lambda x: BIST_SEGMENTS[x],
+                key="bt_universe_bist",
+            )
         else:
-            bt_universe_label = USA_SEGMENTS.get(usa_segment, usa_segment)
-        st.markdown(f"**Evren:** {bt_universe_label}")
-        st.markdown(f"**Tarama Modu:** {SCAN_MODES.get(scan_mode, scan_mode)}")
-        st.markdown(f"**Kalite:** {_quality_labels.get(selected_preset, selected_preset)}")
+            bt_usa_segment = st.selectbox(
+                "Evren Seçimi",
+                options=list(USA_SEGMENTS.keys()),
+                format_func=lambda x: USA_SEGMENTS[x],
+                key="bt_universe_usa",
+            )
 
-        sort_label = sort_options.get(sort_by, sort_by)
-        st.markdown(f"**Sıralama:** {sort_label}")
+        bt_scan_mode = st.selectbox(
+            "Tarama Modu",
+            options=list(SCAN_MODES.keys()),
+            format_func=lambda x: SCAN_MODES[x],
+            index=0,
+            key="bt_scan_mode",
+        )
 
-    with bt_col2:
+    with bt_p2:
+        bt_preset = st.radio(
+            "Temel Kalite Seviyesi",
+            options=get_preset_names(),
+            format_func=lambda x: QUALITY_LABELS.get(x, x),
+            index=0,
+            horizontal=True,
+            key="bt_preset",
+        )
+
+        bt_sort = st.selectbox(
+            "Sıralama Türü",
+            options=list(SORT_OPTIONS.keys()),
+            format_func=lambda x: SORT_OPTIONS[x],
+            index=2,
+            key="bt_sort",
+        )
+
         bt_top_n = st.selectbox(
             "Portföy Hisse Sayısı",
             options=[5, 10, 15, 20],
@@ -673,28 +702,22 @@ elif page == "Backtest":
             key="bt_top_n",
         )
 
-        rebalance_labels = {
-            "1w": "1 Hafta",
-            "15d": "15 Gün",
-            "1m": "1 Ay",
-        }
         bt_rebalance = st.selectbox(
             "Rebalance Sıklığı",
-            options=list(rebalance_labels.keys()),
-            format_func=lambda x: rebalance_labels[x],
+            options=list(REBALANCE_LABELS.keys()),
+            format_func=lambda x: REBALANCE_LABELS[x],
             index=2,
             key="bt_rebalance",
         )
 
-    bt_date_col1, bt_date_col2 = st.columns(2)
-    with bt_date_col1:
+    with bt_p3:
         bt_start = st.date_input(
             "Başlangıç Tarihi",
             value=date.today() - timedelta(days=180),
             max_value=date.today() - timedelta(days=30),
             key="bt_start",
         )
-    with bt_date_col2:
+
         bt_end = st.date_input(
             "Bitiş Tarihi",
             value=date.today(),
@@ -702,13 +725,24 @@ elif page == "Backtest":
             key="bt_end",
         )
 
+        bt_benchmark_label = BENCHMARK_INDEX.get(bt_market, "—")
+        st.markdown(f"**Benchmark:** {bt_benchmark_label}")
+
+        bt_weight = st.selectbox(
+            "Ağırlıklandırma",
+            options=list(WEIGHT_LABELS.keys()),
+            format_func=lambda x: WEIGHT_LABELS[x],
+            index=0,
+            key="bt_weight",
+        )
+
     if bt_start >= bt_end:
         st.warning("Başlangıç tarihi bitiş tarihinden önce olmalıdır.")
     else:
-        run_bt = st.button("Backtest Başlat", type="primary", use_container_width=True)
+        run_bt = st.button("Backtest Başlat", type="primary", use_container_width=True, key="bt_run")
 
         if run_bt:
-            bt_universe = bist_segment if market == "BIST" else usa_segment
+            bt_universe = bt_bist_segment if bt_market == "BIST" else bt_usa_segment
 
             progress_bar = st.progress(0, text="Backtest başlatılıyor...")
 
@@ -718,30 +752,37 @@ elif page == "Backtest":
             try:
                 with st.spinner("Veriler çekilip analiz ediliyor..."):
                     result = run_backtest(
-                        market=market,
+                        market=bt_market,
                         universe=bt_universe,
-                        scan_mode=scan_mode,
-                        quality_preset=selected_preset,
-                        sort_by=sort_by,
+                        scan_mode=bt_scan_mode,
+                        quality_preset=bt_preset,
+                        sort_by=bt_sort,
                         top_n=bt_top_n,
                         rebalance_freq=bt_rebalance,
                         start_date=bt_start,
                         end_date=bt_end,
-                        min_avg_volume=min_avg_volume,
                         progress_callback=_bt_progress,
                     )
 
                 progress_bar.empty()
 
+                bt_universe_label = (
+                    BIST_SEGMENTS.get(bt_bist_segment, bt_bist_segment)
+                    if bt_market == "BIST"
+                    else USA_SEGMENTS.get(bt_usa_segment, bt_usa_segment)
+                )
+
                 st.session_state["bt_result"] = result
                 st.session_state["bt_params"] = {
-                    "market": market,
+                    "market": SUPPORTED_MARKETS[bt_market]["label"],
                     "universe": bt_universe_label,
-                    "scan_mode": SCAN_MODES.get(scan_mode, scan_mode),
-                    "quality": _quality_labels.get(selected_preset, selected_preset),
-                    "sort_by": sort_label,
+                    "scan_mode": SCAN_MODES.get(bt_scan_mode, bt_scan_mode),
+                    "quality": QUALITY_LABELS.get(bt_preset, bt_preset),
+                    "sort_by": SORT_OPTIONS.get(bt_sort, bt_sort),
                     "top_n": bt_top_n,
-                    "rebalance": rebalance_labels.get(bt_rebalance, bt_rebalance),
+                    "rebalance": REBALANCE_LABELS.get(bt_rebalance, bt_rebalance),
+                    "weight": WEIGHT_LABELS.get(bt_weight, bt_weight),
+                    "benchmark": bt_benchmark_label,
                     "start": str(bt_start),
                     "end": str(bt_end),
                 }
@@ -750,84 +791,87 @@ elif page == "Backtest":
                 progress_bar.empty()
                 st.error(f"Backtest sırasında hata oluştu: {e}")
 
-        if "bt_result" in st.session_state:
-            result = st.session_state["bt_result"]
-            params = st.session_state.get("bt_params", {})
+    if "bt_result" in st.session_state:
+        result = st.session_state["bt_result"]
+        params = st.session_state.get("bt_params", {})
 
-            if result.num_periods == 0:
-                st.warning("Seçilen tarih aralığında yeterli veri bulunamadı. Tarih aralığını genişletmeyi deneyin.")
-            else:
-                st.divider()
-                st.markdown("#### Performans Özeti")
+        if result.num_periods == 0:
+            st.warning("Seçilen tarih aralığında yeterli veri bulunamadı. Tarih aralığını genişletmeyi deneyin.")
+        else:
+            st.divider()
 
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("Portföy Getirisi", f"%{result.total_return:.1f}")
-                m2.metric("Benchmark Getirisi", f"%{result.benchmark_return:.1f}")
-                m3.metric("Alpha", f"%{result.alpha:.1f}")
-                m4.metric("Sharpe Oranı", f"{result.sharpe_ratio:.2f}")
-
-                m5, m6, m7, m8 = st.columns(4)
-                m5.metric("Maks. Drawdown", f"%{result.max_drawdown:.1f}")
-                m6.metric("Volatilite (Yıllık)", f"%{result.volatility:.1f}")
-                m7.metric("Dönem Sayısı", str(result.num_periods))
-                m8.metric("Ort. Hisse/Dönem", f"{result.avg_stocks_per_period:.0f}")
-
-                st.divider()
-                st.markdown("#### Equity Eğrisi")
-
-                eq_df = result.equity_curve.copy()
-                bench_df = result.benchmark_curve.copy()
-
-                if not eq_df.empty and not bench_df.empty:
-                    chart_data = pd.DataFrame({
-                        "Tarih": eq_df["date"],
-                        "Portföy": eq_df["value"],
-                        "Benchmark": bench_df["value"],
-                    }).set_index("Tarih")
-                    st.line_chart(chart_data, use_container_width=True)
-
-                st.divider()
-                st.markdown("#### Drawdown Grafiği")
-
-                if not result.drawdown_series.empty:
-                    dd_chart = pd.DataFrame({
-                        "Portföy DD": (result.drawdown_series.values * 100),
-                        "Benchmark DD": (result.benchmark_drawdown_series.values * 100),
-                    }, index=result.drawdown_series.index)
-                    st.area_chart(dd_chart, use_container_width=True)
-
-                st.divider()
-                st.markdown("#### Rebalance Geçmişi")
-
-                if result.rebalance_history:
-                    history_rows = []
-                    for rec in result.rebalance_history:
-                        history_rows.append({
-                            "Tarih": rec.date.strftime("%Y-%m-%d"),
-                            "Hisse Sayısı": len(rec.tickers),
-                            "Seçilen Hisseler": ", ".join(rec.tickers[:10]) + ("..." if len(rec.tickers) > 10 else ""),
-                            "Dönem Getirisi (%)": rec.period_return,
-                        })
-                    history_df = pd.DataFrame(history_rows)
-                    st.dataframe(history_df, use_container_width=True, hide_index=True)
-
-                    with st.expander("Detaylı Dönem Skorları", expanded=False):
-                        for rec in result.rebalance_history:
-                            if rec.tickers:
-                                st.markdown(f"**{rec.date.strftime('%Y-%m-%d')}** — Getiri: %{rec.period_return:.1f}")
-                                score_items = [f"{t}: {s:.1f}" for t, s in rec.scores.items()]
-                                st.caption(" · ".join(score_items))
-
-                st.divider()
-                st.markdown("#### Backtest Parametreleri")
-                param_text = " · ".join([
+            info_col1, info_col2 = st.columns(2)
+            with info_col1:
+                st.markdown(f"**Başlangıç:** {params.get('start', '—')}  ·  **Bitiş:** {params.get('end', '—')}")
+                st.markdown(f"**Periyot:** {params.get('rebalance', '—')}  ·  **Dönem Sayısı:** {result.num_periods}")
+            with info_col2:
+                cond_parts = [
                     f"Piyasa: {params.get('market', '?')}",
                     f"Evren: {params.get('universe', '?')}",
                     f"Mod: {params.get('scan_mode', '?')}",
                     f"Kalite: {params.get('quality', '?')}",
                     f"Sıralama: {params.get('sort_by', '?')}",
-                    f"Top-N: {params.get('top_n', '?')}",
-                    f"Rebalance: {params.get('rebalance', '?')}",
-                    f"Tarih: {params.get('start', '?')} → {params.get('end', '?')}",
-                ])
-                st.caption(param_text)
+                    f"Top-{params.get('top_n', '?')}",
+                    f"Ağırlık: {params.get('weight', '?')}",
+                    f"Benchmark: {params.get('benchmark', '?')}",
+                ]
+                st.caption("Koşullar: " + " · ".join(cond_parts))
+
+            st.divider()
+            st.markdown("#### Performans Özeti")
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Portföy Getirisi", f"%{result.total_return:.1f}")
+            m2.metric("Benchmark Getirisi", f"%{result.benchmark_return:.1f}")
+            m3.metric("Alpha", f"%{result.alpha:.1f}")
+
+            m4, m5, m6 = st.columns(3)
+            m4.metric("Maks. Drawdown", f"%{result.max_drawdown:.1f}")
+            m5.metric("Sharpe Oranı", f"{result.sharpe_ratio:.2f}")
+            m6.metric("Volatilite (Yıllık)", f"%{result.volatility:.1f}")
+
+            st.divider()
+            st.markdown("#### Equity Eğrisi")
+
+            eq_df = result.equity_curve.copy()
+            bench_df = result.benchmark_curve.copy()
+
+            if not eq_df.empty and not bench_df.empty:
+                chart_data = pd.DataFrame({
+                    "Tarih": eq_df["date"],
+                    "Portföy": eq_df["value"],
+                    "Benchmark": bench_df["value"],
+                }).set_index("Tarih")
+                st.line_chart(chart_data, use_container_width=True)
+
+            st.divider()
+            st.markdown("#### Drawdown Grafiği")
+
+            if not result.drawdown_series.empty:
+                dd_chart = pd.DataFrame({
+                    "Portföy DD (%)": (result.drawdown_series.values * 100),
+                    "Benchmark DD (%)": (result.benchmark_drawdown_series.values * 100),
+                }, index=result.drawdown_series.index)
+                st.area_chart(dd_chart, use_container_width=True)
+
+            st.divider()
+            st.markdown("#### Rebalance Geçmişi")
+
+            if result.rebalance_history:
+                history_rows = []
+                for rec in result.rebalance_history:
+                    history_rows.append({
+                        "Tarih": rec.date.strftime("%Y-%m-%d"),
+                        "Hisse Sayısı": len(rec.tickers),
+                        "Seçilen Hisseler": ", ".join(rec.tickers[:10]) + ("..." if len(rec.tickers) > 10 else ""),
+                        "Dönem Getirisi (%)": rec.period_return,
+                    })
+                history_df = pd.DataFrame(history_rows)
+                st.dataframe(history_df, use_container_width=True, hide_index=True)
+
+                with st.expander("Detaylı Dönem Skorları", expanded=False):
+                    for rec in result.rebalance_history:
+                        if rec.tickers:
+                            st.markdown(f"**{rec.date.strftime('%Y-%m-%d')}** — Getiri: %{rec.period_return:.1f}")
+                            score_items = [f"{t}: {s:.1f}" for t, s in rec.scores.items()]
+                            st.caption(" · ".join(score_items))
