@@ -800,22 +800,40 @@ with tab_backtest:
         else:
             st.divider()
 
+            if result.data_prep_stats:
+                dps = result.data_prep_stats
+                prep_parts = [f"Toplam: {dps.total_symbols}"]
+                if dps.cache_hits > 0:
+                    prep_parts.append(f"Cache: {dps.cache_hits}")
+                if dps.incremental_updates > 0:
+                    prep_parts.append(f"Guncellenen: {dps.incremental_updates}")
+                if dps.full_fetches > 0:
+                    prep_parts.append(f"Yeni cekilen: {dps.full_fetches}")
+                if dps.failed > 0:
+                    prep_parts.append(f"Basarisiz: {dps.failed}")
+                if dps.used_mock:
+                    prep_parts.append("Demo veri")
+                prep_parts.append(f"Sure: {dps.duration_seconds:.1f}s")
+                st.caption("Veri Durumu: " + " · ".join(prep_parts))
+                if dps.failed_symbols:
+                    st.warning(f"Basarisiz semboller: {', '.join(dps.failed_symbols[:20])}")
+
             info_col1, info_col2 = st.columns(2)
             with info_col1:
-                st.markdown(f"**Başlangıç:** {params.get('start', '—')}  ·  **Bitiş:** {params.get('end', '—')}")
-                st.markdown(f"**Periyot:** {params.get('rebalance', '—')}  ·  **Dönem Sayısı:** {result.num_periods}")
+                st.markdown(f"**Baslangic:** {params.get('start', '—')}  ·  **Bitis:** {params.get('end', '—')}")
+                st.markdown(f"**Periyot:** {params.get('rebalance', '—')}  ·  **Donem Sayisi:** {result.num_periods}")
             with info_col2:
                 cond_parts = [
                     f"Piyasa: {params.get('market', '?')}",
                     f"Evren: {params.get('universe', '?')}",
                     f"Mod: {params.get('scan_mode', '?')}",
                     f"Kalite: {params.get('quality', '?')}",
-                    f"Sıralama: {params.get('sort_by', '?')}",
+                    f"Siralama: {params.get('sort_by', '?')}",
                     f"Top-{params.get('top_n', '?')}",
-                    f"Ağırlık: {params.get('weight', '?')}",
+                    f"Agirlik: {params.get('weight', '?')}",
                     f"Benchmark: {params.get('benchmark', '?')}",
                 ]
-                st.caption("Koşullar: " + " · ".join(cond_parts))
+                st.caption("Kosullar: " + " · ".join(cond_parts))
 
             st.divider()
             st.markdown("#### Performans Özeti")

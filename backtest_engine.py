@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Tuple
 from datetime import date, timedelta
 
-from data_fetcher import fetch_backtest_data, get_cached_benchmark, _generate_placeholder_price_data
+from data_fetcher import fetch_backtest_data, get_cached_benchmark, _generate_placeholder_price_data, DataPrepStats
 from momentum_metrics import append_momentum_fields
 from scoring_engine import compute_rs_scores
 from filters import apply_preset_filter, rank_and_limit
@@ -63,6 +63,7 @@ class BacktestResult:
     sharpe_ratio: float = 0.0
     num_periods: int = 0
     avg_stocks_per_period: float = 0.0
+    data_prep_stats: Optional[DataPrepStats] = None
 
 
 def _get_all_trading_dates(raw_data: pd.DataFrame) -> pd.DatetimeIndex:
@@ -273,7 +274,13 @@ def run_backtest(
     min_avg_volume: Optional[float] = None,
     progress_callback=None,
 ) -> BacktestResult:
-    raw_data = fetch_backtest_data(market)
+    def _data_progress(pct, text):
+        if progress_callback:
+            progress_callback(pct * 0.3, text)
+
+    raw_data, prep_stats = fetch_backtest_data(
+        market, progress_callback=_data_progress, skip_momentum=True,
+    )
 
     raw_data = _apply_universe_filter(raw_data, market, universe)
 
@@ -296,6 +303,7 @@ def run_backtest(
             drawdown_series=pd.Series(dtype=float),
             benchmark_drawdown_series=pd.Series(dtype=float),
             rebalance_history=[],
+            data_prep_stats=prep_stats,
         )
 
     benchmark_history = get_cached_benchmark(market)
@@ -328,7 +336,8 @@ def run_backtest(
         next_reb_date = rebalance_dates[i + 1]
 
         if progress_callback:
-            progress_callback((i + 1) / total_steps, f"Dönem {i+1}/{total_steps}")
+            sim_pct = 0.3 + ((i + 1) / total_steps) * 0.7
+            progress_callback(sim_pct, f"Simülasyon: dönem {i+1}/{total_steps}")
 
         truncated = _truncate_price_data(raw_data, reb_date)
 
@@ -436,6 +445,7 @@ def run_backtest(
         sharpe_ratio=round(metrics["sharpe_ratio"], 2),
         num_periods=len(rebalance_records),
         avg_stocks_per_period=round(avg_stocks, 1),
+        data_prep_stats=prep_stats,
     )
 
 

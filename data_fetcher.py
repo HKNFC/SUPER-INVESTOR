@@ -593,73 +593,135 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
     return result
 
 
-def fetch_backtest_data(market: str) -> pd.DataFrame:
+@dataclass
+class DataPrepStats:
+    total_symbols: int = 0
+    cache_hits: int = 0
+    incremental_updates: int = 0
+    full_fetches: int = 0
+    failed: int = 0
+    failed_symbols: List[str] = field(default_factory=list)
+    placeholder_used: int = 0
+    used_mock: bool = False
+    duration_seconds: float = 0.0
+
+
+def fetch_backtest_data(
+    market: str,
+    progress_callback=None,
+    skip_momentum: bool = False,
+) -> tuple:
     from momentum_metrics import append_momentum_fields
     from disk_cache import read_cache, needs_refresh, get_cached_or_fetch
 
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
 
+    start_time = time.time()
+    stats = DataPrepStats()
     symbols = SUPPORTED_MARKETS[market]["symbols"]
+    stats.total_symbols = len(symbols)
     provider = get_provider()
 
     records = []
     has_any_cache = False
 
-    for symbol in symbols:
-        resolved = provider._resolve_symbol(symbol, market) if provider else symbol
-        cached = read_cache(resolved)
+    for idx, symbol in enumerate(symbols):
+        if progress_callback:
+            progress_callback(
+                (idx + 1) / len(symbols),
+                f"Veri hazırlanıyor: {idx + 1}/{len(symbols)} ({symbol})"
+            )
 
-        if cached is not None and not cached.empty:
-            has_any_cache = True
-            if not needs_refresh(resolved) or provider is None:
-                price_data = _ensure_sorted(cached)
-            else:
+        try:
+            resolved = provider._resolve_symbol(symbol, market) if provider else symbol
+            cached = read_cache(resolved)
+
+            if cached is not None and not cached.empty:
+                has_any_cache = True
+                if not needs_refresh(resolved) or provider is None:
+                    price_data = _ensure_sorted(cached)
+                    stats.cache_hits += 1
+                else:
+                    def _disk_fetch(sym, outputsize=300, start_date=None):
+                        return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+
+                    fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
+                    if fetched is not None and not fetched.empty:
+                        price_data = _ensure_sorted(fetched)
+                        stats.incremental_updates += 1
+                    else:
+                        price_data = _ensure_sorted(cached)
+                        stats.cache_hits += 1
+            elif provider is not None:
                 def _disk_fetch(sym, outputsize=300, start_date=None):
                     return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
 
                 fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
-                price_data = _ensure_sorted(fetched) if fetched is not None and not fetched.empty else _ensure_sorted(cached)
-        elif provider is not None:
-            def _disk_fetch(sym, outputsize=300, start_date=None):
-                return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
-
-            fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
-            if fetched is not None and not fetched.empty:
-                price_data = _ensure_sorted(fetched)
+                if fetched is not None and not fetched.empty:
+                    price_data = _ensure_sorted(fetched)
+                    stats.full_fetches += 1
+                else:
+                    logger.warning("No data for %s, using placeholder", symbol)
+                    price_data = _generate_placeholder_price_data(symbol)
+                    stats.placeholder_used += 1
             else:
-                logger.warning("No cached data for %s, using placeholder", symbol)
                 price_data = _generate_placeholder_price_data(symbol)
-        else:
-            price_data = _generate_placeholder_price_data(symbol)
+                stats.placeholder_used += 1
 
-        records.append({
-            "ticker": symbol,
-            "company_name": symbol,
-            "market": market,
-            "sector": "",
-            "industry": "",
-            "price_data": price_data,
-        })
+            records.append({
+                "ticker": symbol,
+                "company_name": symbol,
+                "market": market,
+                "sector": "",
+                "industry": "",
+                "price_data": price_data,
+            })
+
+        except Exception as e:
+            logger.error("Failed to load data for %s: %s — %s", symbol, type(e).__name__, e)
+            stats.failed += 1
+            stats.failed_symbols.append(symbol)
+            records.append({
+                "ticker": symbol,
+                "company_name": symbol,
+                "market": market,
+                "sector": "",
+                "industry": "",
+                "price_data": _generate_placeholder_price_data(symbol),
+            })
 
     if not has_any_cache and provider is None:
         logger.info("No cache and no API key — backtest using mock data for %s", market)
+        stats.used_mock = True
         df = get_mock_data(market)
         df["price_data"] = df["ticker"].apply(
             lambda t: _generate_placeholder_price_data(t)
         )
-        benchmark = get_cached_benchmark(market)
-        df = append_momentum_fields(df, benchmark_history=benchmark)
-        return df
+        if not skip_momentum:
+            benchmark = get_cached_benchmark(market)
+            df = append_momentum_fields(df, benchmark_history=benchmark)
+        stats.duration_seconds = time.time() - start_time
+        return df, stats
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
 
-    benchmark = get_cached_benchmark(market)
-    df = append_momentum_fields(df, benchmark_history=benchmark)
+    if not skip_momentum:
+        benchmark = get_cached_benchmark(market)
+        df = append_momentum_fields(df, benchmark_history=benchmark)
 
-    return df
+    stats.duration_seconds = time.time() - start_time
+    logger.info(
+        "Data prep complete for %s: %d symbols, %d cache hits, %d incremental, %d full fetch, %d failed in %.1fs",
+        market, stats.total_symbols, stats.cache_hits, stats.incremental_updates,
+        stats.full_fetches, stats.failed, stats.duration_seconds,
+    )
+    if stats.failed_symbols:
+        logger.warning("Failed symbols: %s", ", ".join(stats.failed_symbols))
+
+    return df, stats
 
 
 def get_cached_benchmark(market: str) -> pd.DataFrame:
