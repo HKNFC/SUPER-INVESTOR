@@ -234,6 +234,26 @@ with st.sidebar:
 
     st.divider()
 
+    SCAN_MODES = {
+        "standard": "Standart Tarama",
+        "smart_money": "Sadece Akıllı Para Girenler",
+        "early_accumulation": "Erken Accumulation Yakalama",
+    }
+    SCAN_MODE_DESCRIPTIONS = {
+        "standard": "Mevcut RS, Teknik ve Kombine Skor ile standart tarama.",
+        "smart_money": "MFI > 55, OBV trend pozitif, endekse göre güçlü, hacim ortalamanın üstünde, teknik ve RS skoru yüksek hisseler.",
+        "early_accumulation": "MFI 50-65 arasında, OBV yükselişte, 52h zirvesine yakın, kısa vadede stabil, orta vadede pozitif hisseler.",
+    }
+    scan_mode = st.selectbox(
+        "Tarama Modu",
+        options=list(SCAN_MODES.keys()),
+        format_func=lambda x: SCAN_MODES[x],
+        index=0,
+    )
+    st.caption(SCAN_MODE_DESCRIPTIONS[scan_mode])
+
+    st.divider()
+
     preset_options = get_preset_names()
     preset_labels = {k: get_preset_info(k)["label"] for k in preset_options}
     selected_preset = st.radio(
@@ -401,8 +421,45 @@ elif page == "Screener":
             filtered_data = apply_preset_filter(
                 scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
             )
+
+            if scan_mode == "smart_money" and not filtered_data.empty:
+                mask = pd.Series(True, index=filtered_data.index)
+                if "mfi" in filtered_data.columns:
+                    mask &= filtered_data["mfi"].fillna(0) > 55
+                if "obv_trend_positive" in filtered_data.columns:
+                    mask &= filtered_data["obv_trend_positive"].fillna(False)
+                if "relative_return_vs_index" in filtered_data.columns:
+                    mask &= filtered_data["relative_return_vs_index"].fillna(-999) > 0
+                if "volume_ratio" in filtered_data.columns:
+                    mask &= filtered_data["volume_ratio"].fillna(0) > 1.10
+                if "technical_score" in filtered_data.columns:
+                    mask &= filtered_data["technical_score"].fillna(0) >= 55
+                if "rs_score" in filtered_data.columns:
+                    mask &= filtered_data["rs_score"].fillna(0) >= 60
+                filtered_data = filtered_data[mask].reset_index(drop=True)
+
+            elif scan_mode == "early_accumulation" and not filtered_data.empty:
+                mask = pd.Series(True, index=filtered_data.index)
+                if "mfi" in filtered_data.columns:
+                    mfi_col = filtered_data["mfi"].fillna(0)
+                    mask &= (mfi_col >= 50) & (mfi_col <= 65)
+                if "obv_trend_positive" in filtered_data.columns:
+                    mask &= filtered_data["obv_trend_positive"].fillna(False)
+                if "distance_to_52w_high" in filtered_data.columns:
+                    d52 = filtered_data["distance_to_52w_high"].fillna(-999)
+                    mask &= (d52 >= -35) & (d52 <= -10)
+                if "return_1m" in filtered_data.columns:
+                    mask &= filtered_data["return_1m"].fillna(-999) > -3
+                if "return_3m" in filtered_data.columns:
+                    mask &= filtered_data["return_3m"].fillna(-999) > 0
+                if "rs_score" in filtered_data.columns:
+                    mask &= filtered_data["rs_score"].fillna(0) >= 55
+                filtered_data = filtered_data[mask].reset_index(drop=True)
+
             passed_count = len(filtered_data)
-            filtered_data = rank_and_limit(filtered_data, top_n=top_n, sort_by=sort_by)
+
+            effective_sort = "combined_score" if scan_mode != "standard" else sort_by
+            filtered_data = rank_and_limit(filtered_data, top_n=top_n, sort_by=effective_sort)
 
             st.session_state["screener_scored"] = scored_data
             st.session_state["screener_filtered"] = filtered_data
@@ -410,7 +467,8 @@ elif page == "Screener":
             st.session_state["screener_market"] = market
             st.session_state["screener_preset"] = selected_preset
             st.session_state["screener_bist_segment"] = bist_segment if market == "BIST" else None
-            st.session_state["screener_sort_by"] = sort_by
+            st.session_state["screener_sort_by"] = effective_sort
+            st.session_state["screener_scan_mode"] = scan_mode
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
@@ -426,6 +484,11 @@ elif page == "Screener":
         stored_segment = st.session_state.get("screener_bist_segment")
         if stored_segment and stored_segment in BIST_SEGMENTS:
             st.caption(f"Segment: **{BIST_SEGMENTS[stored_segment]}**")
+
+        stored_scan_mode = st.session_state.get("screener_scan_mode", "standard")
+        if stored_scan_mode != "standard":
+            mode_label = SCAN_MODES.get(stored_scan_mode, stored_scan_mode)
+            st.info(f"Tarama Modu: **{mode_label}**")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Taranan Hisse", len(scored_data))

@@ -404,15 +404,53 @@ def assign_setup_label(rs_score: float, tech_score: float) -> str:
     return SETUP_LABELS["avoid"]
 
 
+def _compute_volume_indicators(price_data) -> dict:
+    closes = _get_closes(price_data)
+    indicators = {"mfi": np.nan, "obv_trend_positive": False, "volume_ratio": np.nan}
+    if closes is None:
+        return indicators
+
+    mfi = _calc_mfi(price_data)
+    if mfi is not None:
+        indicators["mfi"] = mfi
+
+    obv = _calc_obv(price_data)
+    if obv is not None and len(obv) >= 20:
+        obv_slope = obv[-1] - obv[-20]
+        indicators["obv_trend_positive"] = bool(obv_slope > 0)
+    elif obv is not None and len(obv) >= 5:
+        obv_slope = obv[-1] - obv[0]
+        indicators["obv_trend_positive"] = bool(obv_slope > 0)
+
+    if (price_data is not None and isinstance(price_data, pd.DataFrame)
+            and "volume" in price_data.columns and len(price_data) >= 20):
+        volumes = price_data["volume"].values.astype(float)
+        avg_vol = np.mean(volumes[-20:])
+        if avg_vol > 0 and np.isfinite(avg_vol):
+            indicators["volume_ratio"] = round(float(volumes[-1] / avg_vol), 4)
+
+    return indicators
+
+
 def append_technical_scores(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
 
     tech_scores = []
+    mfi_vals = []
+    obv_trend_vals = []
+    vol_ratio_vals = []
     for _, row in result.iterrows():
         price_data = row.get("price_data")
         tech_scores.append(compute_technical_score_for_row(price_data))
+        vi = _compute_volume_indicators(price_data)
+        mfi_vals.append(vi["mfi"])
+        obv_trend_vals.append(vi["obv_trend_positive"])
+        vol_ratio_vals.append(vi["volume_ratio"])
 
     result["technical_score"] = tech_scores
+    result["mfi"] = mfi_vals
+    result["obv_trend_positive"] = obv_trend_vals
+    result["volume_ratio"] = vol_ratio_vals
 
     rs_scores = result["rs_score"].values if "rs_score" in result.columns else np.full(len(result), np.nan)
     tech_arr = np.array(tech_scores)
