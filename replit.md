@@ -13,7 +13,9 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `app.py` — Streamlit UI entry point with sidebar market selector, filters, results table, and detail tabs
 - `config.py` — Market definitions, scoring weights, API configuration (uses `TWELVE_DATA_API_KEY` env var)
 - `data_model.py` — Unified DataFrame schema (33 columns), validation helpers, type coercion, derived field computation, and mock data (10 stocks per market)
-- `data_fetcher.py` — Fetches price history and fundamentals from Twelve Data API; falls back to mock data from data_model when API key not set
+- `price_provider.py` — Abstract base class (PriceProvider) defining the provider-agnostic interface for market data
+- `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, and BIST ticker resolution
+- `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume)
 - `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
 - `momentum_metrics.py` — Calculates momentum sub-scores from pre-computed returns and price data (MA signals)
 - `scoring_engine.py` — Computes derived fields, then weighted composite RS Score; ranks stocks
@@ -61,7 +63,9 @@ artifacts-monorepo/
 ├── app.py                 # Streamlit stock screener entry point
 ├── config.py              # Stock screener configuration
 ├── data_model.py          # Unified DataFrame schema, validation, mock data
-├── data_fetcher.py        # Market data fetching
+├── price_provider.py      # Abstract market data provider interface
+├── twelve_data_provider.py # Twelve Data API provider implementation
+├── data_fetcher.py        # Market data orchestration layer
 ├── financial_metrics.py   # Financial sub-score calculations
 ├── momentum_metrics.py    # Momentum sub-score calculations
 ├── scoring_engine.py      # Composite RS Score engine

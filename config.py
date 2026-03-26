@@ -6,6 +6,9 @@ load_dotenv()
 TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
 TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
 
+CACHE_TTL_HISTORY = 600
+CACHE_TTL_QUOTE = 120
+
 SUPPORTED_MARKETS = {
     "BIST": {
         "label": "BIST (Turkey)",

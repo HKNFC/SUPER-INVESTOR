@@ -1,52 +1,139 @@
+import logging
 import pandas as pd
 import numpy as np
-import requests
 from typing import Optional
 from config import TWELVE_DATA_API_KEY, TWELVE_DATA_BASE_URL, SUPPORTED_MARKETS
 from data_model import (
     ensure_columns, coerce_numeric_columns, get_mock_data,
     safe_float, ALL_COLUMNS,
 )
+from price_provider import PriceProvider
+
+logger = logging.getLogger("stock_screener.fetcher")
+
+_provider_instance: Optional[PriceProvider] = None
+
+
+def get_provider() -> Optional[PriceProvider]:
+    """
+    Get or create the active price data provider.
+
+    Returns None if no API key is configured (mock data will be used instead).
+    Provider instance is reused across calls to preserve cache.
+    """
+    global _provider_instance
+
+    if _provider_instance is not None:
+        return _provider_instance
+
+    if not TWELVE_DATA_API_KEY:
+        return None
+
+    try:
+        from twelve_data_provider import TwelveDataProvider
+        _provider_instance = TwelveDataProvider(
+            api_key=TWELVE_DATA_API_KEY,
+            base_url=TWELVE_DATA_BASE_URL,
+        )
+        logger.info("Twelve Data provider initialized")
+        return _provider_instance
+    except (ImportError, ValueError) as e:
+        logger.error("Failed to initialize price provider: %s", e)
+        return None
+
+
+def reset_provider() -> None:
+    """Reset the provider instance (useful for testing or key rotation)."""
+    global _provider_instance
+    _provider_instance = None
 
 
 def fetch_price_history(
-    symbol: str,
-    interval: str = "1day",
+    ticker: str,
     outputsize: int = 252,
+    market: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Fetch historical price data for a symbol from Twelve Data API.
+    Fetch daily OHLCV history for a ticker.
 
-    Returns a DataFrame with columns: datetime, open, high, low, close, volume.
-    Falls back to placeholder data when the API key is not configured.
+    Uses the configured provider if available, otherwise returns placeholder data.
     """
-    if not TWELVE_DATA_API_KEY:
-        return _generate_placeholder_price_data(symbol, outputsize)
+    provider = get_provider()
+    if provider is None:
+        return _generate_placeholder_price_data(ticker, outputsize)
 
     try:
-        url = f"{TWELVE_DATA_BASE_URL}/time_series"
-        params = {
-            "symbol": symbol,
-            "interval": interval,
-            "outputsize": outputsize,
-            "apikey": TWELVE_DATA_API_KEY,
-        }
-        response = requests.get(url, params=params, timeout=15)
-        response.raise_for_status()
-        data = response.json()
+        history = provider.get_daily_history(ticker, outputsize=outputsize, market=market)
 
-        if "values" not in data:
-            return _generate_placeholder_price_data(symbol, outputsize)
+        if history.empty:
+            logger.warning("Provider returned empty history for %s — using placeholder", ticker)
+            return _generate_placeholder_price_data(ticker, outputsize)
 
-        df = pd.DataFrame(data["values"])
-        df["datetime"] = pd.to_datetime(df["datetime"])
-        for col in ["open", "high", "low", "close", "volume"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        df = df.sort_values("datetime").reset_index(drop=True)
-        return df
+        return history
 
-    except (requests.RequestException, ValueError, KeyError):
-        return _generate_placeholder_price_data(symbol, outputsize)
+    except Exception as e:
+        logger.error("Error fetching history for %s: %s", ticker, type(e).__name__)
+        return _generate_placeholder_price_data(ticker, outputsize)
+
+
+def fetch_latest_price(ticker: str, market: Optional[str] = None) -> Optional[float]:
+    """
+    Get the most recent price for a ticker.
+
+    Uses the provider's quote endpoint with fallback to last close.
+    """
+    provider = get_provider()
+    if provider is None:
+        return None
+
+    try:
+        return provider.get_latest_price(ticker, market=market)
+    except Exception as e:
+        logger.error("Error fetching latest price for %s: %s", ticker, type(e).__name__)
+        return None
+
+
+def fetch_period_returns(ticker: str, market: Optional[str] = None) -> dict:
+    """
+    Calculate 1M, 3M, 6M, 12M returns for a ticker.
+
+    Returns a dict with keys return_1m, return_3m, return_6m, return_12m.
+    """
+    provider = get_provider()
+    if provider is None:
+        return {}
+
+    try:
+        return provider.get_period_returns(ticker, market=market)
+    except Exception as e:
+        logger.error("Error calculating returns for %s: %s", ticker, type(e).__name__)
+        return {}
+
+
+def fetch_52w_high(ticker: str, market: Optional[str] = None) -> Optional[float]:
+    """Get the 52-week high price for a ticker."""
+    provider = get_provider()
+    if provider is None:
+        return None
+
+    try:
+        return provider.get_52w_high(ticker, market=market)
+    except Exception as e:
+        logger.error("Error fetching 52w high for %s: %s", ticker, type(e).__name__)
+        return None
+
+
+def fetch_avg_volume_20d(ticker: str, market: Optional[str] = None) -> Optional[float]:
+    """Get the 20-day average volume for a ticker."""
+    provider = get_provider()
+    if provider is None:
+        return None
+
+    try:
+        return provider.get_avg_volume_20d(ticker, market=market)
+    except Exception as e:
+        logger.error("Error fetching avg volume for %s: %s", ticker, type(e).__name__)
+        return None
 
 
 def fetch_fundamentals(symbol: str) -> dict:
@@ -60,16 +147,22 @@ def fetch_fundamentals(symbol: str) -> dict:
         return {}
 
     try:
+        import requests
         url = f"{TWELVE_DATA_BASE_URL}/statistics"
         params = {
             "symbol": symbol,
             "apikey": TWELVE_DATA_API_KEY,
         }
-        response = requests.get(url, params=params, timeout=15)
+        response = requests.get(url, params=params, timeout=20)
         response.raise_for_status()
         data = response.json()
 
+        if "status" in data and data["status"] == "error":
+            logger.warning("Twelve Data statistics error for %s: %s", symbol, data.get("message", ""))
+            return {}
+
         if "statistics" not in data:
+            logger.warning("No statistics data for %s", symbol)
             return {}
 
         stats = data["statistics"]
@@ -95,38 +188,9 @@ def fetch_fundamentals(symbol: str) -> dict:
             "eps": safe_float(financials.get("diluted_eps")),
         }
 
-    except (requests.RequestException, ValueError, KeyError):
+    except Exception as e:
+        logger.error("Error fetching fundamentals for %s: %s", symbol, type(e).__name__)
         return {}
-
-
-def enrich_price_fields(row: dict, price_data: pd.DataFrame) -> dict:
-    """
-    Enrich a stock record with price-derived fields from historical data.
-
-    Computes: price, return_1m/3m/6m/12m, avg_volume_20d, distance_to_52w_high.
-    """
-    result = dict(row)
-
-    if price_data is None or price_data.empty:
-        return result
-
-    closes = price_data["close"].values
-    current = closes[-1]
-    result["price"] = round(current, 2)
-
-    periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
-    for field, days in periods.items():
-        if len(closes) >= days and closes[-days] != 0:
-            result[field] = round((current / closes[-days] - 1) * 100, 2)
-
-    if "volume" in price_data.columns and len(price_data) >= 20:
-        result["avg_volume_20d"] = round(price_data["volume"].tail(20).mean(), 0)
-
-    high_52w = price_data["high"].tail(252).max() if len(price_data) >= 21 else current
-    if high_52w > 0:
-        result["distance_to_52w_high"] = round((current / high_52w - 1) * 100, 2)
-
-    return result
 
 
 def fetch_market_data(market: str) -> pd.DataFrame:
@@ -134,12 +198,17 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     Fetch data for all symbols in a given market.
 
     When no API key is configured, returns mock data from the unified data model.
-    With an API key, fetches live data and enriches it with price-derived fields.
+    With an API key, fetches live data via the provider and enriches with price fields.
+
+    Tickers that fail to fetch are skipped with a log warning.
     """
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
 
-    if not TWELVE_DATA_API_KEY:
+    provider = get_provider()
+
+    if provider is None:
+        logger.info("No API key configured — using mock data for %s", market)
         df = get_mock_data(market)
         df["price_data"] = df["ticker"].apply(
             lambda t: _generate_placeholder_price_data(t)
@@ -147,21 +216,48 @@ def fetch_market_data(market: str) -> pd.DataFrame:
         return df
 
     symbols = SUPPORTED_MARKETS[market]["symbols"]
-    market_info = SUPPORTED_MARKETS[market]
     records = []
+    skipped = []
 
     for symbol in symbols:
-        fundamentals = fetch_fundamentals(symbol)
-        price_data = fetch_price_history(symbol)
+        try:
+            fundamentals = fetch_fundamentals(symbol)
 
-        if not fundamentals.get("ticker"):
-            fundamentals["ticker"] = symbol
+            if not fundamentals.get("ticker"):
+                fundamentals["ticker"] = symbol
 
-        fundamentals["market"] = market
-        fundamentals = enrich_price_fields(fundamentals, price_data)
-        fundamentals["price_data"] = price_data
+            fundamentals["market"] = market
+            fundamentals["sector"] = fundamentals.get("sector", "")
+            fundamentals["industry"] = fundamentals.get("industry", "")
 
-        records.append(fundamentals)
+            enriched = provider.enrich_record(fundamentals)
+            records.append(enriched)
+
+            logger.info(
+                "Fetched %s: price=%s, returns=%s/%s/%s/%s",
+                symbol,
+                enriched.get("price", "N/A"),
+                enriched.get("return_1m", "N/A"),
+                enriched.get("return_3m", "N/A"),
+                enriched.get("return_6m", "N/A"),
+                enriched.get("return_12m", "N/A"),
+            )
+
+        except Exception as e:
+            logger.warning("Skipping %s due to error: %s", symbol, e)
+            skipped.append(symbol)
+            continue
+
+    if skipped:
+        logger.warning("Skipped %d tickers: %s", len(skipped), ", ".join(skipped))
+
+    if not records:
+        logger.error("No data fetched for market %s — falling back to mock data", market)
+        df = get_mock_data(market)
+        df["price_data"] = df["ticker"].apply(
+            lambda t: _generate_placeholder_price_data(t)
+        )
+        return df
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
