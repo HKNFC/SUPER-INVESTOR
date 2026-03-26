@@ -18,13 +18,13 @@ from typing import Optional, Dict, Any, List
 
 FILTER_PRESETS = {
     "none": {
-        "label": "No Filter",
-        "description": "Show all stocks without pre-screening",
+        "label": "Filtre Yok",
+        "description": "Tüm hisseleri ön eleme yapmadan göster",
         "rules": {},
     },
     "basic": {
-        "label": "Basic Quality",
-        "description": "Profitable companies with positive equity and reasonable leverage",
+        "label": "Temel Kalite",
+        "description": "Kârlı, pozitif özkaynaklı ve makul kaldıraçlı şirketler",
         "rules": {
             "equity_gt": 0,
             "net_income_gt": 0,
@@ -37,8 +37,8 @@ FILTER_PRESETS = {
         },
     },
     "strict": {
-        "label": "Strict Quality",
-        "description": "High-quality companies with strong returns, low leverage, and positive momentum",
+        "label": "Sıkı Kalite",
+        "description": "Güçlü getiri, düşük kaldıraç ve pozitif momentum ile yüksek kaliteli şirketler",
         "rules": {
             "equity_gt": 0,
             "net_income_gt": 0,

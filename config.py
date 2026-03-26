@@ -11,7 +11,7 @@ CACHE_TTL_QUOTE = 120
 
 SUPPORTED_MARKETS = {
     "BIST": {
-        "label": "BIST (Turkey)",
+        "label": "BIST (Türkiye)",
         "exchange": "BIST",
         "currency": "TRY",
         "symbols": [
@@ -22,7 +22,7 @@ SUPPORTED_MARKETS = {
         ],
     },
     "USA": {
-        "label": "US Stocks",
+        "label": "ABD Hisseleri",
         "exchange": "NASDAQ/NYSE",
         "currency": "USD",
         "symbols": [
@@ -92,11 +92,11 @@ REVERSE_SCORED_METRICS = {
 }
 
 RS_CATEGORIES = [
-    (85, 100, "Elite"),
-    (70, 85, "Strong"),
-    (55, 70, "Watchlist"),
-    (40, 55, "Weak"),
-    (0, 40, "Avoid"),
+    (85, 100, "Elit"),
+    (70, 85, "Güçlü"),
+    (55, 70, "İzleme"),
+    (40, 55, "Zayıf"),
+    (0, 40, "Kaçın"),
 ]
 
 WINSORIZE_LOWER = 0.05
