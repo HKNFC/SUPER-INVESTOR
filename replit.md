@@ -49,8 +49,10 @@ Helper functions: `validate_dataframe()`, `coerce_numeric_columns()`, `ensure_co
 
 ### Running
 
-- Workflow: `streamlit run app.py --server.port 5000`
+- Artifact: `artifacts/stock-screener` (kind: web, previewPath: `/`)
+- Workflow: `artifacts/stock-screener: web` — runs `streamlit run app.py --server.port 5000`
 - Port: 5000
+- The Streamlit app lives at the project root (app.py, config.py, etc.) but is registered as an artifact for preview proxy routing
 
 ### API Integration
 
