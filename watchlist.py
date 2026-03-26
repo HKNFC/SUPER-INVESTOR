@@ -1,3 +1,11 @@
+"""
+Watchlist Manager
+
+Persistent JSON-backed watchlist for tracking stocks of interest.
+Supports add, remove, clear, score updates, and CSV export.
+Stored in watchlist.json (local file, not version-controlled).
+"""
+
 import json
 import os
 import time
@@ -10,6 +18,7 @@ WATCHLIST_FILE = "watchlist.json"
 
 
 def _load_raw() -> Dict[str, Any]:
+    """Load the raw watchlist JSON from disk, returning an empty structure on failure."""
     if not os.path.exists(WATCHLIST_FILE):
         return {"stocks": {}, "updated_at": 0}
     try:
@@ -24,6 +33,7 @@ def _load_raw() -> Dict[str, Any]:
 
 
 def _save_raw(data: Dict[str, Any]) -> bool:
+    """Persist watchlist data to disk. Returns True on success, False on IO error."""
     data["updated_at"] = time.time()
     try:
         with open(WATCHLIST_FILE, "w") as f:
@@ -35,6 +45,7 @@ def _save_raw(data: Dict[str, Any]) -> bool:
 
 
 def get_watchlist() -> List[Dict[str, Any]]:
+    """Return all watchlist entries sorted by ticker, each as a dict."""
     data = _load_raw()
     items = []
     for ticker, info in sorted(data["stocks"].items()):
@@ -45,11 +56,13 @@ def get_watchlist() -> List[Dict[str, Any]]:
 
 
 def get_watchlist_tickers() -> List[str]:
+    """Return a sorted list of ticker symbols currently in the watchlist."""
     data = _load_raw()
     return sorted(data["stocks"].keys())
 
 
 def is_in_watchlist(ticker: str) -> bool:
+    """Check whether a ticker is already in the watchlist."""
     data = _load_raw()
     return ticker in data["stocks"]
 
@@ -62,6 +75,7 @@ def add_to_watchlist(
     company_name: Optional[str] = None,
     market: Optional[str] = None,
 ) -> bool:
+    """Add or update a stock in the watchlist. Returns True on success."""
     data = _load_raw()
     data["stocks"][ticker] = {
         "rs_score": rs_score,
@@ -78,6 +92,7 @@ def add_to_watchlist(
 
 
 def remove_from_watchlist(ticker: str) -> bool:
+    """Remove a stock from the watchlist. Returns False if ticker not found."""
     data = _load_raw()
     if ticker not in data["stocks"]:
         return False
@@ -89,6 +104,7 @@ def remove_from_watchlist(ticker: str) -> bool:
 
 
 def clear_watchlist() -> int:
+    """Remove all stocks from the watchlist. Returns the count of items removed."""
     data = _load_raw()
     count = len(data["stocks"])
     data["stocks"] = {}
@@ -99,6 +115,7 @@ def clear_watchlist() -> int:
 
 
 def update_watchlist_scores(scored_rows: List[Dict[str, Any]]) -> int:
+    """Bulk-update RS scores and prices for watchlist stocks from scored data."""
     data = _load_raw()
     updated = 0
     for row in scored_rows:
@@ -115,6 +132,7 @@ def update_watchlist_scores(scored_rows: List[Dict[str, Any]]) -> int:
 
 
 def export_watchlist_csv() -> str:
+    """Export the watchlist as a CSV string using proper csv escaping."""
     import io
     import csv as csv_mod
     items = get_watchlist()

@@ -1,3 +1,13 @@
+"""
+Stock Screener — Streamlit Application
+
+Main entry point for the stock screening dashboard. Provides two views:
+  - Screener: fetch, score, filter, and display stocks ranked by RS Score
+  - Watchlist: manage a persistent watchlist of tracked stocks
+
+Sidebar controls: market selection, quality preset, volume filter, result count.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,7 +24,7 @@ from filters import (
     apply_preset_filter, rank_and_limit,
     get_preset_names, get_preset_info,
 )
-from utils import format_number, format_percentage, format_large_number, format_market_cap, format_pct_value
+from utils import format_number, format_percentage, format_large_number, format_market_cap, format_pct_value, is_na
 from watchlist import (
     get_watchlist, get_watchlist_tickers, is_in_watchlist,
     add_to_watchlist, remove_from_watchlist, clear_watchlist,
@@ -35,6 +45,7 @@ def _cached_fetch(market: str, _cache_bust: int) -> pd.DataFrame:
 
 
 def _fmt_rule(rule_key: str, threshold: float) -> str:
+    """Format a filter rule key and threshold into a human-readable label."""
     _pct_keys = {"roic_gt", "revenue_growth_gt", "net_margin_gt", "return_12m_gt"}
     labels = {
         "equity_gt": "Equity > {:.0f}",
@@ -56,21 +67,19 @@ def _fmt_rule(rule_key: str, threshold: float) -> str:
 
 
 def _score_fmt(val) -> str:
-    if val is None or (isinstance(val, float) and np.isnan(val)):
+    """Format a score value for display, returning 'N/A' for missing values."""
+    if is_na(val):
         return "N/A"
     return f"{val:.1f}"
 
 
 def _missing_metric_warnings(stock_row: pd.Series) -> list:
-    warnings = []
-    for f in REQUIRED_FIELDS_FOR_SCORING:
-        val = stock_row.get(f)
-        if val is None or (isinstance(val, float) and np.isnan(val)):
-            warnings.append(f)
-    return warnings
+    """Return a list of required scoring fields that are missing or NaN for a stock."""
+    return [f for f in REQUIRED_FIELDS_FOR_SCORING if is_na(stock_row.get(f))]
 
 
 def _render_detail(stock_row: pd.Series) -> None:
+    """Render the full stock detail panel inside an expander."""
     bd = get_score_breakdown(stock_row)
 
     missing = _missing_metric_warnings(stock_row)
@@ -145,13 +154,14 @@ def _render_detail(stock_row: pd.Series) -> None:
 
     if "price_data" in stock_row and isinstance(stock_row["price_data"], pd.DataFrame):
         price_df = stock_row["price_data"]
-        if not price_df.empty:
+        if not price_df.empty and "datetime" in price_df.columns and "close" in price_df.columns:
             st.markdown("**Price History**")
             chart_data = price_df.set_index("datetime")[["close"]].rename(columns={"close": "Close"})
             st.line_chart(chart_data, height=250)
 
 
 def _render_diagnostics() -> None:
+    """Render the fetch diagnostics panel (fetched/failed/incomplete counts)."""
     diag = get_last_diagnostics()
     if diag is None:
         return
@@ -260,11 +270,11 @@ if page == "Watchlist":
 
         if "rs_score" in display_wl.columns:
             display_wl["rs_score"] = display_wl["rs_score"].apply(
-                lambda x: round(x, 1) if x is not None and not (isinstance(x, float) and np.isnan(x)) else None
+                lambda x: round(x, 1) if not is_na(x) else None
             )
         if "price" in display_wl.columns:
             display_wl["price"] = display_wl["price"].apply(
-                lambda x: round(x, 2) if x is not None and not (isinstance(x, float) and np.isnan(x)) else None
+                lambda x: round(x, 2) if not is_na(x) else None
             )
 
         st.dataframe(
@@ -382,11 +392,11 @@ elif page == "Screener":
             for col in ["rs_score", "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
                 if col in display_df.columns:
                     display_df[col] = display_df[col].apply(
-                        lambda x: round(x, 1) if x is not None and np.isfinite(x) else None
+                        lambda x: round(x, 1) if not is_na(x) else None
                     )
             if "price" in display_df.columns:
                 display_df["price"] = display_df["price"].apply(
-                    lambda x: round(x, 2) if x is not None and np.isfinite(x) else None
+                    lambda x: round(x, 2) if not is_na(x) else None
                 )
 
             st.dataframe(

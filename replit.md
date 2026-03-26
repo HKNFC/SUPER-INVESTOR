@@ -16,12 +16,12 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `price_provider.py` — Abstract base class (PriceProvider) defining the provider-agnostic interface for market data
 - `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, and BIST ticker resolution
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume)
-- `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
-- `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume, and composite momentum score
+- `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment
+- `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume
 - `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid)
 - `filters.py` — Pre-ranking quality filter engine with presets (None/Basic/Strict), configurable min volume, top-N results, plus score/category/sector/market filters
 - `watchlist.py` — Local JSON-backed watchlist: add/remove/clear stocks, export CSV, auto-update scores on screening runs
-- `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and display DataFrames
+- `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and `is_na` utility
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
 - `.streamlit/config.toml` — Streamlit server configuration (port 5000, headless)
 

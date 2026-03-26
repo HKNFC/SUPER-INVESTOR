@@ -51,52 +51,11 @@ def format_large_number(value) -> str:
     return f"{sign}${abs_val:,.0f}"
 
 
-def score_color(score) -> str:
-    """Return a color indicator based on score value."""
-    if score is None or (isinstance(score, float) and np.isnan(score)):
-        return "gray"
-    if score >= 75:
-        return "green"
-    if score >= 50:
-        return "orange"
-    return "red"
-
-
-def prepare_display_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Prepare a DataFrame for display in the UI by selecting
-    and formatting the relevant columns.
-    """
-    display_cols = [
-        "rank", "ticker", "company_name", "sector", "price", "market_cap",
-        "rs_score", "rs_category", "financial_strength", "growth", "margin_quality",
-        "valuation", "momentum",
-        "return_1m", "return_3m", "return_6m", "return_12m",
-    ]
-
-    available = [c for c in display_cols if c in df.columns]
-    result = df[available].copy()
-
-    score_cols = [
-        "rs_score", "financial_strength", "growth",
-        "margin_quality", "valuation", "momentum",
-    ]
-    for col in score_cols:
-        if col in result.columns:
-            result[col] = result[col].apply(
-                lambda x: round(x, 1) if x is not None and isinstance(x, (int, float)) and np.isfinite(x) else None
-            )
-
-    if "price" in result.columns:
-        result["price"] = result["price"].apply(
-            lambda x: round(x, 2) if x is not None and isinstance(x, (int, float)) and np.isfinite(x) else None
-        )
-
-    return_cols = ["return_1m", "return_3m", "return_6m", "return_12m"]
-    for col in return_cols:
-        if col in result.columns:
-            result[col] = result[col].apply(
-                lambda x: round(x, 1) if x is not None and isinstance(x, (int, float)) and np.isfinite(x) else None
-            )
-
-    return result
+def is_na(value) -> bool:
+    """Check if a value is missing or non-finite (None, NaN, pd.NA, inf)."""
+    if value is None:
+        return True
+    try:
+        return not np.isfinite(float(value))
+    except (ValueError, TypeError):
+        return True

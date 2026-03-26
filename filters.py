@@ -1,3 +1,16 @@
+"""
+Filter Engine
+
+Provides preset and custom quality filters for screening stocks before
+scoring. Presets apply threshold-based rules (e.g., ROIC > 5%, D/E < 2.5)
+to remove low-quality or speculative stocks from the universe.
+
+Presets:
+  - none:   No filter — show all stocks
+  - basic:  Profitable companies with positive equity and reasonable leverage
+  - strict: High-quality companies with strong returns and positive momentum
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Optional, Dict, Any, List
@@ -42,6 +55,7 @@ FILTER_PRESETS = {
 
 
 def _safe_check(value, op: str, threshold: float) -> bool:
+    """Check if a value passes a comparison against a threshold, handling NaN/None safely."""
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return False
     try:
@@ -80,6 +94,7 @@ def apply_preset_filter(
     preset: str = "none",
     min_avg_volume: Optional[float] = None,
 ) -> pd.DataFrame:
+    """Apply a named preset filter to the DataFrame, returning only passing rows."""
     if preset not in FILTER_PRESETS:
         preset = "none"
 
@@ -109,6 +124,7 @@ def apply_custom_filter(
     df: pd.DataFrame,
     rules: Dict[str, float],
 ) -> pd.DataFrame:
+    """Apply a custom set of filter rules to the DataFrame."""
     if not rules:
         return df.copy()
 
@@ -130,6 +146,7 @@ def rank_and_limit(
     df: pd.DataFrame,
     top_n: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Sort by RS Score descending, assign rank, and optionally limit to top N."""
     if df.empty:
         return df
 
@@ -151,6 +168,7 @@ def top_n_results(
     preset: str = "none",
     min_avg_volume: Optional[float] = None,
 ) -> pd.DataFrame:
+    """Convenience: apply preset filter, then rank and limit to top N."""
     filtered = apply_preset_filter(df, preset=preset, min_avg_volume=min_avg_volume)
     return rank_and_limit(filtered, top_n=n)
 
@@ -160,6 +178,7 @@ def filter_by_score(
     min_rs_score: float = 0,
     top_n: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Filter stocks by minimum RS Score and optionally limit results."""
     filtered = df[df["rs_score"] >= min_rs_score].copy()
     if top_n is not None and top_n > 0:
         filtered = filtered.head(top_n)
@@ -171,6 +190,7 @@ def filter_by_category_score(
     category: str,
     min_score: float = 50,
 ) -> pd.DataFrame:
+    """Filter stocks by minimum sub-score in a specific category."""
     valid = [
         "financial_strength", "growth", "margin_quality",
         "valuation", "momentum",
@@ -186,20 +206,24 @@ def filter_by_category_score(
 
 
 def filter_by_sector(df: pd.DataFrame, sectors: list) -> pd.DataFrame:
+    """Filter stocks to include only the specified sectors."""
     if not sectors or "sector" not in df.columns:
         return df
     return df[df["sector"].isin(sectors)].reset_index(drop=True)
 
 
 def filter_by_market(df: pd.DataFrame, market: str) -> pd.DataFrame:
+    """Filter stocks to include only those from the specified market."""
     if "market" not in df.columns:
         return df
     return df[df["market"] == market].reset_index(drop=True)
 
 
 def get_preset_names() -> List[str]:
+    """Return the list of available filter preset keys."""
     return list(FILTER_PRESETS.keys())
 
 
 def get_preset_info(preset: str) -> Dict[str, Any]:
+    """Return the label, description, and rules for a named preset."""
     return FILTER_PRESETS.get(preset, FILTER_PRESETS["none"])
