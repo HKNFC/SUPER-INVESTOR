@@ -21,6 +21,7 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid). Integrates technical_signals after RS computation.
 - `technical_signals.py` — Technical Signal Score engine (0-100): Trend (30%, MA50/MA200/golden cross), Momentum (20%, RSI/MACD), Breakout (20%, 20d/52w high proximity, volume ratio), Volume Flow (20%, MFI scoring + OBV trend/divergence with fake breakout penalty and accumulation bonus), Risk/Stability (10%, ATR volatility penalty). Also computes combined_score (0.65*RS + 0.35*tech), setup_label, and stores per-row volume indicators (mfi, obv_trend_positive, volume_ratio) for scan mode filtering.
 - `filters.py` — Pre-ranking quality filter engine with presets (None/Basic/Strict), configurable min volume, top-N results, sort by rs_score or combined_score
+- `backtest_engine.py` — Backtest engine: replays screening strategy over historical data with proper point-in-time truncation (no look-ahead bias), recomputes momentum + scores at each rebalance, supports 1w/15d/1m rebalance frequency, computes equity curve, drawdown, Sharpe, alpha, volatility
 - `watchlist.py` — Local JSON-backed watchlist: add/remove/clear stocks, export CSV, auto-update scores on screening runs
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and `is_na` utility
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
@@ -85,6 +86,7 @@ artifacts-monorepo/
 ├── momentum_metrics.py    # Momentum sub-score calculations
 ├── scoring_engine.py      # Composite RS Score engine
 ├── technical_signals.py   # Technical Signal Score engine
+├── backtest_engine.py     # Historical backtest engine
 ├── filters.py             # Stock filtering logic
 ├── watchlist.py           # JSON-backed watchlist storage
 ├── utils.py               # Display formatting utilities
