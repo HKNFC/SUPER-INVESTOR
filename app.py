@@ -5,7 +5,11 @@ from config import SUPPORTED_MARKETS, SCORING_WEIGHTS, DEFAULT_TOP_N, TWELVE_DAT
 from data_model import validate_dataframe
 from data_fetcher import fetch_market_data
 from scoring_engine import compute_rs_scores, get_score_breakdown
-from filters import filter_by_score, filter_by_category_score, filter_by_fundamentals, filter_by_sector
+from filters import (
+    apply_preset_filter, rank_and_limit, top_n_results,
+    filter_by_score, filter_by_category_score, filter_by_sector,
+    get_preset_names, get_preset_info, FILTER_PRESETS,
+)
 from utils import (
     prepare_display_dataframe, format_market_cap, format_number,
     format_percentage, format_pct_value, format_large_number, score_color,
@@ -31,7 +35,54 @@ with st.sidebar:
     )
 
     st.divider()
-    st.subheader("Filters")
+    st.subheader("Quality Filter")
+
+    preset_options = get_preset_names()
+    preset_labels = {k: get_preset_info(k)["label"] for k in preset_options}
+    selected_preset = st.radio(
+        "Filter Preset",
+        options=preset_options,
+        format_func=lambda x: preset_labels[x],
+        index=0,
+        help="Pre-screen stocks before ranking",
+    )
+    preset_info = get_preset_info(selected_preset)
+    st.caption(preset_info["description"])
+
+    if selected_preset != "none" and preset_info["rules"]:
+        with st.expander("Active filter rules"):
+            _pct_rules = {"roic_gt", "revenue_growth_gt", "net_margin_gt", "return_12m_gt"}
+            rule_display = {
+                "equity_gt": ("Equity > {:.0f}", False),
+                "net_income_gt": ("Net Income > {:.0f}", False),
+                "roic_gt": ("ROIC > {:.0f}%", True),
+                "revenue_growth_gt": ("Rev Growth > {:.0f}%", True),
+                "net_margin_gt": ("Net Margin > {:.0f}%", True),
+                "debt_to_equity_lt": ("D/E < {:.1f}", False),
+                "peg_gt": ("PEG > {:.0f}", False),
+                "pe_gt": ("P/E > {:.0f}", False),
+                "return_12m_gt": ("12M Return > {:.0f}%", True),
+                "avg_volume_20d_gte": ("Avg Vol >= {:.0f}", False),
+            }
+            for rule_key, threshold in preset_info["rules"].items():
+                if rule_key in rule_display:
+                    fmt, is_pct = rule_display[rule_key]
+                    display_val = threshold * 100 if is_pct else threshold
+                    st.text(fmt.format(display_val))
+                else:
+                    st.text(f"{rule_key}: {threshold}")
+
+    st.divider()
+    st.subheader("Additional Filters")
+
+    min_avg_volume = st.number_input(
+        "Min Avg Volume (20d)",
+        min_value=0,
+        value=0,
+        step=100000,
+        help="Set to 0 to disable",
+    )
+    min_avg_volume = min_avg_volume if min_avg_volume > 0 else None
 
     min_rs_score = st.slider(
         "Minimum RS Score",
@@ -67,20 +118,6 @@ with st.sidebar:
         )
 
     st.divider()
-    st.subheader("Fundamental Filters")
-
-    max_pe = st.number_input("Max P/E Ratio", min_value=0.0, value=0.0, step=5.0,
-                             help="Set to 0 to disable")
-    max_pe = max_pe if max_pe > 0 else None
-
-    min_market_cap_input = st.selectbox(
-        "Min Market Cap",
-        options=["Any", "$1B+", "$10B+", "$100B+", "$1T+"],
-    )
-    min_market_cap_map = {"Any": None, "$1B+": 1e9, "$10B+": 10e9, "$100B+": 100e9, "$1T+": 1e12}
-    min_market_cap = min_market_cap_map[min_market_cap_input]
-
-    st.divider()
     st.subheader("Scoring Weights")
     st.caption("Current weights used for RS Score calculation")
     for cat, weight in SCORING_WEIGHTS.items():
@@ -105,7 +142,13 @@ if run_screening:
     with st.spinner("Computing RS Scores..."):
         scored_data = compute_rs_scores(raw_data)
 
-    filtered_data = filter_by_score(scored_data, min_rs_score=min_rs_score, top_n=None)
+    filtered_data = apply_preset_filter(
+        scored_data,
+        preset=selected_preset,
+        min_avg_volume=min_avg_volume,
+    )
+
+    filtered_data = filter_by_score(filtered_data, min_rs_score=min_rs_score)
 
     if category_filter != "None":
         filtered_data = filter_by_category_score(
@@ -114,27 +157,23 @@ if run_screening:
             min_score=category_min,
         )
 
-    filtered_data = filter_by_fundamentals(
-        filtered_data,
-        max_pe=max_pe,
-        min_market_cap=min_market_cap,
-    )
-
-    if top_n and top_n > 0:
-        filtered_data = filtered_data.head(top_n).reset_index(drop=True)
+    filtered_data = rank_and_limit(filtered_data, top_n=top_n)
 
     st.header(f"Results: {market_info['label']}")
     st.caption(f"{market_info['exchange']} | Currency: {market_info['currency']}")
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("Stocks Screened", len(scored_data))
+        st.metric("Universe", len(scored_data))
     with col2:
-        st.metric("Showing", len(filtered_data))
+        passed_filter = len(apply_preset_filter(scored_data, preset=selected_preset, min_avg_volume=min_avg_volume))
+        st.metric("Passed Filter", passed_filter)
     with col3:
+        st.metric("Showing", len(filtered_data))
+    with col4:
         if not filtered_data.empty:
             st.metric("Top RS Score", f"{filtered_data['rs_score'].max():.1f}")
-    with col4:
+    with col5:
         if not filtered_data.empty:
             st.metric("Avg RS Score", f"{filtered_data['rs_score'].mean():.1f}")
 

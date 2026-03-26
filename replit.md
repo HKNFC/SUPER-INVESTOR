@@ -19,7 +19,7 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
 - `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume, and composite momentum score
 - `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid)
-- `filters.py` — Score-based, category-based, fundamental, sector, and market filters
+- `filters.py` — Pre-ranking quality filter engine with presets (None/Basic/Strict), configurable min volume, top-N results, plus score/category/sector/market filters
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and display DataFrames
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
 - `.streamlit/config.toml` — Streamlit server configuration (port 5000, headless)
