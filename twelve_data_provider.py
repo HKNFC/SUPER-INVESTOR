@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any
 from urllib.parse import urlencode
 from price_provider import PriceProvider
 from config import CACHE_TTL_HISTORY, CACHE_TTL_QUOTE, API_REQUEST_TIMEOUT, API_MAX_RETRIES, API_RETRY_DELAY
+from disk_cache import get_cached_or_fetch, needs_refresh, read_cache, OHLCV_COLUMNS
 
 logger = logging.getLogger("stock_screener.twelve_data")
 
@@ -149,34 +150,21 @@ class TwelveDataProvider(PriceProvider):
         if recent >= 7:
             logger.warning("Approaching Twelve Data rate limit: %d requests in last 60s", recent)
 
-    def get_daily_history(
-        self,
-        ticker: str,
-        outputsize: int = 252,
-        market: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """
-        Fetch daily OHLCV history from Twelve Data.
-
-        Results are cached using TTL from config.CACHE_TTL_HISTORY.
-        Returns a copy to prevent cache mutation.
-        """
-        symbol = self._resolve_symbol(ticker, market)
-        ck = _cache_key("history", symbol=symbol, outputsize=outputsize)
-
-        cached = _cache_get(ck)
-        if cached is not None:
-            return cached.copy()
-
-        data = self._api_request("time_series", {
+    def _fetch_from_api(self, symbol: str, outputsize: int = 300, start_date: Optional[str] = None) -> pd.DataFrame:
+        params = {
             "symbol": symbol,
             "interval": "1day",
-            "outputsize": outputsize,
-        })
+        }
+        if start_date:
+            params["start_date"] = start_date
+            params["outputsize"] = 5000
+        else:
+            params["outputsize"] = outputsize
+
+        data = self._api_request("time_series", params)
 
         if data is None or "values" not in data:
-            logger.warning("No history data for %s — returning empty DataFrame", ticker)
-            return pd.DataFrame(columns=["datetime", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(columns=OHLCV_COLUMNS)
 
         df = pd.DataFrame(data["values"])
         df["datetime"] = pd.to_datetime(df["datetime"])
@@ -184,9 +172,32 @@ class TwelveDataProvider(PriceProvider):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         df = df.sort_values("datetime").reset_index(drop=True)
+        return df
 
-        _cache_set(ck, df, ttl=CACHE_TTL_HISTORY)
-        return df.copy()
+    def get_daily_history(
+        self,
+        ticker: str,
+        outputsize: int = 300,
+        market: Optional[str] = None,
+    ) -> pd.DataFrame:
+        symbol = self._resolve_symbol(ticker, market)
+        ck = _cache_key("history", symbol=symbol, outputsize=outputsize)
+
+        mem_cached = _cache_get(ck)
+        if mem_cached is not None:
+            return mem_cached.copy()
+
+        def _disk_fetch(sym, outputsize=300, start_date=None):
+            return self._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+
+        df = get_cached_or_fetch(symbol, _disk_fetch, outputsize=outputsize)
+
+        if df is not None and not df.empty:
+            _cache_set(ck, df, ttl=CACHE_TTL_HISTORY)
+            return df.copy()
+
+        logger.warning("No history data for %s — returning empty DataFrame", ticker)
+        return pd.DataFrame(columns=OHLCV_COLUMNS)
 
     def get_quote(
         self,
@@ -255,7 +266,7 @@ class TwelveDataProvider(PriceProvider):
 
         result = dict(record)
 
-        history = self.get_daily_history(ticker, outputsize=252, market=market)
+        history = self.get_daily_history(ticker, outputsize=300, market=market)
         result["price_data"] = history
 
         if history.empty:
