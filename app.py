@@ -16,6 +16,7 @@ from config import (
     SUPPORTED_MARKETS, DEFAULT_TOP_N,
     TWELVE_DATA_API_KEY, BENCHMARK_INDEX,
     CACHE_TTL_MARKET_DATA, REQUIRED_FIELDS_FOR_SCORING,
+    BIST100_TICKERS, BIST_SEGMENTS,
 )
 from data_model import validate_dataframe
 from data_fetcher import fetch_market_data, get_last_diagnostics
@@ -214,6 +215,14 @@ with st.sidebar:
         format_func=lambda x: SUPPORTED_MARKETS[x]["label"],
     )
 
+    bist_segment = "BISTTUM"
+    if market == "BIST":
+        bist_segment = st.selectbox(
+            "BIST Segmenti",
+            options=list(BIST_SEGMENTS.keys()),
+            format_func=lambda x: BIST_SEGMENTS[x],
+        )
+
     benchmark = BENCHMARK_INDEX.get(market, "SPX")
     st.caption(f"Endeks: {benchmark}")
 
@@ -357,6 +366,12 @@ elif page == "Screener":
                 cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
                 raw_data = _cached_fetch(market, cache_bust)
 
+            if market == "BIST" and bist_segment != "BISTTUM" and "ticker" in raw_data.columns:
+                if bist_segment == "BIST100":
+                    raw_data = raw_data[raw_data["ticker"].isin(BIST100_TICKERS)].reset_index(drop=True)
+                elif bist_segment == "BIST100_DISI":
+                    raw_data = raw_data[~raw_data["ticker"].isin(BIST100_TICKERS)].reset_index(drop=True)
+
             validation = validate_dataframe(raw_data)
             if not validation["valid"]:
                 st.warning(f"Veri kalitesi uyarısı: eksik sütunlar {validation['missing_columns']}")
@@ -380,6 +395,7 @@ elif page == "Screener":
             st.session_state["screener_passed_count"] = passed_count
             st.session_state["screener_market"] = market
             st.session_state["screener_preset"] = selected_preset
+            st.session_state["screener_bist_segment"] = bist_segment if market == "BIST" else None
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
@@ -391,6 +407,10 @@ elif page == "Screener":
         passed_count = st.session_state["screener_passed_count"]
         stored_market = st.session_state["screener_market"]
         stored_preset = st.session_state["screener_preset"]
+
+        stored_segment = st.session_state.get("screener_bist_segment")
+        if stored_segment and stored_segment in BIST_SEGMENTS:
+            st.caption(f"Segment: **{BIST_SEGMENTS[stored_segment]}**")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Taranan Hisse", len(scored_data))

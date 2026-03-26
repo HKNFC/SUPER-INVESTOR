@@ -39,6 +39,25 @@ BENCHMARK_INDEX = {
     "BIST": "XU100",
 }
 
+BIST100_TICKERS = [
+    "THYAO", "GARAN", "AKBNK", "EREGL", "BIMAS",
+    "KCHOL", "SAHOL", "SISE", "TUPRS", "ASELS",
+    "TCELL", "PGSUS", "TOASO", "FROTO", "KOZAL",
+    "HEKTS", "MGROS", "TAVHL", "ARCLK", "SASA",
+    "PETKM", "ISCTR", "YKBNK", "VAKBN", "HALKB",
+    "TKFEN", "TTKOM", "EKGYO", "ENKAI", "GUBRF",
+    "KRDMD", "OYAKC", "OTKAR", "DOHOL", "AEFES",
+    "SOKM", "ALARK", "ECZYT", "CIMSA", "AKSEN",
+    "GESAN", "KONTR", "BRYAT", "BTCIM", "ISGYO",
+    "TSKB", "AGHOL", "CCOLA", "TTRAK", "ULKER",
+]
+
+BIST_SEGMENTS = {
+    "BISTTUM": "BIST TÜM",
+    "BIST100": "BIST 100",
+    "BIST100_DISI": "BIST 100 Dışı",
+}
+
 SCORING_WEIGHTS = {
     "financial_strength": 0.25,
     "growth": 0.20,
