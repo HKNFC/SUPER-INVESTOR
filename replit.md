@@ -18,7 +18,7 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume)
 - `financial_metrics.py` — Calculates financial strength, growth, margin quality, and valuation sub-scores from raw fundamentals
 - `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume, and composite momentum score
-- `scoring_engine.py` — Computes derived fields, then weighted composite RS Score; ranks stocks
+- `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid)
 - `filters.py` — Score-based, category-based, fundamental, sector, and market filters
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and display DataFrames
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
@@ -31,7 +31,18 @@ Unified DataFrame structure with 33 columns:
 - **Price & Market (9)**: price, market_cap, avg_volume_20d, return_1m/3m/6m/12m, distance_to_52w_high, relative_return_vs_index
 - **Fundamentals (19)**: revenue (current/prev/3y), net_income (current/prev), eps (current/3y), gross_profit, operating_income, ebitda, total_assets, total_debt, equity, cash, invested_capital, pe, pb, ev_ebitda, peg
 
-Derived fields computed by `compute_derived_fields()`: gross_margin, operating_margin, net_margin, revenue_growth, revenue_growth_3y, earnings_growth, eps_growth_3y, roe, roa, roic, debt_to_equity
+Derived fields computed by `compute_derived_fields()`: gross_margin, operating_margin, net_margin, ebitda_margin, revenue_growth, revenue_growth_3y, earnings_growth, eps_growth_3y, roe, roa, roic, debt_to_equity, equity_to_assets, net_income_to_assets
+
+### RS Score Engine (scoring_engine.py)
+
+- **Percentile ranking**: True 0-100 scaling via `(rank-1)/(n-1)*100`; NaN-safe
+- **Reverse scoring**: D/E, PE, PB, EV/EBITDA, PEG (lower raw value = higher score)
+- **Negative valuation filter**: Non-positive PE/PB/EV_EBITDA/PEG treated as NaN
+- **Winsorization**: 5th/95th percentile clipping before ranking
+- **Sub-scores**: Financial Strength (25%), Growth (20%), Margin Quality (15%), Valuation (20%), Momentum (20%)
+- **NaN redistribution**: Missing metrics' weights redistributed to available metrics within each sub-score
+- **RS Categories**: Elite (85-100), Strong (70-85), Watchlist (55-70), Weak (40-55), Avoid (0-40)
+- **Margin trend**: `net_margin - prev_year_net_margin` added as scoring metric
 
 Helper functions: `validate_dataframe()`, `coerce_numeric_columns()`, `ensure_columns()`, `safe_float()`, `safe_ratio()`
 

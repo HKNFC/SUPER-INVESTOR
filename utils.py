@@ -69,7 +69,7 @@ def prepare_display_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
     display_cols = [
         "rank", "ticker", "company_name", "sector", "price", "market_cap",
-        "rs_score", "financial_strength", "growth", "margin_quality",
+        "rs_score", "rs_category", "financial_strength", "growth", "margin_quality",
         "valuation", "momentum",
         "return_1m", "return_3m", "return_6m", "return_12m",
     ]

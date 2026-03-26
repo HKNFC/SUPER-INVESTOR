@@ -158,6 +158,7 @@ if run_screening:
                 "rs_score": st.column_config.ProgressColumn(
                     "RS Score", min_value=0, max_value=100, format="%.1f",
                 ),
+                "rs_category": st.column_config.TextColumn("Category", width="small"),
                 "financial_strength": st.column_config.ProgressColumn(
                     "Financial", min_value=0, max_value=100, format="%.1f",
                 ),
@@ -195,7 +196,8 @@ if run_screening:
                 stock_row = filtered_data[filtered_data["ticker"] == selected_symbol].iloc[0]
                 breakdown = get_score_breakdown(stock_row)
 
-                st.subheader(f"{breakdown['ticker']} — {breakdown['company_name']}")
+                cat = breakdown.get('rs_category', 'N/A')
+                st.subheader(f"{breakdown['ticker']} — {breakdown['company_name']}  ({cat})")
 
                 score_cols = st.columns(6)
                 labels = ["RS Score", "Financial Strength", "Growth", "Margin Quality", "Valuation", "Momentum"]
