@@ -75,6 +75,20 @@ def reset_provider() -> None:
     _provider_instance = None
 
 
+def _try_yahoo_fallback(ticker: str, market: Optional[str] = None, outputsize: int = 300) -> pd.DataFrame:
+    try:
+        from yahoo_provider import fetch_yahoo_history
+        df = fetch_yahoo_history(ticker, period="2y", market=market)
+        if not df.empty:
+            df["data_source"] = "yahoo"
+            if len(df) > outputsize:
+                df = df.tail(outputsize).reset_index(drop=True)
+        return df
+    except Exception as e:
+        logger.error("Yahoo fallback error for %s: %s", ticker, e)
+        return pd.DataFrame()
+
+
 def fetch_price_history(
     ticker: str,
     outputsize: int = 252,
@@ -82,15 +96,24 @@ def fetch_price_history(
 ) -> pd.DataFrame:
     provider = get_provider()
     if provider is None:
+        df = _try_yahoo_fallback(ticker, market=market, outputsize=outputsize)
+        if not df.empty:
+            return df
         return _generate_placeholder_price_data(ticker, outputsize)
     try:
         history = provider.get_daily_history(ticker, outputsize=outputsize, market=market)
         if history.empty:
-            logger.warning("Empty history for %s — using placeholder", ticker)
+            logger.warning("Empty history for %s — trying Yahoo fallback", ticker)
+            df = _try_yahoo_fallback(ticker, market=market, outputsize=outputsize)
+            if not df.empty:
+                return df
             return _generate_placeholder_price_data(ticker, outputsize)
         return history
     except Exception as e:
         logger.error("Error fetching history for %s: %s — %s", ticker, type(e).__name__, e)
+        df = _try_yahoo_fallback(ticker, market=market, outputsize=outputsize)
+        if not df.empty:
+            return df
         return _generate_placeholder_price_data(ticker, outputsize)
 
 
@@ -206,6 +229,41 @@ def _check_row_completeness(record: dict, diag: FetchDiagnostics) -> None:
         logger.info("Incomplete data for %s: missing %s", ticker, ", ".join(missing))
 
 
+def _enrich_via_yahoo(record: dict) -> dict:
+    ticker = record.get("ticker", "")
+    market = record.get("market")
+    if not ticker:
+        return record
+
+    result = dict(record)
+    history = _try_yahoo_fallback(ticker, market=market)
+    result["price_data"] = history
+    result["data_source"] = "yahoo"
+
+    if history.empty:
+        logger.warning("Yahoo: no price data for %s — skipping enrichment", ticker)
+        return result
+
+    closes = history["close"].values
+    current = closes[-1]
+    result["price"] = round(float(current), 2)
+
+    periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
+    for field_name, days in periods.items():
+        if len(closes) >= days and closes[-days] != 0:
+            result[field_name] = round((current / closes[-days] - 1) * 100, 2)
+
+    if "volume" in history.columns and len(history) >= 20:
+        result["avg_volume_20d"] = round(float(history["volume"].tail(20).mean()), 0)
+
+    if "high" in history.columns and len(history) >= 21:
+        high_52w = float(history["high"].tail(min(252, len(history))).max())
+        if high_52w > 0:
+            result["distance_to_52w_high"] = round((current / high_52w - 1) * 100, 2)
+
+    return result
+
+
 def fetch_market_data(market: str) -> pd.DataFrame:
     global _last_diagnostics
 
@@ -221,14 +279,6 @@ def fetch_market_data(market: str) -> pd.DataFrame:
 
     provider = get_provider()
 
-    if provider is None:
-        diag.duration_seconds = time.time() - start_time
-        _last_diagnostics = diag
-        raise RuntimeError(
-            "TWELVE_DATA_API_KEY ortam degiskeni tanimli degil. "
-            "Lutfen Twelve Data API anahtarinizi ekleyin."
-        )
-
     records = []
     skipped = []
 
@@ -241,20 +291,20 @@ def fetch_market_data(market: str) -> pd.DataFrame:
             fundamentals["sector"] = fundamentals.get("sector", "")
             fundamentals["industry"] = fundamentals.get("industry", "")
 
-            enriched = provider.enrich_record(fundamentals)
+            if provider is not None:
+                enriched = provider.enrich_record(fundamentals)
+            else:
+                enriched = _enrich_via_yahoo(fundamentals)
+
             _check_row_completeness(enriched, diag)
             records.append(enriched)
             diag.fetched_tickers += 1
 
             logger.info(
-                "Fetched %s: price=%s, rs_fields=%d/%d",
+                "Fetched %s: price=%s, source=%s",
                 symbol,
                 enriched.get("price", "N/A"),
-                len(REQUIRED_FIELDS_FOR_SCORING) - sum(
-                    1 for f in REQUIRED_FIELDS_FOR_SCORING
-                    if enriched.get(f) is None or (isinstance(enriched.get(f), float) and np.isnan(enriched.get(f)))
-                ),
-                len(REQUIRED_FIELDS_FOR_SCORING),
+                enriched.get("data_source", "unknown"),
             )
 
         except Exception as e:
@@ -642,12 +692,26 @@ def fetch_backtest_data(
                     price_data = _ensure_sorted(fetched)
                     stats.full_fetches += 1
                 else:
-                    logger.warning("No data for %s, using placeholder", symbol)
-                    price_data = _generate_placeholder_price_data(symbol)
-                    stats.placeholder_used += 1
+                    yahoo_data = _try_yahoo_fallback(symbol, market=market)
+                    if not yahoo_data.empty:
+                        logger.info("Yahoo fallback for backtest: %s (%d rows)", symbol, len(yahoo_data))
+                        price_data = _ensure_sorted(yahoo_data)
+                        stats.full_fetches += 1
+                    else:
+                        logger.warning("No data for %s, using placeholder", symbol)
+                        price_data = _generate_placeholder_price_data(symbol)
+                        stats.failed += 1
+                        stats.failed_symbols.append(symbol)
             else:
-                price_data = _generate_placeholder_price_data(symbol)
-                stats.placeholder_used += 1
+                yahoo_data = _try_yahoo_fallback(symbol, market=market)
+                if not yahoo_data.empty:
+                    logger.info("Yahoo fallback for backtest (no API key): %s (%d rows)", symbol, len(yahoo_data))
+                    price_data = _ensure_sorted(yahoo_data)
+                    stats.full_fetches += 1
+                else:
+                    price_data = _generate_placeholder_price_data(symbol)
+                    stats.failed += 1
+                    stats.failed_symbols.append(symbol)
 
             records.append({
                 "ticker": symbol,
@@ -670,13 +734,6 @@ def fetch_backtest_data(
                 "industry": "",
                 "price_data": _generate_placeholder_price_data(symbol),
             })
-
-    if not has_any_cache and provider is None:
-        stats.duration_seconds = time.time() - start_time
-        raise RuntimeError(
-            "TWELVE_DATA_API_KEY ortam degiskeni tanimli degil ve cache verisi bulunamadi. "
-            "Lutfen once Hisse Tarama ile veri cekin veya API anahtarinizi ekleyin."
-        )
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
@@ -717,6 +774,14 @@ def get_cached_benchmark(market: str) -> pd.DataFrame:
             return _ensure_sorted(cached)
 
     if provider is None:
+        logger.info("No provider — trying Yahoo Finance for benchmark %s", index_ticker)
+        try:
+            from yahoo_provider import fetch_yahoo_benchmark
+            yahoo_bench = fetch_yahoo_benchmark(index_ticker)
+            if not yahoo_bench.empty:
+                return _ensure_sorted(yahoo_bench)
+        except Exception as e:
+            logger.error("Yahoo benchmark fallback error: %s", e)
         return _generate_placeholder_price_data(index_ticker, days=300)
 
     def _disk_fetch(sym, outputsize=300, start_date=None):
@@ -728,6 +793,15 @@ def get_cached_benchmark(market: str) -> pd.DataFrame:
 
     if cached is not None and not cached.empty:
         return _ensure_sorted(cached)
+
+    logger.info("Twelve Data benchmark fetch failed — trying Yahoo Finance for %s", index_ticker)
+    try:
+        from yahoo_provider import fetch_yahoo_benchmark
+        yahoo_bench = fetch_yahoo_benchmark(index_ticker)
+        if not yahoo_bench.empty:
+            return _ensure_sorted(yahoo_bench)
+    except Exception as e:
+        logger.error("Yahoo benchmark fallback error: %s", e)
 
     return _generate_placeholder_price_data(index_ticker, days=300)
 

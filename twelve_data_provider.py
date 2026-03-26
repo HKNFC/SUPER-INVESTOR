@@ -164,7 +164,10 @@ class TwelveDataProvider(PriceProvider):
         data = self._api_request("time_series", params)
 
         if data is None or "values" not in data:
-            return pd.DataFrame(columns=OHLCV_COLUMNS)
+            df = self._yahoo_fallback(symbol, outputsize)
+            if not df.empty:
+                df["data_source"] = "yahoo"
+            return df
 
         df = pd.DataFrame(data["values"])
         df["datetime"] = pd.to_datetime(df["datetime"])
@@ -172,7 +175,24 @@ class TwelveDataProvider(PriceProvider):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         df = df.sort_values("datetime").reset_index(drop=True)
+        df["data_source"] = "twelve_data"
         return df
+
+    def _yahoo_fallback(self, symbol: str, outputsize: int = 300) -> pd.DataFrame:
+        try:
+            from yahoo_provider import fetch_yahoo_history
+            market = "BIST" if ":BIST" in symbol else None
+            bare = symbol.replace(":BIST", "")
+            logger.info("Twelve Data failed for %s — trying Yahoo Finance fallback", symbol)
+            df = fetch_yahoo_history(bare, period="2y", market=market)
+            if not df.empty:
+                logger.info("Yahoo Finance fallback succeeded for %s (%d rows)", symbol, len(df))
+                if outputsize and len(df) > outputsize:
+                    df = df.tail(outputsize).reset_index(drop=True)
+            return df
+        except Exception as e:
+            logger.error("Yahoo Finance fallback error for %s: %s", symbol, e)
+            return pd.DataFrame(columns=OHLCV_COLUMNS)
 
     def get_daily_history(
         self,
@@ -268,6 +288,12 @@ class TwelveDataProvider(PriceProvider):
 
         history = self.get_daily_history(ticker, outputsize=300, market=market)
         result["price_data"] = history
+
+        result["data_source"] = "twelve_data"
+        if "data_source" in history.columns and not history.empty:
+            src = history["data_source"].iloc[-1]
+            if src == "yahoo":
+                result["data_source"] = "yahoo"
 
         if history.empty:
             logger.warning("No history for %s — skipping enrichment", ticker)

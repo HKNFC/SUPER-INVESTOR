@@ -466,6 +466,7 @@ with tab_screener:
                 "rs_category",
                 "financial_strength", "growth", "margin_quality",
                 "valuation", "momentum",
+                "data_source",
             ]
             display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
 
@@ -514,6 +515,7 @@ with tab_screener:
                     "momentum": st.column_config.ProgressColumn(
                         "Momentum", min_value=0, max_value=100, format="%.1f",
                     ),
+                    "data_source": st.column_config.TextColumn("Kaynak", width="small"),
                 },
             )
 
@@ -523,6 +525,7 @@ with tab_screener:
                 "rs_category",
                 "financial_strength", "growth", "margin_quality", "valuation", "momentum",
                 "return_1m", "return_3m", "return_6m", "return_12m",
+                "data_source",
             ]
             csv_df = filtered_data[[c for c in csv_cols if c in filtered_data.columns]].copy()
             csv_data = csv_df.to_csv(index=False)

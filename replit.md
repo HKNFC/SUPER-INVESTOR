@@ -14,7 +14,8 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `config.py` — Market definitions, scoring weights, API configuration (uses `TWELVE_DATA_API_KEY` env var)
 - `data_model.py` — Unified DataFrame schema (33 columns), validation helpers, type coercion, derived field computation, and mock data (10 stocks per market)
 - `price_provider.py` — Abstract base class (PriceProvider) defining the provider-agnostic interface for market data
-- `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, and BIST ticker resolution
+- `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, BIST ticker resolution, and Yahoo Finance fallback when API fails
+- `yahoo_provider.py` — Yahoo Finance fallback provider using yfinance. Handles BIST (.IS suffix) and US tickers. Used as automatic fallback when Twelve Data fails or API key is missing
 - `disk_cache.py` — Parquet-based disk cache layer for OHLCV data. Stores each symbol's history as `data/cache/{symbol}.parquet`. Features: daily refresh (20h TTL), incremental date-based updates (only fetches missing dates), atomic writes via temp-file rename, per-symbol thread locking, corrupted file auto-removal, outputsize-aware tail slicing
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume). Provides all standalone technical indicator functions (`calculate_moving_averages` (MA20/MA50/MA200 + ratios), `calculate_rsi`, `calculate_macd` (line/signal/histogram), `calculate_atr`, `calculate_volume_ratio`, `calculate_obv`, `calculate_mfi`). The `build_technical_data` pipeline computes all 21 indicator columns from OHLCV in one pass and attaches them to the master DataFrame
 - `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment
@@ -25,7 +26,7 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `backtest_engine.py` — Backtest engine: replays screening strategy using disk-cached OHLCV data (no API fundamentals calls). Uses `fetch_backtest_data` for cache-first symbol loading with progress callback, failure logging, and `DataPrepStats` tracking (cache hits, incremental updates, failures). Uses `get_cached_benchmark` for cached benchmark index. Skips redundant momentum pre-computation (recomputes per-period). Point-in-time truncation (no look-ahead bias), supports 1w/15d/1m rebalance, computes equity curve, drawdown, Sharpe, alpha, volatility. UI shows data prep stats after results.
 - `watchlist.py` — Local JSON-backed watchlist: add/remove/clear stocks, export CSV, auto-update scores on screening runs
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and `is_na` utility
-- `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
+- `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv, pyarrow, yfinance)
 - `.streamlit/config.toml` — Streamlit server configuration (port 5000, headless)
 
 ### Data Model (data_model.py)

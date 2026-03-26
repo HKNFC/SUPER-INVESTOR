@@ -44,7 +44,9 @@ FUNDAMENTAL_COLUMNS = [
     "peg",
 ]
 
-ALL_COLUMNS = IDENTITY_COLUMNS + PRICE_COLUMNS + FUNDAMENTAL_COLUMNS
+META_COLUMNS = ["data_source"]
+
+ALL_COLUMNS = IDENTITY_COLUMNS + PRICE_COLUMNS + FUNDAMENTAL_COLUMNS + META_COLUMNS
 
 NUMERIC_COLUMNS = PRICE_COLUMNS + FUNDAMENTAL_COLUMNS
 
@@ -109,6 +111,9 @@ def ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     for col in NUMERIC_COLUMNS:
         if col not in result.columns:
             result[col] = np.nan
+    for col in META_COLUMNS:
+        if col not in result.columns:
+            result[col] = ""
     return result
 
 
