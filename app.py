@@ -100,10 +100,16 @@ def _render_detail(stock_row: pd.Series) -> None:
     rs_val = bd.get("rs_score")
     cat_val = bd.get("rs_category", "N/A")
 
-    h1, h2, h3 = st.columns(3)
+    tech_val = stock_row.get("technical_score")
+    comb_val = stock_row.get("combined_score")
+    setup_val = stock_row.get("setup_label", "N/A")
+
+    h1, h2, h3, h4, h5 = st.columns(5)
     h1.metric("Fiyat", price_str)
     h2.metric("RS Skoru", _score_fmt(rs_val))
-    h3.metric("Kategori", cat_val)
+    h3.metric("Teknik Skor", _score_fmt(tech_val))
+    h4.metric("Kombine Skor", _score_fmt(comb_val))
+    h5.metric("Kurulum", setup_val)
 
     st.markdown("---")
 
@@ -262,6 +268,14 @@ with st.sidebar:
         value=DEFAULT_TOP_N,
     )
 
+    sort_options = {"rs_score": "RS Skoruna Göre", "combined_score": "Kombine Skora Göre"}
+    sort_by = st.selectbox(
+        "Sıralama",
+        options=list(sort_options.keys()),
+        format_func=lambda x: sort_options[x],
+        index=0,
+    )
+
     st.divider()
     api_status = "Canlı Veri" if TWELVE_DATA_API_KEY else "Demo Veri"
     st.caption(f"Veri: {api_status}")
@@ -388,7 +402,7 @@ elif page == "Screener":
                 scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
             )
             passed_count = len(filtered_data)
-            filtered_data = rank_and_limit(filtered_data, top_n=top_n)
+            filtered_data = rank_and_limit(filtered_data, top_n=top_n, sort_by=sort_by)
 
             st.session_state["screener_scored"] = scored_data
             st.session_state["screener_filtered"] = filtered_data
@@ -396,6 +410,7 @@ elif page == "Screener":
             st.session_state["screener_market"] = market
             st.session_state["screener_preset"] = selected_preset
             st.session_state["screener_bist_segment"] = bist_segment if market == "BIST" else None
+            st.session_state["screener_sort_by"] = sort_by
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
@@ -431,13 +446,15 @@ elif page == "Screener":
         else:
             display_cols = [
                 "ticker", "sector", "price",
-                "rs_score", "rs_category",
+                "rs_score", "technical_score", "combined_score", "setup_label",
+                "rs_category",
                 "financial_strength", "growth", "margin_quality",
                 "valuation", "momentum",
             ]
             display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
 
-            for col in ["rs_score", "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
+            for col in ["rs_score", "technical_score", "combined_score",
+                        "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
                 if col in display_df.columns:
                     display_df[col] = display_df[col].apply(
                         lambda x: round(x, 1) if not is_na(x) else None
@@ -458,6 +475,13 @@ elif page == "Screener":
                     "rs_score": st.column_config.ProgressColumn(
                         "RS Skoru", min_value=0, max_value=100, format="%.1f",
                     ),
+                    "technical_score": st.column_config.ProgressColumn(
+                        "Teknik Skor", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "combined_score": st.column_config.ProgressColumn(
+                        "Kombine Skor", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "setup_label": st.column_config.TextColumn("Kurulum", width="small"),
                     "rs_category": st.column_config.TextColumn("Kategori", width="small"),
                     "financial_strength": st.column_config.ProgressColumn(
                         "Finansal", min_value=0, max_value=100, format="%.1f",
@@ -479,7 +503,8 @@ elif page == "Screener":
 
             csv_cols = [
                 "rank", "ticker", "company_name", "sector", "price", "market_cap",
-                "rs_score", "rs_category",
+                "rs_score", "technical_score", "combined_score", "setup_label",
+                "rs_category",
                 "financial_strength", "growth", "margin_quality", "valuation", "momentum",
                 "return_1m", "return_3m", "return_6m", "return_12m",
             ]
@@ -501,9 +526,11 @@ elif page == "Screener":
                 name = row.get("company_name", "")
                 cat = row.get("rs_category", "N/A")
                 rs = row.get("rs_score", 0)
+                setup = row.get("setup_label", "")
                 in_wl = is_in_watchlist(ticker)
                 wl_icon = " [İ]" if in_wl else ""
-                label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat}){wl_icon}"
+                setup_tag = f"  · {setup}" if setup and setup != "N/A" else ""
+                label = f"{ticker}  —  {name}  |  RS {rs:.1f}  ({cat}){setup_tag}{wl_icon}"
 
                 with st.expander(label, expanded=False):
                     if not in_wl:

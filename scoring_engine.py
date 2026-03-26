@@ -29,6 +29,7 @@ from config import (
     WINSORIZE_UPPER,
 )
 from data_model import compute_derived_fields
+from technical_signals import append_technical_scores
 
 
 def compute_rs_scores(df: pd.DataFrame) -> pd.DataFrame:
@@ -75,6 +76,8 @@ def compute_rs_scores(df: pd.DataFrame) -> pd.DataFrame:
     result["rs_score"] = _final_rs_score(result, sub_score_cols)
 
     result["rs_category"] = result["rs_score"].apply(_categorize)
+
+    result = append_technical_scores(result)
 
     result = result.sort_values("rs_score", ascending=False).reset_index(drop=True)
     result["rank"] = result.index + 1

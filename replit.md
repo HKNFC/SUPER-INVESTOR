@@ -18,8 +18,9 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume)
 - `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment
 - `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume
-- `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid)
-- `filters.py` — Pre-ranking quality filter engine with presets (None/Basic/Strict), configurable min volume, top-N results, plus score/category/sector/market filters
+- `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid). Integrates technical_signals after RS computation.
+- `technical_signals.py` — Technical Signal Score engine (0-100): Trend (35%, MA50/MA200/golden cross), Momentum (25%, RSI/MACD), Breakout/Volume (25%, 20d/52w high proximity, volume ratio), Risk/Stability (15%, ATR volatility penalty). Also computes combined_score (0.65*RS + 0.35*tech) and setup_label (Güçlü Alım Adayı / İzleme / Erken Kurulum / Kaçın).
+- `filters.py` — Pre-ranking quality filter engine with presets (None/Basic/Strict), configurable min volume, top-N results, sort by rs_score or combined_score
 - `watchlist.py` — Local JSON-backed watchlist: add/remove/clear stocks, export CSV, auto-update scores on screening runs
 - `utils.py` — Formatting helpers for numbers, percentages, market cap, large numbers, and `is_na` utility
 - `requirements.txt` — Python dependencies (streamlit, pandas, numpy, requests, python-dotenv)
@@ -83,6 +84,7 @@ artifacts-monorepo/
 ├── financial_metrics.py   # Financial sub-score calculations
 ├── momentum_metrics.py    # Momentum sub-score calculations
 ├── scoring_engine.py      # Composite RS Score engine
+├── technical_signals.py   # Technical Signal Score engine
 ├── filters.py             # Stock filtering logic
 ├── watchlist.py           # JSON-backed watchlist storage
 ├── utils.py               # Display formatting utilities

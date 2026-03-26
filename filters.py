@@ -145,15 +145,17 @@ def apply_custom_filter(
 def rank_and_limit(
     df: pd.DataFrame,
     top_n: Optional[int] = None,
+    sort_by: str = "rs_score",
 ) -> pd.DataFrame:
-    """Sort by RS Score descending, assign rank, and optionally limit to top N."""
+    """Sort by the chosen score column descending, assign rank, and optionally limit to top N."""
     if df.empty:
         return df
 
-    if "rs_score" not in df.columns:
+    sort_col = sort_by if sort_by in df.columns else "rs_score"
+    if sort_col not in df.columns:
         return df
 
-    ranked = df.sort_values("rs_score", ascending=False).reset_index(drop=True)
+    ranked = df.sort_values(sort_col, ascending=False).reset_index(drop=True)
     ranked["rank"] = range(1, len(ranked) + 1)
 
     if top_n is not None and top_n > 0:
