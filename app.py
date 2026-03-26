@@ -12,7 +12,7 @@ from filters import (
     apply_preset_filter, rank_and_limit,
     get_preset_names, get_preset_info,
 )
-from utils import format_number, format_percentage
+from utils import format_number, format_percentage, format_large_number, format_market_cap, format_pct_value
 
 st.set_page_config(
     page_title="Stock Screener",
@@ -43,49 +43,86 @@ def _fmt_rule(rule_key: str, threshold: float) -> str:
     return f"{rule_key}: {threshold}"
 
 
+def _score_fmt(val) -> str:
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return "N/A"
+    return f"{val:.1f}"
+
+
 def _render_detail(stock_row: pd.Series) -> None:
     bd = get_score_breakdown(stock_row)
 
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("RS Score", f"{bd['rs_score']:.1f}" if bd["rs_score"] is not None else "N/A")
-    c2.metric("Financial", f"{bd['financial_strength']:.1f}" if bd["financial_strength"] is not None else "N/A")
-    c3.metric("Growth", f"{bd['growth']:.1f}" if bd["growth"] is not None else "N/A")
-    c4.metric("Margins", f"{bd['margin_quality']:.1f}" if bd["margin_quality"] is not None else "N/A")
-    c5.metric("Valuation", f"{bd['valuation']:.1f}" if bd["valuation"] is not None else "N/A")
-    c6.metric("Momentum", f"{bd['momentum']:.1f}" if bd["momentum"] is not None else "N/A")
+    st.markdown(
+        f"**{stock_row.get('company_name', '')}** · "
+        f"{stock_row.get('sector', '')} · "
+        f"{stock_row.get('industry', '')} · "
+        f"Market Cap: {format_market_cap(stock_row.get('market_cap'))}"
+    )
 
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.markdown("**Margins**")
-        st.text(f"Gross:      {format_percentage(bd.get('gross_margin'))}")
-        st.text(f"Operating:  {format_percentage(bd.get('operating_margin'))}")
-        st.text(f"Net:        {format_percentage(bd.get('net_margin'))}")
-        st.text(f"EBITDA:     {format_percentage(bd.get('ebitda_margin'))}")
-    with m2:
-        st.markdown("**Returns on Capital**")
-        st.text(f"ROE:   {format_percentage(bd.get('roe'))}")
-        st.text(f"ROA:   {format_percentage(bd.get('roa'))}")
-        st.text(f"ROIC:  {format_percentage(bd.get('roic'))}")
-    with m3:
-        st.markdown("**Growth**")
-        st.text(f"Revenue YoY:  {format_percentage(bd.get('revenue_growth'))}")
-        st.text(f"Earnings YoY: {format_percentage(bd.get('earnings_growth'))}")
-        st.text(f"Rev CAGR 3Y:  {format_percentage(bd.get('revenue_cagr_3y'))}")
-        st.text(f"EPS CAGR 3Y:  {format_percentage(bd.get('eps_cagr_3y'))}")
-    with m4:
-        st.markdown("**Valuation & Leverage**")
-        st.text(f"P/E:        {format_number(stock_row.get('pe'))}")
-        st.text(f"P/B:        {format_number(stock_row.get('pb'))}")
-        st.text(f"EV/EBITDA:  {format_number(stock_row.get('ev_ebitda'))}")
-        st.text(f"PEG:        {format_number(stock_row.get('peg'))}")
-        de = bd.get("debt_to_equity")
-        st.text(f"D/E:        {format_number(de) if de is not None else 'N/A'}")
+    price_val = stock_row.get("price")
+    price_str = f"${price_val:,.2f}" if price_val is not None and np.isfinite(price_val) else "N/A"
+    rs_val = bd.get("rs_score")
+    cat_val = bd.get("rs_category", "N/A")
+
+    h1, h2, h3 = st.columns(3)
+    h1.metric("Price", price_str)
+    h2.metric("RS Score", _score_fmt(rs_val))
+    h3.metric("Category", cat_val)
+
+    st.markdown("---")
+
+    s1, s2, s3, s4, s5 = st.columns(5)
+    s1.metric("Financial Strength", _score_fmt(bd.get("financial_strength")))
+    s2.metric("Growth", _score_fmt(bd.get("growth")))
+    s3.metric("Margin Quality", _score_fmt(bd.get("margin_quality")))
+    s4.metric("Valuation", _score_fmt(bd.get("valuation")))
+    s5.metric("Momentum", _score_fmt(bd.get("momentum")))
+
+    st.markdown("---")
+
+    raw_col, derived_col = st.columns(2)
+
+    with raw_col:
+        st.markdown("**Raw Metrics**")
+        st.text(f"Equity:        {format_large_number(stock_row.get('equity'))}")
+        st.text(f"Total Debt:    {format_large_number(stock_row.get('total_debt'))}")
+        st.text(f"Total Assets:  {format_large_number(stock_row.get('total_assets'))}")
+        st.text(f"Revenue:       {format_large_number(stock_row.get('revenue'))}")
+        st.text(f"Net Income:    {format_large_number(stock_row.get('net_income'))}")
+        st.text(f"P/E:           {format_number(stock_row.get('pe'))}")
+        st.text(f"P/B:           {format_number(stock_row.get('pb'))}")
+        st.text(f"EV/EBITDA:     {format_number(stock_row.get('ev_ebitda'))}")
+        st.text(f"PEG:           {format_number(stock_row.get('peg'))}")
+
+    with derived_col:
+        st.markdown("**Derived Metrics**")
+        st.text(f"D/E Ratio:      {format_number(bd.get('debt_to_equity'))}")
+        st.text(f"Equity/Assets:  {format_percentage(bd.get('equity_to_assets'))}")
+        st.text(f"ROIC:           {format_percentage(bd.get('roic'))}")
+        st.text(f"Gross Margin:   {format_percentage(bd.get('gross_margin'))}")
+        st.text(f"Op Margin:      {format_percentage(bd.get('operating_margin'))}")
+        st.text(f"Net Margin:     {format_percentage(bd.get('net_margin'))}")
+        st.text(f"Rev Growth YoY: {format_percentage(bd.get('revenue_growth'))}")
+        st.text(f"NI Growth YoY:  {format_percentage(bd.get('earnings_growth'))}")
+        st.text(f"Rev CAGR 3Y:    {format_percentage(bd.get('revenue_cagr_3y'))}")
+        st.text(f"EPS CAGR 3Y:    {format_percentage(bd.get('eps_cagr_3y'))}")
+
+    st.markdown("---")
+
+    r1, r2, r3 = st.columns(3)
+    ret_3m = stock_row.get("return_3m")
+    ret_6m = stock_row.get("return_6m")
+    ret_12m = stock_row.get("return_12m")
+    r1.metric("3M Return", format_pct_value(ret_3m))
+    r2.metric("6M Return", format_pct_value(ret_6m))
+    r3.metric("12M Return", format_pct_value(ret_12m))
 
     if "price_data" in stock_row and isinstance(stock_row["price_data"], pd.DataFrame):
         price_df = stock_row["price_data"]
         if not price_df.empty:
+            st.markdown("**Price History**")
             chart_data = price_df.set_index("datetime")[["close"]].rename(columns={"close": "Close"})
-            st.line_chart(chart_data, height=200)
+            st.line_chart(chart_data, height=250)
 
 
 with st.sidebar:
