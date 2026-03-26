@@ -155,6 +155,6 @@ REQUIRED_FIELDS_FOR_SCORING = [
     "equity", "net_income", "revenue", "total_assets",
 ]
 
-FALLBACK_TO_MOCK = True
+FALLBACK_TO_MOCK = False
 
 MIN_ROWS_FOR_SCORING = 3

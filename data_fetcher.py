@@ -6,11 +6,11 @@ from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
 from config import (
     TWELVE_DATA_API_KEY, TWELVE_DATA_BASE_URL, SUPPORTED_MARKETS,
-    API_REQUEST_TIMEOUT, FALLBACK_TO_MOCK, LOG_LEVEL,
+    API_REQUEST_TIMEOUT, LOG_LEVEL,
     REQUIRED_FIELDS_FOR_SCORING, MIN_ROWS_FOR_SCORING,
 )
 from data_model import (
-    ensure_columns, coerce_numeric_columns, get_mock_data,
+    ensure_columns, coerce_numeric_columns,
     safe_float, ALL_COLUMNS,
 )
 from price_provider import PriceProvider
@@ -222,20 +222,12 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     provider = get_provider()
 
     if provider is None:
-        logger.info("No API key — using mock data for %s", market)
-        diag.used_mock = True
-        df = get_mock_data(market)
-        df["price_data"] = df["ticker"].apply(
-            lambda t: _generate_placeholder_price_data(t)
-        )
-        benchmark = get_benchmark_history(market)
-        df = append_momentum_fields(df, benchmark_history=benchmark)
-        diag.fetched_tickers = len(df)
-        for _, row in df.iterrows():
-            _check_row_completeness(row.to_dict(), diag)
         diag.duration_seconds = time.time() - start_time
         _last_diagnostics = diag
-        return df
+        raise RuntimeError(
+            "TWELVE_DATA_API_KEY ortam degiskeni tanimli degil. "
+            "Lutfen Twelve Data API anahtarinizi ekleyin."
+        )
 
     records = []
     skipped = []
@@ -276,24 +268,12 @@ def fetch_market_data(market: str) -> pd.DataFrame:
         logger.warning("Skipped %d/%d tickers: %s", len(skipped), len(symbols), ", ".join(skipped))
 
     if not records:
-        if FALLBACK_TO_MOCK:
-            logger.error("No data fetched for %s — falling back to mock data", market)
-            diag.fallback_triggered = True
-            diag.used_mock = True
-            df = get_mock_data(market)
-            df["price_data"] = df["ticker"].apply(
-                lambda t: _generate_placeholder_price_data(t)
-            )
-            benchmark = get_benchmark_history(market)
-            df = append_momentum_fields(df, benchmark_history=benchmark)
-            diag.fetched_tickers = len(df)
-            diag.duration_seconds = time.time() - start_time
-            _last_diagnostics = diag
-            return df
-        else:
-            diag.duration_seconds = time.time() - start_time
-            _last_diagnostics = diag
-            raise RuntimeError(f"No data could be fetched for market {market} and fallback is disabled")
+        diag.duration_seconds = time.time() - start_time
+        _last_diagnostics = diag
+        raise RuntimeError(
+            f"{market} piyasasi icin hicbir veri cekilemedi. "
+            f"API anahtarinizi ve internet baglantinizi kontrol edin."
+        )
 
     if len(records) < MIN_ROWS_FOR_SCORING:
         logger.warning(
@@ -692,17 +672,11 @@ def fetch_backtest_data(
             })
 
     if not has_any_cache and provider is None:
-        logger.info("No cache and no API key — backtest using mock data for %s", market)
-        stats.used_mock = True
-        df = get_mock_data(market)
-        df["price_data"] = df["ticker"].apply(
-            lambda t: _generate_placeholder_price_data(t)
-        )
-        if not skip_momentum:
-            benchmark = get_cached_benchmark(market)
-            df = append_momentum_fields(df, benchmark_history=benchmark)
         stats.duration_seconds = time.time() - start_time
-        return df, stats
+        raise RuntimeError(
+            "TWELVE_DATA_API_KEY ortam degiskeni tanimli degil ve cache verisi bulunamadi. "
+            "Lutfen once Hisse Tarama ile veri cekin veya API anahtarinizi ekleyin."
+        )
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
