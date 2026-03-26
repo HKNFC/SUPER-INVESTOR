@@ -257,6 +257,33 @@ with st.sidebar:
     api_status = "Canlı Veri" if TWELVE_DATA_API_KEY else "Demo Veri"
     st.caption(f"Veri: {api_status}")
 
+    st.divider()
+    with st.expander("Hakkında", expanded=False):
+        st.markdown(
+            """
+**RS Skoru** hisseleri beş boyutta 0–100 arası puanlar:
+
+- **Finansal Güç** — ROIC, kaldıraç, varlık kalitesi
+- **Büyüme** — Gelir ve kâr büyümesi (YoY + 3Y YBBO)
+- **Marj Kalitesi** — Brüt, faaliyet, net, FAVÖK marjları + trend
+- **Değerleme** — F/K, PD/DD, FD/FAVÖK, PEG
+- **Momentum** — Çoklu dönem getirileri, 52H zirve, göreceli güç
+            """
+        )
+        st.markdown("**Mevcut Piyasalar**")
+        for key, info in SUPPORTED_MARKETS.items():
+            bench = BENCHMARK_INDEX.get(key, "—")
+            st.markdown(f"- **{info['label']}** — {len(info['symbols'])} hisse, endeks: {bench}")
+
+        st.markdown(
+            """
+**Kalite Filtreleri** sıralama öncesi hisseleri ön eler:
+- **Filtre Yok** — tüm evren
+- **Temel** — kârlı, pozitif özkaynak, makul kaldıraç
+- **Sıkı** — yüksek ROIC, güçlü marjlar, pozitif momentum
+            """
+        )
+
 if page == "Watchlist":
     st.markdown("### İzleme Listesi")
 
@@ -485,31 +512,4 @@ elif page == "Screener":
     else:
         st.markdown("### Hisse Tarayıcı")
         st.markdown("Bir piyasa seçin ve hisseleri RS Skoruna göre sıralamak için **Taramayı Başlat** butonuna tıklayın.")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(
-                """
-**RS Skoru** hisseleri beş boyutta 0–100 arası puanlar:
-
-- **Finansal Güç** — ROIC, kaldıraç, varlık kalitesi
-- **Büyüme** — Gelir ve kâr büyümesi (YoY + 3Y YBBO)
-- **Marj Kalitesi** — Brüt, faaliyet, net, FAVÖK marjları + trend
-- **Değerleme** — F/K, PD/DD, FD/FAVÖK, PEG
-- **Momentum** — Çoklu dönem getirileri, 52H zirve, göreceli güç
-                """
-            )
-        with col2:
-            st.markdown("**Mevcut Piyasalar**")
-            for key, info in SUPPORTED_MARKETS.items():
-                bench = BENCHMARK_INDEX.get(key, "—")
-                st.markdown(f"- **{info['label']}** — {len(info['symbols'])} hisse, endeks: {bench}")
-
-            st.markdown(
-                """
-**Kalite Filtreleri** sıralama öncesi hisseleri ön eler:
-- **Filtre Yok** — tüm evren
-- **Temel** — kârlı, pozitif özkaynak, makul kaldıraç
-- **Sıkı** — yüksek ROIC, güçlü marjlar, pozitif momentum
-                """
-            )
+        st.info("Daha fazla bilgi için sol menüdeki **Hakkında** bölümüne göz atabilirsiniz.")
