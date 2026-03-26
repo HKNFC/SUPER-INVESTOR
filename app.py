@@ -17,6 +17,7 @@ from config import (
     TWELVE_DATA_API_KEY, BENCHMARK_INDEX,
     CACHE_TTL_MARKET_DATA, REQUIRED_FIELDS_FOR_SCORING,
     BIST100_TICKERS, BIST_SEGMENTS,
+    SP500_TICKERS, NASDAQ100_TICKERS, USA_SEGMENTS,
 )
 from data_model import validate_dataframe
 from data_fetcher import fetch_market_data, get_last_diagnostics
@@ -215,22 +216,27 @@ with st.sidebar:
 
     st.divider()
 
-    market = st.selectbox(
+    market = st.radio(
         "Piyasa",
         options=list(SUPPORTED_MARKETS.keys()),
         format_func=lambda x: SUPPORTED_MARKETS[x]["label"],
+        horizontal=True,
     )
 
     bist_segment = "BISTTUM"
+    usa_segment = "USA_ALL"
     if market == "BIST":
         bist_segment = st.selectbox(
-            "BIST Segmenti",
+            "Evren Seçimi",
             options=list(BIST_SEGMENTS.keys()),
             format_func=lambda x: BIST_SEGMENTS[x],
         )
-
-    benchmark = BENCHMARK_INDEX.get(market, "SPX")
-    st.caption(f"Endeks: {benchmark}")
+    else:
+        usa_segment = st.selectbox(
+            "Evren Seçimi",
+            options=list(USA_SEGMENTS.keys()),
+            format_func=lambda x: USA_SEGMENTS[x],
+        )
 
     st.divider()
 
@@ -240,9 +246,9 @@ with st.sidebar:
         "early_accumulation": "Erken Accumulation Yakalama",
     }
     SCAN_MODE_DESCRIPTIONS = {
-        "standard": "Mevcut RS, Teknik ve Kombine Skor ile standart tarama.",
-        "smart_money": "MFI > 55, OBV trend pozitif, endekse göre güçlü, hacim ortalamanın üstünde, teknik ve RS skoru yüksek hisseler.",
-        "early_accumulation": "MFI 50-65 arasında, OBV yükselişte, 52h zirvesine yakın, kısa vadede stabil, orta vadede pozitif hisseler.",
+        "standard": "Tüm skorlarla standart tarama.",
+        "smart_money": "Akıllı para girişi tespit edilen hisseler.",
+        "early_accumulation": "Erken birikim sinyali veren hisseler.",
     }
     scan_mode = st.selectbox(
         "Tarama Modu",
@@ -254,17 +260,16 @@ with st.sidebar:
 
     st.divider()
 
+    _quality_labels = {"none": "Kapalı", "basic": "Temel", "strict": "Sıkı"}
     preset_options = get_preset_names()
-    preset_labels = {k: get_preset_info(k)["label"] for k in preset_options}
     selected_preset = st.radio(
-        "Kalite Filtresi",
+        "Temel Kalite Seviyesi",
         options=preset_options,
-        format_func=lambda x: preset_labels[x],
+        format_func=lambda x: _quality_labels.get(x, x),
         index=0,
+        horizontal=True,
     )
     preset_info = get_preset_info(selected_preset)
-    st.caption(preset_info["description"])
-
     if selected_preset != "none" and preset_info["rules"]:
         with st.expander("Filtre kuralları", expanded=False):
             for rule_key, threshold in preset_info["rules"].items():
@@ -272,35 +277,38 @@ with st.sidebar:
 
     st.divider()
 
+    sort_options = {
+        "rs_score": "RS Score",
+        "technical_score": "Technical Score",
+        "combined_score": "Combined Score",
+    }
+    sort_by = st.selectbox(
+        "Sıralama Türü",
+        options=list(sort_options.keys()),
+        format_func=lambda x: sort_options[x],
+        index=2,
+    )
+
     min_avg_volume = st.number_input(
-        "Min Ort Hacim (20g)",
+        "Minimum Hacim",
         min_value=0,
         value=0,
         step=100000,
-        help="Devre dışı bırakmak için 0 girin",
+        help="Devre dışı bırakmak için 0",
     )
     min_avg_volume = min_avg_volume if min_avg_volume > 0 else None
 
-    top_n = st.number_input(
-        "Gösterilecek Sonuç",
-        min_value=1,
-        max_value=100,
-        value=DEFAULT_TOP_N,
-    )
-
-    sort_options = {"rs_score": "RS Skoruna Göre", "combined_score": "Kombine Skora Göre"}
-    sort_by = st.selectbox(
-        "Sıralama",
-        options=list(sort_options.keys()),
-        format_func=lambda x: sort_options[x],
-        index=0,
+    top_n_options = [10, 20, 50, 100]
+    top_n = st.selectbox(
+        "Sonuç Sayısı",
+        options=top_n_options,
+        index=1,
     )
 
     st.divider()
     api_status = "Canlı Veri" if TWELVE_DATA_API_KEY else "Demo Veri"
     st.caption(f"Veri: {api_status}")
 
-    st.divider()
     with st.expander("Hakkında", expanded=False):
         st.markdown(
             """
@@ -406,6 +414,12 @@ elif page == "Screener":
                 elif bist_segment == "BIST100_DISI":
                     raw_data = raw_data[~raw_data["ticker"].isin(BIST100_TICKERS)].reset_index(drop=True)
 
+            if market == "USA" and usa_segment != "USA_ALL" and "ticker" in raw_data.columns:
+                if usa_segment == "SP500":
+                    raw_data = raw_data[raw_data["ticker"].isin(SP500_TICKERS)].reset_index(drop=True)
+                elif usa_segment == "NASDAQ100":
+                    raw_data = raw_data[raw_data["ticker"].isin(NASDAQ100_TICKERS)].reset_index(drop=True)
+
             validation = validate_dataframe(raw_data)
             if not validation["valid"]:
                 st.warning(f"Veri kalitesi uyarısı: eksik sütunlar {validation['missing_columns']}")
@@ -467,6 +481,7 @@ elif page == "Screener":
             st.session_state["screener_market"] = market
             st.session_state["screener_preset"] = selected_preset
             st.session_state["screener_bist_segment"] = bist_segment if market == "BIST" else None
+            st.session_state["screener_usa_segment"] = usa_segment if market == "USA" else None
             st.session_state["screener_sort_by"] = effective_sort
             st.session_state["screener_scan_mode"] = scan_mode
 
@@ -482,8 +497,11 @@ elif page == "Screener":
         stored_preset = st.session_state["screener_preset"]
 
         stored_segment = st.session_state.get("screener_bist_segment")
+        stored_usa_segment = st.session_state.get("screener_usa_segment")
         if stored_segment and stored_segment in BIST_SEGMENTS:
-            st.caption(f"Segment: **{BIST_SEGMENTS[stored_segment]}**")
+            st.caption(f"Evren: **{BIST_SEGMENTS[stored_segment]}**")
+        elif stored_usa_segment and stored_usa_segment in USA_SEGMENTS:
+            st.caption(f"Evren: **{USA_SEGMENTS[stored_usa_segment]}**")
 
         stored_scan_mode = st.session_state.get("screener_scan_mode", "standard")
         if stored_scan_mode != "standard":

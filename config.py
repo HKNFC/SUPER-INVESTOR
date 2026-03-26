@@ -58,6 +58,24 @@ BIST_SEGMENTS = {
     "BIST100_DISI": "BIST 100 Dışı",
 }
 
+SP500_TICKERS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "BRK.B", "JPM", "V",
+    "UNH", "XOM", "JNJ", "PG", "MA",
+    "HD", "AVGO", "MRK", "COST", "PEP",
+]
+
+NASDAQ100_TICKERS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "AVGO", "COST", "PEP",
+]
+
+USA_SEGMENTS = {
+    "USA_ALL": "Tüm USA",
+    "SP500": "S&P 500",
+    "NASDAQ100": "NASDAQ 100",
+}
+
 SCORING_WEIGHTS = {
     "financial_strength": 0.25,
     "growth": 0.20,
