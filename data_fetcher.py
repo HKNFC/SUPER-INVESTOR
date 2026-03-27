@@ -161,129 +161,62 @@ def fetch_avg_volume_20d(ticker: str, market: Optional[str] = None) -> Optional[
         return None
 
 
-def _fetch_twelve_data_fundamentals(symbol: str) -> dict:
+def _td_get_json(endpoint: str, symbol: str) -> Optional[dict]:
+    import requests as _requests
+    url = f"{TWELVE_DATA_BASE_URL}{endpoint}"
+    params = {"symbol": symbol, "apikey": TWELVE_DATA_API_KEY}
+    resp = _requests.get(url, params=params, timeout=API_REQUEST_TIMEOUT)
+    resp.raise_for_status()
+    data = resp.json()
+    if isinstance(data, dict) and data.get("status") == "error":
+        logger.warning("Twelve Data %s error for %s: %s", endpoint, symbol, data.get("message", ""))
+        return None
+    return data
+
+
+def _fetch_twelve_data_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
     if not TWELVE_DATA_API_KEY:
         return {}
     try:
-        import requests as _requests
-        url = f"{TWELVE_DATA_BASE_URL}/statistics"
-        params = {"symbol": symbol, "apikey": TWELVE_DATA_API_KEY}
-        response = _requests.get(url, params=params, timeout=API_REQUEST_TIMEOUT)
-        response.raise_for_status()
-        data = response.json()
+        profile = _td_get_json("/profile", symbol)
 
-        if "status" in data and data["status"] == "error":
-            msg = data.get("message", "")
-            if "available exclusively with" in msg:
-                logger.info("Twelve Data /statistics requires paid plan for %s, will use Yahoo fallback", symbol)
-                return {"_needs_fallback": True}
-            logger.warning("API error for %s: %s", symbol, msg)
-            return {}
+        company_name = symbol
+        sector = ""
+        industry = ""
+        if profile:
+            company_name = profile.get("name", symbol)
+            sector = profile.get("sector", "")
+            industry = profile.get("industry", "")
 
-        if "statistics" not in data:
-            logger.warning("No statistics for %s", symbol)
-            return {}
+        from yahoo_provider import fetch_yahoo_fundamentals
+        yahoo_data = fetch_yahoo_fundamentals(symbol, market=market)
 
-        stats = data["statistics"]
-        financials = stats.get("financials", {})
-        valuations = stats.get("valuations_metrics", {})
-        income = financials.get("income_statement", {})
-        balance = financials.get("balance_sheet", {})
-
-        revenue = safe_float(income.get("revenue_ttm"))
-        net_income = safe_float(income.get("net_income_to_common_ttm"))
-        gross_profit = safe_float(income.get("gross_profit_ttm"))
-        ebitda_val = safe_float(income.get("ebitda")) or safe_float(financials.get("ebitda"))
-        eps_val = safe_float(income.get("diluted_eps_ttm"))
-
-        total_debt = safe_float(balance.get("total_debt_mrq"))
-        total_cash = safe_float(balance.get("total_cash_mrq"))
-        bvps = safe_float(balance.get("book_value_per_share_mrq"))
-
-        shares = safe_float(stats.get("stock_statistics", {}).get("shares_outstanding"))
-        equity_val = bvps * shares if bvps and shares else np.nan
-
-        gross_margin = safe_float(financials.get("gross_margin"))
-        profit_margin = safe_float(financials.get("profit_margin"))
-        operating_margin = safe_float(financials.get("operating_margin"))
-        roa = safe_float(financials.get("return_on_assets_ttm"))
-        roe = safe_float(financials.get("return_on_equity_ttm"))
-
-        net_margin_calc = np.nan
-        if revenue and not np.isnan(revenue) and revenue != 0 and net_income and not np.isnan(net_income):
-            net_margin_calc = net_income / revenue
-
-        roic_calc = np.nan
-        if net_income and not np.isnan(net_income) and equity_val and not np.isnan(equity_val) and equity_val != 0:
-            roic_calc = net_income / equity_val
-
-        operating_income = np.nan
-        if operating_margin and not np.isnan(operating_margin) and revenue and not np.isnan(revenue):
-            operating_income = operating_margin * revenue
+        if yahoo_data:
+            if sector and not yahoo_data.get("sector"):
+                yahoo_data["sector"] = sector
+            if industry and not yahoo_data.get("industry"):
+                yahoo_data["industry"] = industry
+            if company_name != symbol and (not yahoo_data.get("company_name") or yahoo_data["company_name"] == symbol):
+                yahoo_data["company_name"] = company_name
+            return yahoo_data
 
         result = {
             "ticker": symbol,
-            "company_name": data.get("meta", {}).get("name", symbol),
-            "market_cap": safe_float(valuations.get("market_capitalization")),
-            "pe": safe_float(valuations.get("trailing_pe")),
-            "pb": safe_float(valuations.get("price_to_book_mrq")),
-            "ev_ebitda": safe_float(valuations.get("enterprise_to_ebitda")),
-            "peg": safe_float(valuations.get("peg_ratio")),
-            "revenue": revenue,
-            "net_income": net_income,
-            "gross_profit": gross_profit,
-            "operating_income": operating_income,
-            "ebitda": ebitda_val,
-            "total_assets": np.nan,
-            "total_debt": total_debt,
-            "equity": equity_val,
-            "cash": total_cash,
-            "eps": eps_val,
-            "gross_margin": gross_margin,
-            "net_margin": net_margin_calc if not np.isnan(net_margin_calc) else profit_margin,
-            "operating_margin": operating_margin,
-            "roe": roe,
-            "roa": roa,
-            "roic": roic_calc,
-            "debt_to_equity": safe_float(balance.get("total_debt_to_equity_mrq")),
+            "company_name": company_name,
+            "sector": sector,
+            "industry": industry,
         }
-
-        has_financials = any(
-            result.get(f) is not None and not (isinstance(result.get(f), float) and np.isnan(result.get(f)))
-            for f in ["revenue", "net_income", "equity"]
-        )
-        if has_financials:
-            logger.info("Fundamentals OK for %s: revenue=%s, net_income=%s, equity=%s",
-                        symbol, result.get("revenue"), result.get("net_income"), result.get("equity"))
-        else:
-            logger.info("No financial data in statistics for %s", symbol)
-
+        if profile:
+            logger.info("Only profile data available for %s (sector=%s)", symbol, sector)
         return result
 
     except Exception as e:
-        logger.error("Twelve Data fundamentals error for %s: %s — %s", symbol, type(e).__name__, e)
+        logger.error("Fundamentals error for %s: %s — %s", symbol, type(e).__name__, e)
         return {}
 
 
-_yahoo_fundamentals_mode = False
-
-
 def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
-    global _yahoo_fundamentals_mode
-
-    if not _yahoo_fundamentals_mode:
-        result = _fetch_twelve_data_fundamentals(symbol)
-        if result.get("_needs_fallback"):
-            logger.info("Switching to Yahoo Finance for all fundamentals (Twelve Data requires paid plan)")
-            _yahoo_fundamentals_mode = True
-        elif result:
-            return result
-
-    if _yahoo_fundamentals_mode or not result:
-        from yahoo_provider import fetch_yahoo_fundamentals
-        return fetch_yahoo_fundamentals(symbol, market=market)
-
-    return {}
+    return _fetch_twelve_data_fundamentals(symbol, market=market)
 
 
 def _check_row_completeness(record: dict, diag: FetchDiagnostics) -> None:
