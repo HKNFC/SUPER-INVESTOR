@@ -44,7 +44,7 @@ FUNDAMENTAL_COLUMNS = [
     "peg",
 ]
 
-META_COLUMNS = ["data_source"]
+META_COLUMNS = ["data_source", "data_provider"]
 
 ALL_COLUMNS = IDENTITY_COLUMNS + PRICE_COLUMNS + FUNDAMENTAL_COLUMNS + META_COLUMNS
 

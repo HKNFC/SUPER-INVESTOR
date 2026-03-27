@@ -116,6 +116,32 @@ def fetch_yahoo_fundamentals(ticker: str, market: Optional[str] = None) -> dict:
         if not np.isnan(net_income) and not np.isnan(equity_val) and equity_val != 0:
             roic_calc = net_income / equity_val
 
+        revenue_prev = np.nan
+        net_income_prev = np.nan
+        try:
+            inc_stmt = stock.income_stmt
+            if inc_stmt is not None and not inc_stmt.empty and inc_stmt.shape[1] >= 2:
+                rev_row = None
+                for label in ["Total Revenue", "TotalRevenue"]:
+                    if label in inc_stmt.index:
+                        rev_row = label
+                        break
+                if rev_row is not None:
+                    revenue_prev = sf(inc_stmt.iloc[inc_stmt.index.get_loc(rev_row), 1])
+
+                ni_row = None
+                for label in ["Net Income", "NetIncome", "Net Income Common Stockholders"]:
+                    if label in inc_stmt.index:
+                        ni_row = label
+                        break
+                if ni_row is not None:
+                    net_income_prev = sf(inc_stmt.iloc[inc_stmt.index.get_loc(ni_row), 1])
+        except Exception as e:
+            logger.debug("Yahoo income_stmt error for %s: %s", ticker, e)
+
+        de_raw = sf(info.get("debtToEquity"))
+        de_ratio = de_raw / 100.0 if not np.isnan(de_raw) else np.nan
+
         result = {
             "company_name": info.get("longName") or info.get("shortName") or ticker,
             "sector": info.get("sector", ""),
@@ -126,7 +152,9 @@ def fetch_yahoo_fundamentals(ticker: str, market: Optional[str] = None) -> dict:
             "ev_ebitda": sf(info.get("enterpriseToEbitda")),
             "peg": sf(info.get("trailingPegRatio") or info.get("pegRatio")),
             "revenue": revenue,
+            "revenue_prev_year": revenue_prev,
             "net_income": net_income,
+            "net_income_prev_year": net_income_prev,
             "gross_profit": gross_profit,
             "operating_income": operating_income,
             "ebitda": ebitda,
@@ -141,7 +169,7 @@ def fetch_yahoo_fundamentals(ticker: str, market: Optional[str] = None) -> dict:
             "roe": sf(info.get("returnOnEquity")),
             "roa": sf(info.get("returnOnAssets")),
             "roic": roic_calc,
-            "debt_to_equity": sf(info.get("debtToEquity")) / 100.0 if not np.isnan(sf(info.get("debtToEquity"))) else np.nan,
+            "debt_to_equity": de_ratio,
         }
 
         has_financials = any(

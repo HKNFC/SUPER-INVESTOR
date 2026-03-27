@@ -12,6 +12,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+from typing import Optional
 from config import (
     SUPPORTED_MARKETS, DEFAULT_TOP_N,
     TWELVE_DATA_API_KEY, BENCHMARK_INDEX,
@@ -189,7 +190,7 @@ def _render_detail(stock_row: pd.Series) -> None:
             st.line_chart(chart_data, height=250)
 
 
-def _render_diagnostics() -> None:
+def _render_diagnostics(scan_df: Optional[pd.DataFrame] = None) -> None:
     diag = get_last_diagnostics()
     if diag is None:
         return
@@ -220,6 +221,24 @@ def _render_diagnostics() -> None:
             with st.expander("Hata detayları", expanded=False):
                 for err in diag.errors[:20]:
                     st.text(err)
+
+        if scan_df is not None and not scan_df.empty:
+            debug_cols = ["ticker", "data_provider"]
+            base_fields = ["revenue", "net_income", "equity", "total_debt",
+                           "total_assets", "pe", "pb", "revenue_growth",
+                           "net_margin", "debt_to_equity", "roic_approx"]
+            flag_fields = ["quality_profitable", "quality_growing", "quality_solvent"]
+            for c in base_fields + flag_fields:
+                if c in scan_df.columns:
+                    debug_cols.append(c)
+            available = [c for c in debug_cols if c in scan_df.columns]
+            if len(available) > 1:
+                with st.expander("Veri Sağlayıcı Detayları", expanded=False):
+                    if "data_provider" in scan_df.columns:
+                        provider_counts = scan_df["data_provider"].value_counts()
+                        parts = [f"{k}: {v}" for k, v in provider_counts.items()]
+                        st.caption("Sağlayıcı dağılımı: " + " · ".join(parts))
+                    st.dataframe(scan_df[available].head(50), use_container_width=True, hide_index=True)
 
 
 with st.sidebar:
@@ -426,7 +445,7 @@ with tab_screener:
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
-            _render_diagnostics()
+            _render_diagnostics(None)
 
     if "screener_filtered" in st.session_state:
         scored_data = st.session_state["screener_scored"]
@@ -457,7 +476,7 @@ with tab_screener:
             c3.metric("En Yüksek RS", "—")
             c4.metric("Ort RS", "—")
 
-        _render_diagnostics()
+        _render_diagnostics(scored_data)
 
         st.divider()
 

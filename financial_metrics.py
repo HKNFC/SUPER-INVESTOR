@@ -335,6 +335,7 @@ DERIVED_METRIC_COLUMNS = [
     "roe",
     "roa",
     "roic",
+    "roic_approx",
     "gross_margin",
     "operating_margin",
     "net_margin",
@@ -343,26 +344,63 @@ DERIVED_METRIC_COLUMNS = [
     "earnings_growth",
     "revenue_cagr_3y",
     "eps_cagr_3y",
+    "quality_profitable",
+    "quality_growing",
+    "quality_solvent",
 ]
+
+
+def _calc_roic_approx(row) -> float:
+    ni = safe_float(row.get("net_income"))
+    eq = safe_float(row.get("equity"))
+    td = safe_float(row.get("total_debt"))
+    cash = safe_float(row.get("cash"))
+    if np.isnan(ni):
+        return np.nan
+    invested = 0.0
+    if not np.isnan(eq):
+        invested += eq
+    if not np.isnan(td):
+        invested += td
+    if not np.isnan(cash):
+        invested -= cash
+    if invested <= 0:
+        return np.nan
+    return ni / invested
+
+
+def _calc_quality_flags(row) -> dict:
+    ni = safe_float(row.get("net_income"))
+    nm = safe_float(row.get("net_margin"))
+    eq = safe_float(row.get("equity"))
+    de = safe_float(row.get("debt_to_equity"))
+    rg = safe_float(row.get("revenue_growth"))
+
+    profitable = (not np.isnan(ni) and ni > 0 and not np.isnan(nm) and nm > 0)
+    growing = (not np.isnan(rg) and rg > 0)
+    solvent = True
+    if not np.isnan(eq) and eq <= 0:
+        solvent = False
+    if not np.isnan(de) and de > 3.0:
+        solvent = False
+
+    return {
+        "quality_profitable": profitable,
+        "quality_growing": growing,
+        "quality_solvent": solvent,
+    }
 
 
 def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Append all derived financial metrics as new columns to the master DataFrame.
 
-    Computes each metric row-by-row from the raw fundamental columns.
-    Existing derived columns are overwritten with freshly computed values.
+    All derived metrics are computed from normalize base columns:
+      revenue, revenue_prev_year, net_income, net_income_prev_year,
+      equity, total_debt, total_assets, pe, pb, peg
 
-    Input columns used:
-      total_debt, equity, total_assets, net_income, net_income_prev_year,
-      operating_income, invested_capital, gross_profit, revenue,
-      revenue_prev_year, revenue_3y_ago, ebitda, eps, eps_3y_ago
-
-    Output columns added:
-      debt_to_equity, equity_to_assets, net_income_to_assets,
-      roe, roa, roic,
-      gross_margin, operating_margin, net_margin, ebitda_margin,
-      revenue_growth, earnings_growth, revenue_cagr_3y, eps_cagr_3y
+    This ensures scoring/filtering is provider-agnostic regardless
+    of whether data_provider is 'yahoo' or 'twelve'.
     """
     result = df.copy()
 
@@ -397,6 +435,7 @@ def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
         lambda r: _prefer_existing(r, "roic", calc_roic, "operating_income", "invested_capital"),
         axis=1,
     )
+    result["roic_approx"] = result.apply(_calc_roic_approx, axis=1)
 
     result["gross_margin"] = result.apply(
         lambda r: _prefer_existing(r, "gross_margin", calc_gross_margin, "gross_profit", "revenue"),
@@ -415,7 +454,6 @@ def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
 
-    # Growth metrics
     result["revenue_growth"] = result.apply(
         lambda r: calc_revenue_growth_yoy(r.get("revenue"), r.get("revenue_prev_year")),
         axis=1,
@@ -432,5 +470,9 @@ def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
         lambda r: calc_eps_cagr_3y(r.get("eps"), r.get("eps_3y_ago")),
         axis=1,
     )
+
+    flags_df = result.apply(_calc_quality_flags, axis=1, result_type="expand")
+    for col in ["quality_profitable", "quality_growing", "quality_solvent"]:
+        result[col] = flags_df[col]
 
     return result

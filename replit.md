@@ -12,14 +12,14 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 
 - `app.py` — Streamlit UI entry point with sidebar market selector, filters, results table, and detail tabs
 - `config.py` — Market definitions, scoring weights, API configuration (uses `TWELVE_DATA_API_KEY` env var)
-- `data_model.py` — Unified DataFrame schema (33 columns), validation helpers, type coercion, derived field computation, and mock data (10 stocks per market)
+- `data_model.py` — Unified DataFrame schema with validation helpers, type coercion, derived field computation, and mock data (10 stocks per market). META_COLUMNS includes `data_source` (price provider) and `data_provider` (fundamentals provider: yahoo/twelve_profile/none)
 - `price_provider.py` — Abstract base class (PriceProvider) defining the provider-agnostic interface for market data
 - `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, BIST ticker resolution, and Yahoo Finance fallback when API fails
 - `symbol_mapper.py` — Centralized provider-agnostic symbol mapping. Canonical tickers (ASELS, AAPL) are resolved per-provider: `resolve_twelve_symbol` adds `:BIST`, `resolve_yahoo_symbol` adds `.IS`. Includes benchmark maps, `map_symbol_for_provider` dispatch, `canonical_ticker` normalizer, and JSON-backed cache (`data/cache/symbol_map.json`) via `load_symbol_cache`/`save_symbol_cache`
 - `disk_cache.py` — Parquet-based disk cache layer for OHLCV data. Stores each symbol's history as `data/cache/{symbol}.parquet`. Features: daily refresh (20h TTL), incremental date-based updates (only fetches missing dates), atomic writes via temp-file rename, per-symbol thread locking, corrupted file auto-removal, outputsize-aware tail slicing
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume). `fetch_fundamentals(symbol, market)` uses hybrid approach: Twelve Data `/profile` for company name/sector/industry + Yahoo Finance for financial data (revenue, net_income, equity, margins, ratios). Grow plan doesn't support `/statistics` or `/income_statement` for most BIST stocks, so Yahoo Finance is the reliable source for financials. Supports `skip_fundamentals` parameter to bypass all fundamentals when quality filter is off. Provides all standalone technical indicator functions (`calculate_moving_averages` (MA20/MA50/MA200 + ratios), `calculate_rsi`, `calculate_macd` (line/signal/histogram), `calculate_atr`, `calculate_volume_ratio`, `calculate_obv`, `calculate_mfi`). The `build_technical_data` pipeline computes all 21 indicator columns from OHLCV in one pass and attaches them to the master DataFrame
-- `yahoo_provider.py` — Yahoo Finance provider using yfinance. `fetch_yahoo_history` for OHLCV price data, `fetch_yahoo_fundamentals` for financial data (revenue, net_income, equity, gross_profit, ebitda, total_debt, margins, ROE, ROA, ROIC, PE, PB, EV/EBITDA, sector, industry from yfinance Ticker.info). Primary source for fundamentals since Twelve Data Grow plan restricts `/income_statement` and `/balance_sheet` for most BIST stocks
-- `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment. Uses `_prefer_existing()` to preserve API-provided values (roe, roa, roic, margins, debt_to_equity) over recalculated ones
+- `yahoo_provider.py` — Yahoo Finance provider using yfinance. `fetch_yahoo_history` for OHLCV price data, `fetch_yahoo_fundamentals` for financial data including revenue, revenue_prev_year, net_income, net_income_prev_year (from `stock.income_stmt`), equity, total_debt, total_assets, margins, ROE, ROA, ROIC, PE, PB, EV/EBITDA, sector, industry. debtToEquity divided by 100 for ratio normalization. Primary source for fundamentals since Twelve Data Grow plan restricts financial statements for most BIST stocks
+- `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment. All derived metrics computed from normalize base columns (revenue, net_income, equity, total_debt, total_assets). Includes `roic_approx` (net_income / invested capital approximation) and quality flags (quality_profitable, quality_growing, quality_solvent). Uses `_prefer_existing()` to preserve API-provided values over recalculated ones
 - `momentum_metrics.py` — Momentum engine: period returns, 52W high distance, relative return vs benchmark (SPX/XU100), MA signals, volume
 - `scoring_engine.py` — Percentile-based RS Score engine with true 0-100 scaling, 5th/95th winsorization, reverse-scoring for lower-is-better metrics, NaN-aware weight redistribution, RS Category assignment (Elite/Strong/Watchlist/Weak/Avoid). Integrates technical_signals after RS computation.
 - `technical_signals.py` — Technical Signal Score engine (0-100): Trend (30%, MA50/MA200/golden cross), Momentum (20%, RSI/MACD), Breakout (20%, 52w high proximity, volume ratio), Volume Flow (20%, MFI scoring + OBV trend/divergence), Risk/Stability (10%, ATR volatility penalty). Uses pre-computed indicator columns from `build_technical_data` when available; falls back to legacy price_data calculation when columns are missing. Computes combined_score (0.65*RS + 0.35*tech), setup_label, and stores volume indicators for scan mode filtering.
@@ -32,12 +32,15 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 
 ### Data Model (data_model.py)
 
-Unified DataFrame structure with 33 columns:
+Unified DataFrame structure:
 - **Identity (5)**: ticker, company_name, market, sector, industry
 - **Price & Market (9)**: price, market_cap, avg_volume_20d, return_1m/3m/6m/12m, distance_to_52w_high, relative_return_vs_index
 - **Fundamentals (19)**: revenue (current/prev/3y), net_income (current/prev), eps (current/3y), gross_profit, operating_income, ebitda, total_assets, total_debt, equity, cash, invested_capital, pe, pb, ev_ebitda, peg
+- **Meta (2)**: data_source (price provider), data_provider (fundamentals: yahoo/twelve_profile/none)
 
-Derived fields computed by `compute_derived_fields()`: gross_margin, operating_margin, net_margin, ebitda_margin, revenue_growth, revenue_growth_3y, earnings_growth, eps_growth_3y, roe, roa, roic, debt_to_equity, equity_to_assets, net_income_to_assets
+Normalize base columns (provider-agnostic): revenue, revenue_prev_year, net_income, net_income_prev_year, equity, total_debt, total_assets, pe, pb, peg
+
+Derived fields computed by `compute_derived_fields()`: debt_to_equity, equity_to_assets, net_income_to_assets, roe, roa, roic, roic_approx, gross_margin, operating_margin, net_margin, ebitda_margin, revenue_growth, earnings_growth, revenue_cagr_3y, eps_cagr_3y, quality_profitable, quality_growing, quality_solvent
 
 ### RS Score Engine (scoring_engine.py)
 

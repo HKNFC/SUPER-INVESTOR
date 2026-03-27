@@ -198,6 +198,7 @@ def _fetch_twelve_data_fundamentals(symbol: str, market: Optional[str] = None) -
                 yahoo_data["industry"] = industry
             if company_name != symbol and (not yahoo_data.get("company_name") or yahoo_data["company_name"] == symbol):
                 yahoo_data["company_name"] = company_name
+            yahoo_data["data_provider"] = "yahoo"
             return yahoo_data
 
         result = {
@@ -205,6 +206,7 @@ def _fetch_twelve_data_fundamentals(symbol: str, market: Optional[str] = None) -
             "company_name": company_name,
             "sector": sector,
             "industry": industry,
+            "data_provider": "twelve_profile",
         }
         if profile:
             logger.info("Only profile data available for %s (sector=%s)", symbol, sector)
@@ -293,7 +295,7 @@ def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFr
         try:
             resolved_sym = resolve_twelve_symbol(symbol, market) if provider else symbol
             if skip_fundamentals:
-                fundamentals = {}
+                fundamentals = {"data_provider": "none"}
             else:
                 fundamentals = fetch_fundamentals(resolved_sym, market=market)
             canonical_sym = _canonical(symbol)
@@ -304,6 +306,8 @@ def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFr
             fundamentals["market"] = market
             fundamentals["sector"] = fundamentals.get("sector", "")
             fundamentals["industry"] = fundamentals.get("industry", "")
+            if "data_provider" not in fundamentals:
+                fundamentals["data_provider"] = "unknown"
 
             if provider is not None:
                 enriched = provider.enrich_record(fundamentals)
