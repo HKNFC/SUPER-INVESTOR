@@ -303,8 +303,11 @@ with st.sidebar:
     st.caption(f"Veri: {api_status}")
 
     with st.expander("Hakkında", expanded=False):
-        st.markdown(
-            """
+        about_tab1, about_tab2 = st.tabs(["Genel Bilgi", "Doğru Kullanım Şekli"])
+
+        with about_tab1:
+            st.markdown(
+                """
 **RS Skoru** hisseleri beş boyutta 0–100 arası puanlar:
 
 - **Finansal Güç** — ROIC, kaldıraç, varlık kalitesi
@@ -312,21 +315,95 @@ with st.sidebar:
 - **Marj Kalitesi** — Brüt, faaliyet, net, FAVÖK marjları + trend
 - **Değerleme** — F/K, PD/DD, FD/FAVÖK, PEG
 - **Momentum** — Çoklu dönem getirileri, 52H zirve, göreceli güç
-            """
-        )
-        st.markdown("**Mevcut Piyasalar**")
-        for key, info in SUPPORTED_MARKETS.items():
-            bench = BENCHMARK_INDEX.get(key, "—")
-            st.markdown(f"- **{info['label']}** — {len(info['symbols'])} hisse, endeks: {bench}")
+                """
+            )
+            st.markdown("**Mevcut Piyasalar**")
+            for key, info in SUPPORTED_MARKETS.items():
+                bench = BENCHMARK_INDEX.get(key, "—")
+                st.markdown(f"- **{info['label']}** — {len(info['symbols'])} hisse, endeks: {bench}")
 
-        st.markdown(
-            """
+            st.markdown(
+                """
 **Kalite Filtreleri** sıralama öncesi hisseleri ön eler:
 - **Filtre Yok** — tüm evren
 - **Temel** — kârlı, pozitif özkaynak, makul kaldıraç
 - **Sıkı** — yüksek ROIC, güçlü marjlar, pozitif momentum
-            """
-        )
+                """
+            )
+
+        with about_tab2:
+            st.markdown("## Doğru Kullanım Şekli")
+            st.markdown("---")
+
+            st.markdown("### 📋 En İyi Kullanıcı Akışı")
+
+            st.markdown("#### 1. Genel Fırsat Tarama")
+            st.markdown(
+                """
+- **Piyasa:** BIST
+- **Evren:** BIST100
+- **Tarama Modu:** Standart Tarama
+- **Temel Kalite Seviyesi:** Temel
+- **Sıralama:** Combined Score
+                """
+            )
+
+            st.markdown("#### 2. Akıllı Para Girişi Bulma")
+            st.markdown(
+                """
+- **Piyasa:** BIST
+- **Evren:** BISTTUM
+- **Tarama Modu:** Sadece Akıllı Para Girenler
+- **Temel Kalite Seviyesi:** Temel
+- **Sıralama:** Combined Score
+                """
+            )
+
+            st.markdown("#### 3. Erken Accumulation Yakalama")
+            st.markdown(
+                """
+- **Piyasa:** BIST
+- **Evren:** BIST100 DIŞI
+- **Tarama Modu:** Erken Accumulation Yakalama
+- **Temel Kalite Seviyesi:** Kapalı veya Temel
+- **Sıralama:** Technical Score veya Combined Score
+                """
+            )
+
+            st.markdown("---")
+            st.markdown("### 🔢 En Doğru Sıralama Mantığı")
+
+            st.markdown("#### Standart Tarama")
+            st.markdown("- Varsayılan sıralama: **Combined Score**")
+
+            st.markdown("#### Akıllı Para Girenler")
+            st.markdown("- Önerilen sıralama: **Combined Score** veya **Technical Score**")
+
+            st.markdown("#### Erken Accumulation")
+            st.markdown("- Önerilen sıralama: **Technical Score** veya **Combined Score**")
+
+            st.info("İlk kullanımda **Combined Score** sıralaması önerilir.")
+
+            st.markdown("---")
+            st.markdown("### 🧠 Temel Mantık")
+            st.markdown(
+                """
+- **Tarama Modu** → piyasadaki davranışı seçer
+- **Temel Kalite Seviyesi** → şirket kalitesini filtreler
+- **Sıralama Türü** → sonuçları hangi kritere göre dizdiğini belirler
+                """
+            )
+
+            st.markdown("---")
+            st.markdown("### 💡 Kullanım Tavsiyeleri")
+            st.markdown(
+                """
+- Çok sıkı filtreler az sonuç getirir
+- Erken fırsatlar için kalite filtresi gevşetilebilir
+- En iyi sonuçlar **Combined Score** ile alınır
+- **Backtest** ile strateji doğrulaması yapılmalıdır
+                """
+            )
 
 tab_screener, tab_backtest = st.tabs(["Hisse Tarama", "Backtest"])
 
