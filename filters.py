@@ -28,12 +28,8 @@ FILTER_PRESETS = {
         "rules": {
             "equity_gt": 0,
             "net_income_gt": 0,
-            "roic_gt": 0.05,
-            "revenue_growth_gt": 0,
             "net_margin_gt": 0,
             "debt_to_equity_lt": 2.5,
-            "peg_gt": 0,
-            "pe_gt": 0,
         },
     },
     "strict": {
@@ -43,21 +39,20 @@ FILTER_PRESETS = {
             "equity_gt": 0,
             "net_income_gt": 0,
             "roic_gt": 0.10,
-            "revenue_growth_gt": 0,
             "net_margin_gt": 0.05,
             "debt_to_equity_lt": 1.5,
-            "peg_gt": 0,
-            "pe_gt": 0,
             "return_12m_gt": 0,
         },
     },
 }
 
 
-def _safe_check(value, op: str, threshold: float) -> bool:
-    """Check if a value passes a comparison against a threshold, handling NaN/None safely."""
+def _safe_check(value, op: str, threshold: float, strict: bool = False) -> bool:
+    """Check if a value passes a comparison against a threshold, handling NaN/None safely.
+    When strict=False (default), NaN/None values pass the check (data absence is not a failure).
+    When strict=True, NaN/None values fail the check."""
     if value is None or (isinstance(value, float) and np.isnan(value)):
-        return False
+        return not strict
     try:
         v = float(value)
     except (TypeError, ValueError):

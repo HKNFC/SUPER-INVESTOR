@@ -141,7 +141,7 @@ def fetch_yahoo_fundamentals(ticker: str, market: Optional[str] = None) -> dict:
             "roe": sf(info.get("returnOnEquity")),
             "roa": sf(info.get("returnOnAssets")),
             "roic": roic_calc,
-            "debt_to_equity": sf(info.get("debtToEquity")),
+            "debt_to_equity": sf(info.get("debtToEquity")) / 100.0 if not np.isnan(sf(info.get("debtToEquity"))) else np.nan,
         }
 
         has_financials = any(
