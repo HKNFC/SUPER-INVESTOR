@@ -67,8 +67,8 @@ WEIGHT_LABELS = {
 
 
 @st.cache_data(ttl=CACHE_TTL_MARKET_DATA, show_spinner=False)
-def _cached_fetch(market: str, _cache_bust: int) -> pd.DataFrame:
-    return fetch_market_data(market)
+def _cached_fetch(market: str, _cache_bust: int, skip_fundamentals: bool = False) -> pd.DataFrame:
+    return fetch_market_data(market, skip_fundamentals=skip_fundamentals)
 
 
 def _fmt_rule(rule_key: str, threshold: float) -> str:
@@ -340,11 +340,12 @@ with tab_screener:
 
     if run_screening:
         market_info = SUPPORTED_MARKETS[market]
+        skip_fund = (selected_preset == "none")
 
         try:
             with st.spinner(f"{market_info['label']} verileri çekiliyor..."):
                 cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
-                raw_data = _cached_fetch(market, cache_bust)
+                raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
 
             if market == "BIST" and bist_segment != "BISTTUM" and "ticker" in raw_data.columns:
                 if bist_segment == "BIST100":

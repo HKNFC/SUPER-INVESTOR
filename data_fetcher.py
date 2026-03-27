@@ -161,19 +161,23 @@ def fetch_avg_volume_20d(ticker: str, market: Optional[str] = None) -> Optional[
         return None
 
 
-def fetch_fundamentals(symbol: str) -> dict:
+def _fetch_twelve_data_fundamentals(symbol: str) -> dict:
     if not TWELVE_DATA_API_KEY:
         return {}
     try:
-        import requests
+        import requests as _requests
         url = f"{TWELVE_DATA_BASE_URL}/statistics"
         params = {"symbol": symbol, "apikey": TWELVE_DATA_API_KEY}
-        response = requests.get(url, params=params, timeout=API_REQUEST_TIMEOUT)
+        response = _requests.get(url, params=params, timeout=API_REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
 
         if "status" in data and data["status"] == "error":
-            logger.warning("API error for %s: %s", symbol, data.get("message", ""))
+            msg = data.get("message", "")
+            if "available exclusively with" in msg:
+                logger.info("Twelve Data /statistics requires paid plan for %s, will use Yahoo fallback", symbol)
+                return {"_needs_fallback": True}
+            logger.warning("API error for %s: %s", symbol, msg)
             return {}
 
         if "statistics" not in data:
@@ -256,15 +260,30 @@ def fetch_fundamentals(symbol: str) -> dict:
 
         return result
 
-    except requests.Timeout:
-        logger.error("Timeout fetching fundamentals for %s (limit=%ds)", symbol, API_REQUEST_TIMEOUT)
-        return {}
-    except requests.ConnectionError:
-        logger.error("Connection error fetching fundamentals for %s", symbol)
-        return {}
     except Exception as e:
-        logger.error("Unexpected error fetching fundamentals for %s: %s — %s", symbol, type(e).__name__, e)
+        logger.error("Twelve Data fundamentals error for %s: %s — %s", symbol, type(e).__name__, e)
         return {}
+
+
+_yahoo_fundamentals_mode = False
+
+
+def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
+    global _yahoo_fundamentals_mode
+
+    if not _yahoo_fundamentals_mode:
+        result = _fetch_twelve_data_fundamentals(symbol)
+        if result.get("_needs_fallback"):
+            logger.info("Switching to Yahoo Finance for all fundamentals (Twelve Data requires paid plan)")
+            _yahoo_fundamentals_mode = True
+        elif result:
+            return result
+
+    if _yahoo_fundamentals_mode or not result:
+        from yahoo_provider import fetch_yahoo_fundamentals
+        return fetch_yahoo_fundamentals(symbol, market=market)
+
+    return {}
 
 
 def _check_row_completeness(record: dict, diag: FetchDiagnostics) -> None:
@@ -317,7 +336,7 @@ def _enrich_via_yahoo(record: dict) -> dict:
     return result
 
 
-def fetch_market_data(market: str) -> pd.DataFrame:
+def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFrame:
     global _last_diagnostics
 
     if market not in SUPPORTED_MARKETS:
@@ -340,7 +359,10 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     for symbol in symbols:
         try:
             resolved_sym = resolve_twelve_symbol(symbol, market) if provider else symbol
-            fundamentals = fetch_fundamentals(resolved_sym)
+            if skip_fundamentals:
+                fundamentals = {}
+            else:
+                fundamentals = fetch_fundamentals(resolved_sym, market=market)
             canonical_sym = _canonical(symbol)
             if not fundamentals.get("ticker"):
                 fundamentals["ticker"] = canonical_sym
