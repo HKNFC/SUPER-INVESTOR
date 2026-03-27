@@ -366,9 +366,14 @@ def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     result = df.copy()
 
-    # Balance sheet ratios
+    def _prefer_existing(row, col, calc_fn, *args):
+        existing = row.get(col)
+        if existing is not None and not (isinstance(existing, float) and np.isnan(existing)):
+            return existing
+        return calc_fn(*[row.get(a) for a in args])
+
     result["debt_to_equity"] = result.apply(
-        lambda r: calc_debt_to_equity(r.get("total_debt"), r.get("equity")),
+        lambda r: _prefer_existing(r, "debt_to_equity", calc_debt_to_equity, "total_debt", "equity"),
         axis=1,
     )
     result["equity_to_assets"] = result.apply(
@@ -380,31 +385,29 @@ def append_all_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
 
-    # Return metrics
     result["roe"] = result.apply(
-        lambda r: calc_roe(r.get("net_income"), r.get("equity")),
+        lambda r: _prefer_existing(r, "roe", calc_roe, "net_income", "equity"),
         axis=1,
     )
     result["roa"] = result.apply(
-        lambda r: calc_roa(r.get("net_income"), r.get("total_assets")),
+        lambda r: _prefer_existing(r, "roa", calc_roa, "net_income", "total_assets"),
         axis=1,
     )
     result["roic"] = result.apply(
-        lambda r: calc_roic(r.get("operating_income"), r.get("invested_capital")),
+        lambda r: _prefer_existing(r, "roic", calc_roic, "operating_income", "invested_capital"),
         axis=1,
     )
 
-    # Margin metrics
     result["gross_margin"] = result.apply(
-        lambda r: calc_gross_margin(r.get("gross_profit"), r.get("revenue")),
+        lambda r: _prefer_existing(r, "gross_margin", calc_gross_margin, "gross_profit", "revenue"),
         axis=1,
     )
     result["operating_margin"] = result.apply(
-        lambda r: calc_operating_margin(r.get("operating_income"), r.get("revenue")),
+        lambda r: _prefer_existing(r, "operating_margin", calc_operating_margin, "operating_income", "revenue"),
         axis=1,
     )
     result["net_margin"] = result.apply(
-        lambda r: calc_net_margin(r.get("net_income"), r.get("revenue")),
+        lambda r: _prefer_existing(r, "net_margin", calc_net_margin, "net_income", "revenue"),
         axis=1,
     )
     result["ebitda_margin"] = result.apply(

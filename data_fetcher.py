@@ -183,25 +183,78 @@ def fetch_fundamentals(symbol: str) -> dict:
         stats = data["statistics"]
         financials = stats.get("financials", {})
         valuations = stats.get("valuations_metrics", {})
+        income = financials.get("income_statement", {})
+        balance = financials.get("balance_sheet", {})
 
-        return {
+        revenue = safe_float(income.get("revenue_ttm"))
+        net_income = safe_float(income.get("net_income_to_common_ttm"))
+        gross_profit = safe_float(income.get("gross_profit_ttm"))
+        ebitda_val = safe_float(income.get("ebitda")) or safe_float(financials.get("ebitda"))
+        eps_val = safe_float(income.get("diluted_eps_ttm"))
+
+        total_debt = safe_float(balance.get("total_debt_mrq"))
+        total_cash = safe_float(balance.get("total_cash_mrq"))
+        bvps = safe_float(balance.get("book_value_per_share_mrq"))
+
+        shares = safe_float(stats.get("stock_statistics", {}).get("shares_outstanding"))
+        equity_val = bvps * shares if bvps and shares else np.nan
+
+        gross_margin = safe_float(financials.get("gross_margin"))
+        profit_margin = safe_float(financials.get("profit_margin"))
+        operating_margin = safe_float(financials.get("operating_margin"))
+        roa = safe_float(financials.get("return_on_assets_ttm"))
+        roe = safe_float(financials.get("return_on_equity_ttm"))
+
+        net_margin_calc = np.nan
+        if revenue and not np.isnan(revenue) and revenue != 0 and net_income and not np.isnan(net_income):
+            net_margin_calc = net_income / revenue
+
+        roic_calc = np.nan
+        if net_income and not np.isnan(net_income) and equity_val and not np.isnan(equity_val) and equity_val != 0:
+            roic_calc = net_income / equity_val
+
+        operating_income = np.nan
+        if operating_margin and not np.isnan(operating_margin) and revenue and not np.isnan(revenue):
+            operating_income = operating_margin * revenue
+
+        result = {
             "ticker": symbol,
-            "company_name": data.get("name", symbol),
+            "company_name": data.get("meta", {}).get("name", symbol),
             "market_cap": safe_float(valuations.get("market_capitalization")),
             "pe": safe_float(valuations.get("trailing_pe")),
-            "pb": safe_float(valuations.get("price_to_book")),
+            "pb": safe_float(valuations.get("price_to_book_mrq")),
             "ev_ebitda": safe_float(valuations.get("enterprise_to_ebitda")),
-            "revenue": safe_float(financials.get("revenue")),
-            "net_income": safe_float(financials.get("net_income")),
-            "gross_profit": safe_float(financials.get("gross_profit")),
-            "operating_income": safe_float(financials.get("operating_income")),
-            "ebitda": safe_float(financials.get("ebitda")),
-            "total_assets": safe_float(financials.get("total_assets")),
-            "total_debt": safe_float(financials.get("total_debt")),
-            "equity": safe_float(financials.get("stockholders_equity")),
-            "cash": safe_float(financials.get("cash_and_equivalents")),
-            "eps": safe_float(financials.get("diluted_eps")),
+            "peg": safe_float(valuations.get("peg_ratio")),
+            "revenue": revenue,
+            "net_income": net_income,
+            "gross_profit": gross_profit,
+            "operating_income": operating_income,
+            "ebitda": ebitda_val,
+            "total_assets": np.nan,
+            "total_debt": total_debt,
+            "equity": equity_val,
+            "cash": total_cash,
+            "eps": eps_val,
+            "gross_margin": gross_margin,
+            "net_margin": net_margin_calc if not np.isnan(net_margin_calc) else profit_margin,
+            "operating_margin": operating_margin,
+            "roe": roe,
+            "roa": roa,
+            "roic": roic_calc,
+            "debt_to_equity": safe_float(balance.get("total_debt_to_equity_mrq")),
         }
+
+        has_financials = any(
+            result.get(f) is not None and not (isinstance(result.get(f), float) and np.isnan(result.get(f)))
+            for f in ["revenue", "net_income", "equity"]
+        )
+        if has_financials:
+            logger.info("Fundamentals OK for %s: revenue=%s, net_income=%s, equity=%s",
+                        symbol, result.get("revenue"), result.get("net_income"), result.get("equity"))
+        else:
+            logger.info("No financial data in statistics for %s", symbol)
+
+        return result
 
     except requests.Timeout:
         logger.error("Timeout fetching fundamentals for %s (limit=%ds)", symbol, API_REQUEST_TIMEOUT)
@@ -282,11 +335,17 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     records = []
     skipped = []
 
+    from symbol_mapper import resolve_twelve_symbol, canonical_ticker as _canonical
+
     for symbol in symbols:
         try:
-            fundamentals = fetch_fundamentals(symbol)
+            resolved_sym = resolve_twelve_symbol(symbol, market) if provider else symbol
+            fundamentals = fetch_fundamentals(resolved_sym)
+            canonical_sym = _canonical(symbol)
             if not fundamentals.get("ticker"):
-                fundamentals["ticker"] = symbol
+                fundamentals["ticker"] = canonical_sym
+            else:
+                fundamentals["ticker"] = _canonical(fundamentals["ticker"])
             fundamentals["market"] = market
             fundamentals["sector"] = fundamentals.get("sector", "")
             fundamentals["industry"] = fundamentals.get("industry", "")
@@ -334,6 +393,18 @@ def fetch_market_data(market: str) -> pd.DataFrame:
     df = pd.DataFrame(records)
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
+
+    fin_count = 0
+    for col in ["revenue", "net_income", "equity"]:
+        if col in df.columns:
+            valid = df[col].dropna()
+            valid = valid[valid != 0]
+            if len(valid) > fin_count:
+                fin_count = len(valid)
+    logger.info(
+        "Financial data summary for %s: %d/%d tickers have fundamental data",
+        market, fin_count, len(df),
+    )
 
     benchmark = get_benchmark_history(market)
     df = append_momentum_fields(df, benchmark_history=benchmark)
