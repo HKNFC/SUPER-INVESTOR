@@ -3,18 +3,9 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 from disk_cache import OHLCV_COLUMNS
+from symbol_mapper import resolve_yahoo_symbol
 
 logger = logging.getLogger("stock_screener.yahoo")
-
-BIST_SUFFIX = ".IS"
-
-
-def _resolve_yahoo_symbol(ticker: str, market: Optional[str] = None) -> str:
-    clean = ticker.replace(":BIST", "")
-    if market and market.upper() == "BIST":
-        if not clean.endswith(BIST_SUFFIX):
-            return f"{clean}{BIST_SUFFIX}"
-    return clean
 
 
 def fetch_yahoo_history(
@@ -28,7 +19,7 @@ def fetch_yahoo_history(
         logger.error("yfinance not installed")
         return pd.DataFrame(columns=OHLCV_COLUMNS)
 
-    symbol = _resolve_yahoo_symbol(ticker, market)
+    symbol = resolve_yahoo_symbol(ticker, market)
 
     try:
         data = yf.download(
@@ -78,10 +69,6 @@ def fetch_yahoo_history(
 
 
 def fetch_yahoo_benchmark(index_symbol: str) -> pd.DataFrame:
-    yahoo_map = {
-        "XU100": "XU100.IS",
-        "SPX": "^GSPC",
-        "^GSPC": "^GSPC",
-    }
-    resolved = yahoo_map.get(index_symbol, index_symbol)
+    from symbol_mapper import resolve_yahoo_benchmark
+    resolved = resolve_yahoo_benchmark(index_symbol)
     return fetch_yahoo_history(resolved, period="2y", market=None)

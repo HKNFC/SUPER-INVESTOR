@@ -15,7 +15,8 @@ A production-ready stock screening web app that ranks stocks using a custom RS S
 - `data_model.py` — Unified DataFrame schema (33 columns), validation helpers, type coercion, derived field computation, and mock data (10 stocks per market)
 - `price_provider.py` — Abstract base class (PriceProvider) defining the provider-agnostic interface for market data
 - `twelve_data_provider.py` — Twelve Data API implementation with in-memory TTL caching, rate-limit tracking, BIST ticker resolution, and Yahoo Finance fallback when API fails
-- `yahoo_provider.py` — Yahoo Finance fallback provider using yfinance. Handles BIST (.IS suffix) and US tickers. Used as automatic fallback when Twelve Data fails or API key is missing
+- `symbol_mapper.py` — Centralized provider-agnostic symbol mapping. Canonical tickers (ASELS, AAPL) are resolved per-provider: `resolve_twelve_symbol` adds `:BIST`, `resolve_yahoo_symbol` adds `.IS`. Includes benchmark maps, `map_symbol_for_provider` dispatch, `canonical_ticker` normalizer, and JSON-backed cache (`data/cache/symbol_map.json`) via `load_symbol_cache`/`save_symbol_cache`
+- `yahoo_provider.py` — Yahoo Finance fallback provider using yfinance. Uses `symbol_mapper` for ticker resolution. Used as automatic fallback when Twelve Data fails or API key is missing
 - `disk_cache.py` — Parquet-based disk cache layer for OHLCV data. Stores each symbol's history as `data/cache/{symbol}.parquet`. Features: daily refresh (20h TTL), incremental date-based updates (only fetches missing dates), atomic writes via temp-file rename, per-symbol thread locking, corrupted file auto-removal, outputsize-aware tail slicing
 - `data_fetcher.py` — Orchestration layer: selects provider or mock data, exposes reusable functions (latest price, history, returns, 52w high, avg volume). Provides all standalone technical indicator functions (`calculate_moving_averages` (MA20/MA50/MA200 + ratios), `calculate_rsi`, `calculate_macd` (line/signal/histogram), `calculate_atr`, `calculate_volume_ratio`, `calculate_obv`, `calculate_mfi`). The `build_technical_data` pipeline computes all 21 indicator columns from OHLCV in one pass and attaches them to the master DataFrame
 - `financial_metrics.py` — Individual financial metric functions (margins, growth, returns) and `append_all_derived_metrics` for bulk DataFrame enrichment
@@ -83,6 +84,7 @@ artifacts-monorepo/
 ├── data_model.py          # Unified DataFrame schema, validation, mock data
 ├── price_provider.py      # Abstract market data provider interface
 ├── twelve_data_provider.py # Twelve Data API provider implementation
+├── symbol_mapper.py       # Centralized symbol resolution & caching
 ├── data_fetcher.py        # Market data orchestration layer
 ├── financial_metrics.py   # Financial sub-score calculations
 ├── momentum_metrics.py    # Momentum sub-score calculations

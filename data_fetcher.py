@@ -664,7 +664,8 @@ def fetch_backtest_data(
             )
 
         try:
-            resolved = provider._resolve_symbol(symbol, market) if provider else symbol
+            from symbol_mapper import resolve_twelve_symbol
+            resolved = resolve_twelve_symbol(symbol, market) if provider else symbol
             cached = read_cache(resolved)
 
             if cached is not None and not cached.empty:
@@ -765,7 +766,8 @@ def get_cached_benchmark(market: str) -> pd.DataFrame:
         return _generate_placeholder_price_data("BENCH", days=300)
 
     provider = get_provider()
-    resolved = provider._resolve_symbol(index_ticker, market) if provider else index_ticker
+    from symbol_mapper import resolve_twelve_benchmark
+    resolved = resolve_twelve_benchmark(index_ticker, market) if provider else index_ticker
 
     cached = read_cache(resolved)
 

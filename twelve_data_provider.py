@@ -65,8 +65,6 @@ class TwelveDataProvider(PriceProvider):
     The provider logs warnings when approaching limits.
     """
 
-    BIST_EXCHANGE_SUFFIX = ":BIST"
-
     def __init__(self, api_key: str, base_url: str = "https://api.twelvedata.com"):
         if not api_key:
             raise ValueError("TWELVE_DATA_API_KEY is required but empty")
@@ -76,16 +74,8 @@ class TwelveDataProvider(PriceProvider):
         self._request_timestamps: list[float] = []
 
     def _resolve_symbol(self, ticker: str, market: Optional[str] = None) -> str:
-        """
-        Resolve a ticker to the Twelve Data symbol format.
-
-        For BIST tickers, appends the exchange suffix if not already present.
-        For US tickers, returns as-is.
-        """
-        if market and market.upper() == "BIST":
-            if not ticker.endswith(self.BIST_EXCHANGE_SUFFIX):
-                return f"{ticker}{self.BIST_EXCHANGE_SUFFIX}"
-        return ticker
+        from symbol_mapper import resolve_twelve_symbol
+        return resolve_twelve_symbol(ticker, market)
 
     def _api_request(self, endpoint: str, params: dict) -> Optional[dict]:
         """
@@ -181,8 +171,9 @@ class TwelveDataProvider(PriceProvider):
     def _yahoo_fallback(self, symbol: str, outputsize: int = 300) -> pd.DataFrame:
         try:
             from yahoo_provider import fetch_yahoo_history
+            from symbol_mapper import canonical_ticker
             market = "BIST" if ":BIST" in symbol else None
-            bare = symbol.replace(":BIST", "")
+            bare = canonical_ticker(symbol)
             logger.info("Twelve Data failed for %s — trying Yahoo Finance fallback", symbol)
             df = fetch_yahoo_history(bare, period="2y", market=market)
             if not df.empty:
