@@ -307,11 +307,6 @@ class TwelveDataProvider(PriceProvider):
             if high_52w > 0:
                 result["distance_to_52w_high"] = round((current / high_52w - 1) * 100, 2)
 
-        quote = self.get_quote(ticker, market=market)
-        if quote and quote.get("name"):
-            if not result.get("company_name"):
-                result["company_name"] = quote["name"]
-
         return result
 
 

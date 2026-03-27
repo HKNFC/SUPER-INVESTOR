@@ -174,51 +174,49 @@ def _td_get_json(endpoint: str, symbol: str) -> Optional[dict]:
     return data
 
 
-def _fetch_twelve_data_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
-    if not TWELVE_DATA_API_KEY:
-        return {}
+_FUNDAMENTALS_CACHE: Dict[str, dict] = {}
+_FUNDAMENTALS_CACHE_TTL: Dict[str, float] = {}
+FUNDAMENTALS_CACHE_HOURS = 20
+
+
+def _get_cached_fundamentals(symbol: str) -> Optional[dict]:
+    if symbol in _FUNDAMENTALS_CACHE:
+        if time.time() - _FUNDAMENTALS_CACHE_TTL.get(symbol, 0) < FUNDAMENTALS_CACHE_HOURS * 3600:
+            return dict(_FUNDAMENTALS_CACHE[symbol])
+        else:
+            del _FUNDAMENTALS_CACHE[symbol]
+            _FUNDAMENTALS_CACHE_TTL.pop(symbol, None)
+    return None
+
+
+def _set_cached_fundamentals(symbol: str, data: dict) -> None:
+    _FUNDAMENTALS_CACHE[symbol] = dict(data)
+    _FUNDAMENTALS_CACHE_TTL[symbol] = time.time()
+
+
+def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
+    cached = _get_cached_fundamentals(symbol)
+    if cached is not None:
+        return cached
+
     try:
-        profile = _td_get_json("/profile", symbol)
-
-        company_name = symbol
-        sector = ""
-        industry = ""
-        if profile:
-            company_name = profile.get("name", symbol)
-            sector = profile.get("sector", "")
-            industry = profile.get("industry", "")
-
         from yahoo_provider import fetch_yahoo_fundamentals
         yahoo_data = fetch_yahoo_fundamentals(symbol, market=market)
 
         if yahoo_data:
-            if sector and not yahoo_data.get("sector"):
-                yahoo_data["sector"] = sector
-            if industry and not yahoo_data.get("industry"):
-                yahoo_data["industry"] = industry
-            if company_name != symbol and (not yahoo_data.get("company_name") or yahoo_data["company_name"] == symbol):
-                yahoo_data["company_name"] = company_name
             yahoo_data["data_provider"] = "yahoo"
+            _set_cached_fundamentals(symbol, yahoo_data)
             return yahoo_data
 
         result = {
             "ticker": symbol,
-            "company_name": company_name,
-            "sector": sector,
-            "industry": industry,
-            "data_provider": "twelve_profile",
+            "data_provider": "none",
         }
-        if profile:
-            logger.info("Only profile data available for %s (sector=%s)", symbol, sector)
         return result
 
     except Exception as e:
         logger.error("Fundamentals error for %s: %s — %s", symbol, type(e).__name__, e)
         return {}
-
-
-def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
-    return _fetch_twelve_data_fundamentals(symbol, market=market)
 
 
 def _check_row_completeness(record: dict, diag: FetchDiagnostics) -> None:
@@ -271,8 +269,50 @@ def _enrich_via_yahoo(record: dict) -> dict:
     return result
 
 
+_PARALLEL_WORKERS = 4
+
+
+def _fetch_single_ticker(args: tuple) -> tuple:
+    symbol, market, skip_fundamentals, provider = args
+    from symbol_mapper import resolve_twelve_symbol, canonical_ticker as _canonical
+    try:
+        resolved_sym = resolve_twelve_symbol(symbol, market) if provider else symbol
+        if skip_fundamentals:
+            fundamentals = {"data_provider": "none"}
+        else:
+            fundamentals = fetch_fundamentals(resolved_sym, market=market)
+        canonical_sym = _canonical(symbol)
+        if not fundamentals.get("ticker"):
+            fundamentals["ticker"] = canonical_sym
+        else:
+            fundamentals["ticker"] = _canonical(fundamentals["ticker"])
+        fundamentals["market"] = market
+        fundamentals["sector"] = fundamentals.get("sector", "")
+        fundamentals["industry"] = fundamentals.get("industry", "")
+        if "data_provider" not in fundamentals:
+            fundamentals["data_provider"] = "unknown"
+
+        if provider is not None:
+            enriched = provider.enrich_record(fundamentals)
+        else:
+            enriched = _enrich_via_yahoo(fundamentals)
+
+        logger.info(
+            "Fetched %s: price=%s, source=%s",
+            symbol,
+            enriched.get("price", "N/A"),
+            enriched.get("data_source", "unknown"),
+        )
+        return ("ok", symbol, enriched)
+
+    except Exception as e:
+        logger.warning("Failed to fetch %s: %s — %s", symbol, type(e).__name__, e)
+        return ("error", symbol, f"{type(e).__name__}: {e}")
+
+
 def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFrame:
     global _last_diagnostics
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
@@ -289,48 +329,28 @@ def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFr
     records = []
     skipped = []
 
-    from symbol_mapper import resolve_twelve_symbol, canonical_ticker as _canonical
+    tasks = [(sym, market, skip_fundamentals, provider) for sym in symbols]
 
-    for symbol in symbols:
-        try:
-            resolved_sym = resolve_twelve_symbol(symbol, market) if provider else symbol
-            if skip_fundamentals:
-                fundamentals = {"data_provider": "none"}
-            else:
-                fundamentals = fetch_fundamentals(resolved_sym, market=market)
-            canonical_sym = _canonical(symbol)
-            if not fundamentals.get("ticker"):
-                fundamentals["ticker"] = canonical_sym
-            else:
-                fundamentals["ticker"] = _canonical(fundamentals["ticker"])
-            fundamentals["market"] = market
-            fundamentals["sector"] = fundamentals.get("sector", "")
-            fundamentals["industry"] = fundamentals.get("industry", "")
-            if "data_provider" not in fundamentals:
-                fundamentals["data_provider"] = "unknown"
-
-            if provider is not None:
-                enriched = provider.enrich_record(fundamentals)
-            else:
-                enriched = _enrich_via_yahoo(fundamentals)
-
-            _check_row_completeness(enriched, diag)
-            records.append(enriched)
-            diag.fetched_tickers += 1
-
-            logger.info(
-                "Fetched %s: price=%s, source=%s",
-                symbol,
-                enriched.get("price", "N/A"),
-                enriched.get("data_source", "unknown"),
-            )
-
-        except Exception as e:
-            logger.warning("Failed to fetch %s: %s — %s", symbol, type(e).__name__, e)
-            diag.failed_tickers += 1
-            diag.failed_symbols.append(symbol)
-            diag.errors.append(f"{symbol}: {type(e).__name__}: {e}")
-            skipped.append(symbol)
+    with ThreadPoolExecutor(max_workers=_PARALLEL_WORKERS) as executor:
+        futures = {executor.submit(_fetch_single_ticker, t): t[0] for t in tasks}
+        for future in as_completed(futures):
+            sym = futures[future]
+            try:
+                status, symbol, result = future.result()
+                if status == "ok":
+                    _check_row_completeness(result, diag)
+                    records.append(result)
+                    diag.fetched_tickers += 1
+                else:
+                    diag.failed_tickers += 1
+                    diag.failed_symbols.append(symbol)
+                    diag.errors.append(f"{symbol}: {result}")
+                    skipped.append(symbol)
+            except Exception as e:
+                diag.failed_tickers += 1
+                diag.failed_symbols.append(sym)
+                diag.errors.append(f"{sym}: {type(e).__name__}: {e}")
+                skipped.append(sym)
 
     if skipped:
         logger.warning("Skipped %d/%d tickers: %s", len(skipped), len(symbols), ", ".join(skipped))
