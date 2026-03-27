@@ -331,81 +331,7 @@ with st.sidebar:
                 """
             )
 
-        with about_tab2:
-            st.markdown("## Doğru Kullanım Şekli")
-            st.markdown("---")
-
-            st.markdown("### 📋 En İyi Kullanıcı Akışı")
-
-            st.markdown("#### 1. Genel Fırsat Tarama")
-            st.markdown(
-                """
-- **Piyasa:** BIST
-- **Evren:** BIST100
-- **Tarama Modu:** Standart Tarama
-- **Temel Kalite Seviyesi:** Temel
-- **Sıralama:** Combined Score
-                """
-            )
-
-            st.markdown("#### 2. Akıllı Para Girişi Bulma")
-            st.markdown(
-                """
-- **Piyasa:** BIST
-- **Evren:** BISTTUM
-- **Tarama Modu:** Sadece Akıllı Para Girenler
-- **Temel Kalite Seviyesi:** Temel
-- **Sıralama:** Combined Score
-                """
-            )
-
-            st.markdown("#### 3. Erken Accumulation Yakalama")
-            st.markdown(
-                """
-- **Piyasa:** BIST
-- **Evren:** BIST100 DIŞI
-- **Tarama Modu:** Erken Accumulation Yakalama
-- **Temel Kalite Seviyesi:** Kapalı veya Temel
-- **Sıralama:** Technical Score veya Combined Score
-                """
-            )
-
-            st.markdown("---")
-            st.markdown("### 🔢 En Doğru Sıralama Mantığı")
-
-            st.markdown("#### Standart Tarama")
-            st.markdown("- Varsayılan sıralama: **Combined Score**")
-
-            st.markdown("#### Akıllı Para Girenler")
-            st.markdown("- Önerilen sıralama: **Combined Score** veya **Technical Score**")
-
-            st.markdown("#### Erken Accumulation")
-            st.markdown("- Önerilen sıralama: **Technical Score** veya **Combined Score**")
-
-            st.info("İlk kullanımda **Combined Score** sıralaması önerilir.")
-
-            st.markdown("---")
-            st.markdown("### 🧠 Temel Mantık")
-            st.markdown(
-                """
-- **Tarama Modu** → piyasadaki davranışı seçer
-- **Temel Kalite Seviyesi** → şirket kalitesini filtreler
-- **Sıralama Türü** → sonuçları hangi kritere göre dizdiğini belirler
-                """
-            )
-
-            st.markdown("---")
-            st.markdown("### 💡 Kullanım Tavsiyeleri")
-            st.markdown(
-                """
-- Çok sıkı filtreler az sonuç getirir
-- Erken fırsatlar için kalite filtresi gevşetilebilir
-- En iyi sonuçlar **Combined Score** ile alınır
-- **Backtest** ile strateji doğrulaması yapılmalıdır
-                """
-            )
-
-tab_screener, tab_backtest = st.tabs(["Hisse Tarama", "Backtest"])
+tab_screener, tab_backtest, tab_guide = st.tabs(["Hisse Tarama", "Backtest", "Doğru Kullanım Şekli"])
 
 with tab_screener:
     watchlist_count = len(get_watchlist_tickers())
@@ -654,7 +580,7 @@ with tab_screener:
 
     else:
         st.markdown("Bir piyasa seçin ve hisseleri skorlarına göre sıralamak için **Taramayı Başlat** butonuna tıklayın.")
-        st.info("Daha fazla bilgi için sol menüdeki **Hakkında** bölümüne göz atabilirsiniz.")
+        st.info("Daha fazla bilgi için **Doğru Kullanım Şekli** sekmesine göz atabilirsiniz.")
 
     st.divider()
     wl_items = get_watchlist()
@@ -973,3 +899,77 @@ with tab_backtest:
                             st.markdown(f"**{rec.date.strftime('%Y-%m-%d')}** — Getiri: %{rec.period_return:.1f}")
                             score_items = [f"{t}: {s:.1f}" for t, s in rec.scores.items()]
                             st.caption(" · ".join(score_items))
+
+with tab_guide:
+    st.markdown("## Doğru Kullanım Şekli")
+    st.markdown("---")
+
+    st.markdown("### 📋 En İyi Kullanıcı Akışı")
+
+    st.markdown("#### 1. Genel Fırsat Tarama")
+    st.markdown(
+        """
+- **Piyasa:** BIST
+- **Evren:** BIST100
+- **Tarama Modu:** Standart Tarama
+- **Temel Kalite Seviyesi:** Temel
+- **Sıralama:** Combined Score
+        """
+    )
+
+    st.markdown("#### 2. Akıllı Para Girişi Bulma")
+    st.markdown(
+        """
+- **Piyasa:** BIST
+- **Evren:** BISTTUM
+- **Tarama Modu:** Sadece Akıllı Para Girenler
+- **Temel Kalite Seviyesi:** Temel
+- **Sıralama:** Combined Score
+        """
+    )
+
+    st.markdown("#### 3. Erken Accumulation Yakalama")
+    st.markdown(
+        """
+- **Piyasa:** BIST
+- **Evren:** BIST100 DIŞI
+- **Tarama Modu:** Erken Accumulation Yakalama
+- **Temel Kalite Seviyesi:** Kapalı veya Temel
+- **Sıralama:** Technical Score veya Combined Score
+        """
+    )
+
+    st.markdown("---")
+    st.markdown("### 🔢 En Doğru Sıralama Mantığı")
+
+    st.markdown("#### Standart Tarama")
+    st.markdown("- Varsayılan sıralama: **Combined Score**")
+
+    st.markdown("#### Akıllı Para Girenler")
+    st.markdown("- Önerilen sıralama: **Combined Score** veya **Technical Score**")
+
+    st.markdown("#### Erken Accumulation")
+    st.markdown("- Önerilen sıralama: **Technical Score** veya **Combined Score**")
+
+    st.info("İlk kullanımda **Combined Score** sıralaması önerilir.")
+
+    st.markdown("---")
+    st.markdown("### 🧠 Temel Mantık")
+    st.markdown(
+        """
+- **Tarama Modu** → piyasadaki davranışı seçer
+- **Temel Kalite Seviyesi** → şirket kalitesini filtreler
+- **Sıralama Türü** → sonuçları hangi kritere göre dizdiğini belirler
+        """
+    )
+
+    st.markdown("---")
+    st.markdown("### 💡 Kullanım Tavsiyeleri")
+    st.markdown(
+        """
+- Çok sıkı filtreler az sonuç getirir
+- Erken fırsatlar için kalite filtresi gevşetilebilir
+- En iyi sonuçlar **Combined Score** ile alınır
+- **Backtest** ile strateji doğrulaması yapılmalıdır
+        """
+    )
