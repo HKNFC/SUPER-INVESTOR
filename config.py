@@ -9,28 +9,63 @@ TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
 CACHE_TTL_HISTORY = 600
 CACHE_TTL_QUOTE = 120
 
+BIST_ALL_TICKERS = [
+    "THYAO", "GARAN", "AKBNK", "EREGL", "BIMAS",
+    "KCHOL", "SAHOL", "SISE", "TUPRS", "ASELS",
+    "TCELL", "PGSUS", "TOASO", "FROTO", "KOZAL",
+    "HEKTS", "MGROS", "TAVHL", "VESTL", "ARCLK",
+    "SASA", "PETKM", "ISCTR", "YKBNK", "VAKBN",
+    "HALKB", "TKFEN", "TTKOM", "EKGYO", "ENKAI",
+    "GUBRF", "KRDMD", "OYAKC", "OTKAR", "DOHOL",
+    "AEFES", "SOKM", "ALARK", "ECZYT", "CIMSA",
+    "AKSEN", "GESAN", "KONTR", "BRYAT", "BTCIM",
+    "ISGYO", "TSKB", "AGHOL", "CCOLA", "TTRAK",
+    "ULKER", "MPARK", "INDES", "LOGO", "QUAGR",
+    "BERA", "VERUS", "EUPWR", "KLSER", "PAPIL",
+    "ARDYZ", "CWENE", "TURSG", "ISMEN", "ZOREN",
+    "SARKY", "AYDEM", "ODAS", "BRSAN", "VESBE",
+    "PENTA", "MAVI", "DOAS", "TMSN", "NETAS",
+    "GLYHO", "ANHYT", "ANELE", "KERVT", "KCAER",
+    "AHGAZ", "BIOEN", "EGEEN", "GEDZA", "GOODY",
+    "KARTN", "KLRHO", "KUYAS", "MAGEN", "OZKGY",
+    "SILVR", "TMPOL", "TUKAS", "YATAS", "ADEL",
+    "AKFGY", "ALBRK", "ALFAS", "ANSGR", "ARSAN",
+    "AVHOL", "BFREN", "BIENY", "BMSTL", "BOBET",
+    "BUCIM", "CEMAS", "DEVA", "DNISI", "ERBOS",
+    "FENER", "FLAP", "FORTE", "GENTS", "GRSEL",
+    "GSDHO", "HATEK", "HDFGS", "HTTBT", "HUNER",
+    "IEYHO", "IPEKE", "ISDMR", "ISKUR", "JANTS",
+    "KARSN", "KATMR", "KFEIN", "KMPUR", "KNFRT",
+    "KONYA", "KORDS", "KOZAA", "KRONT", "KRPLS",
+    "LKMNH", "MAALT", "MEGAP", "MERIT", "MIATK",
+    "MOBTL", "NUGYO", "OSMEN", "OSTIM", "OYAYO",
+    "PCILT", "PEGYO", "PRKME", "RALYH", "ROYAL",
+    "RYGYO", "SANEL", "SEGYO", "SELGD", "SMRTG",
+    "SNGYO", "SRVGY", "TATGD", "TBORG", "TERA",
+    "TKURU", "TLMAN", "TRGYO", "TRILC", "TUREX",
+    "ULUUN", "USAK", "VAKKO", "YAPRK", "YKSLN",
+    "YUNSA", "ZRGYO",
+]
+
+USA_ALL_TICKERS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "BRK.B", "JPM", "V",
+    "UNH", "XOM", "JNJ", "PG", "MA",
+    "HD", "AVGO", "MRK", "COST", "PEP",
+]
+
 SUPPORTED_MARKETS = {
     "BIST": {
         "label": "BIST (Türkiye)",
         "exchange": "BIST",
         "currency": "TRY",
-        "symbols": [
-            "THYAO", "GARAN", "AKBNK", "EREGL", "BIMAS",
-            "KCHOL", "SAHOL", "SISE", "TUPRS", "ASELS",
-            "TCELL", "PGSUS", "TOASO", "FROTO", "KOZAL",
-            "HEKTS", "MGROS", "TAVHL", "VESTL", "ARCLK",
-        ],
+        "symbols": BIST_ALL_TICKERS,
     },
     "USA": {
         "label": "ABD Hisseleri",
         "exchange": "NASDAQ/NYSE",
         "currency": "USD",
-        "symbols": [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-            "META", "TSLA", "BRK.B", "JPM", "V",
-            "UNH", "XOM", "JNJ", "PG", "MA",
-            "HD", "AVGO", "MRK", "COST", "PEP",
-        ],
+        "symbols": USA_ALL_TICKERS,
     },
 }
 
@@ -50,6 +85,16 @@ BIST100_TICKERS = [
     "SOKM", "ALARK", "ECZYT", "CIMSA", "AKSEN",
     "GESAN", "KONTR", "BRYAT", "BTCIM", "ISGYO",
     "TSKB", "AGHOL", "CCOLA", "TTRAK", "ULKER",
+    "MPARK", "INDES", "LOGO", "QUAGR", "BERA",
+    "VERUS", "EUPWR", "KLSER", "PAPIL", "ARDYZ",
+    "CWENE", "TURSG", "ISMEN", "ZOREN", "SARKY",
+    "AYDEM", "ODAS", "BRSAN", "VESBE", "PENTA",
+    "MAVI", "DOAS", "TMSN", "NETAS", "GLYHO",
+    "ANHYT", "ANELE", "KERVT", "KCAER", "AHGAZ",
+    "BIOEN", "EGEEN", "GEDZA", "GOODY", "KARTN",
+    "KLRHO", "KUYAS", "MAGEN", "OZKGY", "SILVR",
+    "TMPOL", "TUKAS", "YATAS", "ADEL", "VESTL",
+    "AKFGY", "ALBRK", "ALFAS", "ANSGR", "ARSAN",
 ]
 
 BIST_SEGMENTS = {
