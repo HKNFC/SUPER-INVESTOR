@@ -12,6 +12,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+from datetime import date, timedelta
 from typing import Optional
 from config import (
     SUPPORTED_MARKETS, DEFAULT_TOP_N,
@@ -21,7 +22,10 @@ from config import (
     SP500_TICKERS, NASDAQ100_TICKERS, USA_SEGMENTS,
 )
 from data_model import validate_dataframe
-from data_fetcher import fetch_market_data, get_last_diagnostics, refresh_eod_cache
+from data_fetcher import (
+    fetch_market_data, get_last_diagnostics, refresh_eod_cache,
+    fetch_backtest_data,
+)
 from scoring_engine import compute_rs_scores, get_score_breakdown
 from institutional_score import STRATEGY_PROFILES, get_debug_info, BLOCK_LABELS
 from filters import (
@@ -389,6 +393,20 @@ with st.sidebar:
     )
 
     st.divider()
+
+    use_historical = st.checkbox("Geçmiş Tarihte Tara", value=False)
+    if use_historical:
+        scan_date = st.date_input(
+            "Tarama Tarihi",
+            value=date.today() - timedelta(days=30),
+            min_value=date(2020, 1, 1),
+            max_value=date.today() - timedelta(days=1),
+        )
+        st.caption("Cache'deki fiyat verileri seçilen tarihe kadar kesilir.")
+    else:
+        scan_date = None
+
+    st.divider()
     api_status = "Canlı Veri" if TWELVE_DATA_API_KEY else "Demo Veri"
     st.caption(f"Veri: {api_status}")
 
@@ -431,15 +449,48 @@ with tab_screener:
     if run_screening:
         market_info = SUPPORTED_MARKETS[market]
         skip_fund = False
+        is_historical = scan_date is not None
 
         try:
-            with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
-                cache_stats = refresh_eod_cache(market)
-                st.session_state["last_cache_stats"] = cache_stats
+            if is_historical:
+                cutoff = pd.Timestamp(scan_date)
+                with st.spinner(f"{market_info['label']} geçmiş verileri yükleniyor ({scan_date})..."):
+                    raw_data, _prep_stats = fetch_backtest_data(
+                        market, skip_fundamentals=skip_fund,
+                    )
+                if raw_data.empty:
+                    st.error("Cache'de veri bulunamadı. Önce güncel tarama yaparak verileri indirin.")
+                    st.stop()
 
-            with st.spinner(f"{market_info['label']} verileri işleniyor..."):
-                cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
-                raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
+                from momentum_metrics import append_momentum_fields
+                from data_fetcher import get_cached_benchmark
+                truncated_rows = []
+                for _, row in raw_data.iterrows():
+                    pd_data = row.get("price_data")
+                    if isinstance(pd_data, pd.DataFrame) and "datetime" in pd_data.columns:
+                        sliced = pd_data[pd_data["datetime"] <= cutoff].copy()
+                        if len(sliced) >= 20:
+                            new_row = row.copy()
+                            new_row["price_data"] = sliced.reset_index(drop=True)
+                            truncated_rows.append(new_row)
+                if not truncated_rows:
+                    st.error(f"{scan_date} tarihinde yeterli veri bulunamadı.")
+                    st.stop()
+                raw_data = pd.DataFrame(truncated_rows).reset_index(drop=True)
+
+                bench = get_cached_benchmark(market, cache_only=True)
+                if bench is not None and not bench.empty and "datetime" in bench.columns:
+                    bench = bench[bench["datetime"] <= cutoff].copy()
+                raw_data = append_momentum_fields(raw_data, benchmark_history=bench)
+                st.session_state["last_cache_stats"] = None
+            else:
+                with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
+                    cache_stats = refresh_eod_cache(market)
+                    st.session_state["last_cache_stats"] = cache_stats
+
+                with st.spinner(f"{market_info['label']} verileri işleniyor..."):
+                    cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
+                    raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
 
             if market == "BIST" and bist_segment != "BISTTUM" and "ticker" in raw_data.columns:
                 if bist_segment == "BIST100":
@@ -524,6 +575,7 @@ with tab_screener:
             st.session_state["screener_usa_segment"] = usa_segment if market == "USA" else None
             st.session_state["screener_sort_by"] = effective_sort
             st.session_state["screener_scan_mode"] = scan_mode
+            st.session_state["screener_scan_date"] = scan_date
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
@@ -535,6 +587,10 @@ with tab_screener:
         passed_count = st.session_state["screener_passed_count"]
         stored_market = st.session_state["screener_market"]
         stored_preset = st.session_state["screener_preset"]
+
+        stored_scan_date = st.session_state.get("screener_scan_date")
+        if stored_scan_date:
+            st.info(f"📅 Geçmiş tarih taraması: **{stored_scan_date}** (cache verileri kullanıldı)")
 
         stored_segment = st.session_state.get("screener_bist_segment")
         stored_usa_segment = st.session_state.get("screener_usa_segment")

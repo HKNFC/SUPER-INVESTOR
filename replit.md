@@ -29,6 +29,7 @@ The stock screener is built with Streamlit for the UI and Python for the backend
 
 ### UI/UX:
 - The Streamlit application provides an interactive UI with market selectors, filters, results tables, and detailed stock information tabs.
+- **Historical Screening:** Sidebar "Geçmiş Tarihte Tara" checkbox + date picker. When enabled, uses `fetch_backtest_data` (cache-only OHLCV + Yahoo fundamentals), truncates price_data to the selected date, recomputes momentum fields with truncated benchmark, then scores normally. Results show an info banner with the selected date.
 - The Streamlit server runs on port 5000.
 
 ## TypeScript Stack
