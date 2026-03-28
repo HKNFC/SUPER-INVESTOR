@@ -713,10 +713,39 @@ def refresh_eod_cache(market: str, progress_callback=None) -> Dict[str, int]:
     return result
 
 
+def _fetch_fundamentals_batch(symbols: list, market: str, progress_callback=None) -> dict:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    results = {}
+    total = len(symbols)
+
+    def _fetch_one(sym):
+        from symbol_mapper import resolve_twelve_symbol
+        provider = get_provider()
+        resolved = resolve_twelve_symbol(sym, market) if provider else sym
+        try:
+            fund = fetch_fundamentals(resolved, market=market)
+            return (sym, fund)
+        except Exception as e:
+            logger.warning("Backtest fundamentals failed for %s: %s", sym, e)
+            return (sym, {"data_provider": "none"})
+
+    with ThreadPoolExecutor(max_workers=_PARALLEL_WORKERS) as executor:
+        futures = {executor.submit(_fetch_one, s): s for s in symbols}
+        for idx, future in enumerate(as_completed(futures)):
+            if progress_callback and idx % 20 == 0:
+                progress_callback(idx / total, f"Temel veri: {idx}/{total}")
+            sym, fund = future.result()
+            results[sym] = fund
+
+    return results
+
+
 def fetch_backtest_data(
     market: str,
     progress_callback=None,
     skip_momentum: bool = False,
+    skip_fundamentals: bool = False,
 ) -> tuple:
     from momentum_metrics import append_momentum_fields
     from disk_cache import read_cache
@@ -731,14 +760,15 @@ def fetch_backtest_data(
     provider = get_provider()
 
     records = []
+    valid_symbols = []
 
     from symbol_mapper import resolve_twelve_symbol
 
     for idx, symbol in enumerate(symbols):
         if progress_callback:
             progress_callback(
-                (idx + 1) / len(symbols),
-                f"Veri hazırlanıyor: {idx + 1}/{len(symbols)} ({symbol})"
+                (idx + 1) / len(symbols) * 0.3,
+                f"Fiyat verisi: {idx + 1}/{len(symbols)} ({symbol})"
             )
 
         try:
@@ -762,6 +792,7 @@ def fetch_backtest_data(
                 "industry": "",
                 "price_data": price_data,
             })
+            valid_symbols.append(symbol)
 
         except Exception as e:
             logger.error("Failed to load cache for %s: %s — %s", symbol, type(e).__name__, e)
@@ -775,6 +806,30 @@ def fetch_backtest_data(
         stats.duration_seconds = time.time() - start_time
         return df, stats
 
+    if not skip_fundamentals and valid_symbols:
+        if progress_callback:
+            progress_callback(0.3, "Temel veriler çekiliyor...")
+        fund_map = _fetch_fundamentals_batch(
+            valid_symbols, market,
+            progress_callback=lambda p, m: progress_callback(0.3 + p * 0.3, m) if progress_callback else None,
+        )
+        fund_count = 0
+        for rec in records:
+            sym = rec["ticker"]
+            fund = fund_map.get(sym, {})
+            if fund.get("data_provider", "none") != "none":
+                fund_count += 1
+            rec["sector"] = fund.get("sector", "")
+            rec["industry"] = fund.get("industry", "")
+            for key in ["revenue", "net_income", "equity", "total_debt",
+                        "roe", "roic", "net_margin", "debt_to_equity",
+                        "revenue_growth", "earnings_growth", "pe_ratio",
+                        "pb_ratio", "ps_ratio", "ev_to_ebitda",
+                        "price", "market_cap", "data_provider"]:
+                if key in fund:
+                    rec[key] = fund[key]
+        logger.info("Backtest fundamentals: %d/%d have data", fund_count, len(valid_symbols))
+
     df = pd.DataFrame(records)
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
@@ -785,7 +840,7 @@ def fetch_backtest_data(
 
     stats.duration_seconds = time.time() - start_time
     logger.info(
-        "Backtest data (cache-only) for %s: %d symbols, %d cache hits, %d missing in %.1fs",
+        "Backtest data for %s: %d symbols, %d cache hits, %d missing in %.1fs",
         market, stats.total_symbols, stats.cache_hits, stats.failed, stats.duration_seconds,
     )
     if stats.failed_symbols:
