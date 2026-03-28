@@ -449,35 +449,62 @@ def _filter_price_spikes(price_data: pd.DataFrame, max_ratio: float = 2.5) -> pd
     if len(valid) < 10:
         return price_data
 
-    overall_median = float(np.median(valid))
-    if overall_median <= 0:
-        return price_data
+    pct = np.abs(np.diff(valid) / valid[:-1])
+    n_big_jumps = int(np.sum(pct > 0.40))
 
-    low_group = valid[valid <= overall_median]
-    high_group = valid[valid > overall_median]
+    if n_big_jumps >= 2:
+        log_vals = np.log(valid)
 
-    if len(low_group) == 0 or len(high_group) == 0:
-        return price_data
+        jump_indices = np.where(pct > 0.40)[0]
+        jump_vals = np.array([valid[j] for j in jump_indices] + [valid[j + 1] for j in jump_indices if j + 1 < len(valid)])
+        log_jump = np.log(jump_vals) if len(jump_vals) > 0 else log_vals
 
-    low_med = float(np.median(low_group))
-    high_med = float(np.median(high_group))
+        center_low = float(np.min(log_jump))
+        center_high = float(np.max(log_jump))
+        if abs(center_high - center_low) < 0.3:
+            center_low = float(np.min(log_vals))
+            center_high = float(np.max(log_vals))
 
-    if low_med > 0 and (high_med / low_med) > 5.0:
-        if len(low_group) >= len(high_group):
-            threshold = low_med * max_ratio
-            keep = (closes <= threshold) | (closes <= 0)
-        else:
-            threshold = high_med / max_ratio
-            keep = (closes >= threshold) | (closes <= 0)
+        for _ in range(20):
+            dist_low = np.abs(log_vals - center_low)
+            dist_high = np.abs(log_vals - center_high)
+            low_mask = dist_low <= dist_high
+            high_mask = ~low_mask
+            if not np.any(low_mask) or not np.any(high_mask):
+                break
+            new_low = float(np.mean(log_vals[low_mask]))
+            new_high = float(np.mean(log_vals[high_mask]))
+            if abs(new_low - center_low) < 1e-6 and abs(new_high - center_high) < 1e-6:
+                break
+            center_low, center_high = new_low, new_high
 
-        removed = int((~keep).sum())
-        if removed > 0:
-            logger.info(
-                "Spike filter (bimodal) removed %d/%d rows, low_med=%.2f, high_med=%.2f",
-                removed, len(df), low_med, high_med,
-            )
-            df = df[keep].reset_index(drop=True)
-            closes = df["close"].values.astype(float)
+        c_low = np.exp(center_low)
+        c_high = np.exp(center_high)
+        cluster_ratio = c_high / c_low if c_low > 0 else 1.0
+
+        if cluster_ratio > 1.8:
+            n_low = int(np.sum(low_mask))
+            n_high = int(np.sum(high_mask))
+            majority_center = c_low if n_low >= n_high else c_high
+
+            keep = np.ones(len(closes), dtype=bool)
+            removed = 0
+            for i in range(len(closes)):
+                c = closes[i]
+                if c <= 0:
+                    continue
+                r = c / majority_center
+                if r > 1.8 or r < (1.0 / 1.8):
+                    keep[i] = False
+                    removed += 1
+
+            if 0 < removed < len(closes) * 0.7:
+                logger.info(
+                    "Spike filter (cluster) removed %d/%d rows, centers=%.2f/%.2f, ratio=%.1f",
+                    removed, len(df), c_low, c_high, cluster_ratio,
+                )
+                df = df[keep].reset_index(drop=True)
+                closes = df["close"].values.astype(float)
 
     total_removed_reversion = 0
     for _pass in range(8):
@@ -506,8 +533,8 @@ def _filter_price_spikes(price_data: pd.DataFrame, max_ratio: float = 2.5) -> pd
                 r_before = curr_c / before_c
                 r_after = curr_c / after_c
 
-                spike_up = r_before > 1.5 and r_after > 1.5
-                spike_down = r_before < 0.67 and r_after < 0.67
+                spike_up = r_before > 1.35 and r_after > 1.35
+                spike_down = r_before < 0.74 and r_after < 0.74
 
                 if spike_up or spike_down:
                     keep[i] = False
@@ -523,6 +550,57 @@ def _filter_price_spikes(price_data: pd.DataFrame, max_ratio: float = 2.5) -> pd
 
     if total_removed_reversion > 0:
         logger.info("Spike filter (reversion) removed %d rows", total_removed_reversion)
+
+    for _tail_pass in range(3):
+        if len(closes) < 20:
+            break
+        pct_final = np.abs(np.diff(closes) / closes[:-1])
+        tail_jumps = np.where(pct_final > 0.35)[0]
+        best_tj = None
+        best_ratio = 0
+        for tj in tail_jumps:
+            before_segment = closes[:tj + 1]
+            after_segment = closes[tj + 1:]
+            if len(after_segment) < 2 or len(before_segment) < 5:
+                continue
+            b_valid = before_segment[before_segment > 0]
+            a_valid = after_segment[after_segment > 0]
+            if len(b_valid) == 0 or len(a_valid) == 0:
+                continue
+            before_med = float(np.median(b_valid))
+            after_med = float(np.median(a_valid))
+            if before_med <= 0 or after_med <= 0:
+                continue
+            shift_ratio = max(before_med, after_med) / min(before_med, after_med)
+            if shift_ratio > 1.45 and shift_ratio > best_ratio:
+                minority_is_after = len(before_segment) > len(after_segment)
+                if minority_is_after or len(after_segment) > len(before_segment):
+                    best_tj = tj
+                    best_ratio = shift_ratio
+
+        if best_tj is None:
+            break
+
+        before_seg = closes[:best_tj + 1]
+        after_seg = closes[best_tj + 1:]
+        if len(before_seg) >= len(after_seg):
+            keep = np.ones(len(closes), dtype=bool)
+            keep[best_tj + 1:] = False
+        else:
+            keep = np.ones(len(closes), dtype=bool)
+            keep[:best_tj + 1] = False
+
+        removed_tail = int((~keep).sum())
+        if removed_tail == 0:
+            break
+        b_med = float(np.median(before_seg[before_seg > 0]))
+        a_med = float(np.median(after_seg[after_seg > 0]))
+        logger.info(
+            "Spike filter (regime) removed %d rows, meds=%.2f/%.2f, ratio=%.1f",
+            removed_tail, b_med, a_med, best_ratio,
+        )
+        df = df[keep].reset_index(drop=True)
+        closes = df["close"].values.astype(float)
 
     return df
 
