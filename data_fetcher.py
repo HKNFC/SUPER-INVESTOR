@@ -265,6 +265,7 @@ def _enrich_via_yahoo(record: dict) -> dict:
 
     result = dict(record)
     history = _try_yahoo_fallback(ticker, market=market)
+    history = _filter_price_spikes(history)
     result["price_data"] = history
     result["data_source"] = "yahoo"
 
@@ -434,6 +435,96 @@ def _ensure_sorted(price_data: pd.DataFrame) -> pd.DataFrame:
     if price_data is not None and not price_data.empty and "datetime" in price_data.columns:
         return price_data.sort_values("datetime").reset_index(drop=True)
     return price_data
+
+
+def _filter_price_spikes(price_data: pd.DataFrame, max_ratio: float = 2.5) -> pd.DataFrame:
+    if price_data is None or price_data.empty or "close" not in price_data.columns:
+        return price_data
+    if len(price_data) < 10:
+        return price_data
+
+    df = price_data.copy()
+    closes = df["close"].values.astype(float)
+    valid = closes[closes > 0]
+    if len(valid) < 10:
+        return price_data
+
+    overall_median = float(np.median(valid))
+    if overall_median <= 0:
+        return price_data
+
+    low_group = valid[valid <= overall_median]
+    high_group = valid[valid > overall_median]
+
+    if len(low_group) == 0 or len(high_group) == 0:
+        return price_data
+
+    low_med = float(np.median(low_group))
+    high_med = float(np.median(high_group))
+
+    if low_med > 0 and (high_med / low_med) > 5.0:
+        if len(low_group) >= len(high_group):
+            threshold = low_med * max_ratio
+            keep = (closes <= threshold) | (closes <= 0)
+        else:
+            threshold = high_med / max_ratio
+            keep = (closes >= threshold) | (closes <= 0)
+
+        removed = int((~keep).sum())
+        if removed > 0:
+            logger.info(
+                "Spike filter (bimodal) removed %d/%d rows, low_med=%.2f, high_med=%.2f",
+                removed, len(df), low_med, high_med,
+            )
+            df = df[keep].reset_index(drop=True)
+            closes = df["close"].values.astype(float)
+
+    total_removed_reversion = 0
+    for _pass in range(8):
+        if len(closes) < 5:
+            break
+        keep = np.ones(len(closes), dtype=bool)
+        removed_this_pass = 0
+
+        for i in range(len(closes)):
+            curr_c = closes[i]
+            if curr_c <= 0:
+                continue
+
+            for gap in [1, 2, 3, 5, 7, 10]:
+                before_idx = i - gap
+                after_idx = i + gap
+                if before_idx < 0 or after_idx >= len(closes):
+                    continue
+                before_c = closes[before_idx]
+                after_c = closes[after_idx]
+                if before_c <= 0 or after_c <= 0:
+                    continue
+                if not keep[before_idx] or not keep[after_idx]:
+                    continue
+
+                r_before = curr_c / before_c
+                r_after = curr_c / after_c
+
+                spike_up = r_before > 1.5 and r_after > 1.5
+                spike_down = r_before < 0.67 and r_after < 0.67
+
+                if spike_up or spike_down:
+                    keep[i] = False
+                    removed_this_pass += 1
+                    break
+
+        if removed_this_pass == 0:
+            break
+
+        total_removed_reversion += removed_this_pass
+        df = df[keep].reset_index(drop=True)
+        closes = df["close"].values.astype(float)
+
+    if total_removed_reversion > 0:
+        logger.info("Spike filter (reversion) removed %d rows", total_removed_reversion)
+
+    return df
 
 
 def get_historical_data(
@@ -777,6 +868,7 @@ def fetch_backtest_data(
 
             if cached is not None and not cached.empty:
                 price_data = _ensure_sorted(cached)
+                price_data = _filter_price_spikes(price_data)
                 stats.cache_hits += 1
             else:
                 logger.info("Backtest: no cache for %s — skipping (cache-only mode)", symbol)
