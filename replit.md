@@ -27,6 +27,7 @@ The stock screener is built with Streamlit for the UI and Python for the backend
 - **Filters:** `filters.py` provides pre-ranking quality filters with configurable presets.
 - **Backtest Engine:** `backtest_engine.py` enables historical strategy backtesting using cached price data plus Yahoo-fetched fundamentals (parallel batch via `_fetch_fundamentals_batch`). Uses the same `inst_profile` (strategy profile) as the screener for consistent scoring. Fundamentals are cached in-memory (20h TTL) so subsequent runs are fast. Non-standard profiles auto-sort by `institutional_score`. Scan modes (Standart/Akıllı Para/Erken Accumulation) are optional filters.
 - **Watchlist:** `watchlist.py` manages a local JSON-backed watchlist.
+- **Scan History:** `scan_history.py` manages a JSON-backed history of scan and backtest runs. Records scan parameters, top stocks, and backtest metrics (return, Sharpe, drawdown). Entries are stored newest-first with unique IDs. Functions: `add_scan_entry()`, `add_backtest_entry()`, `get_history()`, `delete_entry()`, `clear_history()`. The "Geçmiş" tab displays all entries with expandable detail cards and individual/bulk delete.
 
 ### UI/UX:
 - The Streamlit application provides an interactive UI with market selectors, filters, results tables, and detailed stock information tabs.

@@ -38,6 +38,10 @@ from watchlist import (
     add_to_watchlist, remove_from_watchlist, clear_watchlist,
     update_watchlist_scores, export_watchlist_csv,
 )
+from scan_history import (
+    add_scan_entry, add_backtest_entry,
+    get_history, delete_entry, clear_history,
+)
 
 st.set_page_config(
     page_title="Hisse Tarayıcı",
@@ -439,7 +443,7 @@ with st.sidebar:
                 """
             )
 
-tab_screener, tab_backtest, tab_guide = st.tabs(["Hisse Tarama", "Backtest", "Doğru Kullanım Şekli"])
+tab_screener, tab_backtest, tab_history, tab_guide = st.tabs(["Hisse Tarama", "Backtest", "Geçmiş", "Doğru Kullanım Şekli"])
 
 with tab_screener:
     watchlist_count = len(get_watchlist_tickers())
@@ -576,6 +580,27 @@ with tab_screener:
             st.session_state["screener_sort_by"] = effective_sort
             st.session_state["screener_scan_mode"] = scan_mode
             st.session_state["screener_scan_date"] = scan_date
+
+            segment_label = ""
+            if market == "BIST":
+                segment_label = BIST_SEGMENTS.get(bist_segment, bist_segment)
+            elif market == "USA":
+                segment_label = USA_SEGMENTS.get(usa_segment, usa_segment)
+            top_tickers = []
+            if "ticker" in filtered_data.columns:
+                top_tickers = filtered_data["ticker"].head(10).tolist()
+            add_scan_entry(
+                market=SUPPORTED_MARKETS[market]["label"],
+                segment=segment_label,
+                scan_mode=SCAN_MODES.get(scan_mode, scan_mode),
+                profile=STRATEGY_PROFILES[inst_profile]["label"],
+                quality=QUALITY_LABELS.get(selected_preset, selected_preset),
+                sort_by=SORT_OPTIONS.get(effective_sort, effective_sort),
+                top_n=top_n,
+                result_count=passed_count,
+                top_stocks=top_tickers,
+                scan_date=str(scan_date) if scan_date else None,
+            )
 
         except Exception as e:
             st.error(f"Tarama sırasında bir hata oluştu: {e}")
@@ -981,13 +1006,20 @@ with tab_backtest:
                 )
 
                 st.session_state["bt_result"] = result
-                st.session_state["bt_params"] = {
+                if bt_profile != "standard":
+                    effective_sort = "Institutional Score"
+                elif bt_scan_mode != "standard":
+                    effective_sort = "Combined Score"
+                else:
+                    effective_sort = SORT_OPTIONS.get(bt_sort, bt_sort)
+
+                bt_params_dict = {
                     "market": SUPPORTED_MARKETS[bt_market]["label"],
                     "universe": bt_universe_label,
                     "profile": STRATEGY_PROFILES[bt_profile]["label"],
                     "scan_mode": SCAN_MODES.get(bt_scan_mode, bt_scan_mode),
                     "quality": QUALITY_LABELS.get(bt_preset, bt_preset),
-                    "sort_by": SORT_OPTIONS.get(bt_sort, bt_sort),
+                    "sort_by": effective_sort,
                     "top_n": bt_top_n,
                     "rebalance": REBALANCE_LABELS.get(bt_rebalance, bt_rebalance),
                     "weight": WEIGHT_LABELS.get(bt_weight, bt_weight),
@@ -995,6 +1027,16 @@ with tab_backtest:
                     "start": str(bt_start),
                     "end": str(bt_end),
                 }
+                st.session_state["bt_params"] = bt_params_dict
+
+                add_backtest_entry(
+                    params=bt_params_dict,
+                    total_return=result.total_return,
+                    benchmark_return=result.benchmark_return,
+                    num_periods=result.num_periods,
+                    sharpe=result.sharpe_ratio,
+                    max_drawdown=result.max_drawdown,
+                )
 
             except Exception as e:
                 progress_bar.empty()
@@ -1103,6 +1145,94 @@ with tab_backtest:
                             st.markdown(f"**{rec.date.strftime('%Y-%m-%d')}** — Getiri: %{rec.period_return:.1f}")
                             score_items = [f"{t}: {s:.1f}" for t, s in rec.scores.items()]
                             st.caption(" · ".join(score_items))
+
+with tab_history:
+    st.subheader("Tarama ve Backtest Geçmişi")
+    history_entries = get_history()
+
+    if not history_entries:
+        st.info("Henüz kayıtlı tarama veya backtest bulunmuyor. Tarama veya backtest yaptıktan sonra burada listelenecektir.")
+    else:
+        col_info, col_clear = st.columns([4, 1])
+        with col_info:
+            scan_count = sum(1 for e in history_entries if e.get("type") == "scan")
+            bt_count = sum(1 for e in history_entries if e.get("type") == "backtest")
+            st.caption(f"Toplam {len(history_entries)} kayıt ({scan_count} tarama, {bt_count} backtest)")
+        with col_clear:
+            if st.button("Tüm Geçmişi Temizle", type="secondary", key="clear_all_history"):
+                clear_history()
+                st.rerun()
+
+        for idx, entry in enumerate(history_entries):
+            entry_id = entry.get("id", idx)
+            entry_type = entry.get("type", "scan")
+            entry_dt = entry.get("datetime", "")
+
+            if entry_type == "scan":
+                scan_date_str = entry.get("scan_date")
+                date_badge = f" | Tarih: {scan_date_str}" if scan_date_str else ""
+                header = f"TARAMA — {entry.get('market', '')} | {entry.get('segment', '')} | {entry_dt}{date_badge}"
+
+                with st.expander(header, expanded=False):
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric("Mod", entry.get("scan_mode", ""))
+                    c2.metric("Profil", entry.get("profile", ""))
+                    c3.metric("Kalite", entry.get("quality", ""))
+                    c4.metric("Sıralama", entry.get("sort_by", ""))
+
+                    c5, c6 = st.columns(2)
+                    c5.metric("Top N", entry.get("top_n", ""))
+                    c6.metric("Sonuç Sayısı", entry.get("result_count", ""))
+
+                    top_stocks = entry.get("top_stocks", [])
+                    if top_stocks:
+                        st.markdown(f"**En İyi Hisseler:** {', '.join(top_stocks)}")
+
+                    if st.button("Sil", key=f"del_scan_{entry_id}", type="secondary"):
+                        delete_entry(entry_id)
+                        st.rerun()
+
+            elif entry_type == "backtest":
+                params = entry.get("params", {})
+                try:
+                    total_ret = float(entry.get("total_return", 0) or 0)
+                except (TypeError, ValueError):
+                    total_ret = 0.0
+                try:
+                    bench_ret = float(entry.get("benchmark_return", 0) or 0)
+                except (TypeError, ValueError):
+                    bench_ret = 0.0
+                try:
+                    sharpe_val = float(entry.get("sharpe", 0) or 0)
+                except (TypeError, ValueError):
+                    sharpe_val = 0.0
+                try:
+                    dd_val = float(entry.get("max_drawdown", 0) or 0)
+                except (TypeError, ValueError):
+                    dd_val = 0.0
+
+                header = f"BACKTEST — {params.get('market', '')} | {params.get('start', '')} ~ {params.get('end', '')} | {entry_dt}"
+
+                with st.expander(header, expanded=False):
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric("Getiri", f"%{total_ret:.1f}", delta=f"vs Benchmark %{bench_ret:.1f}")
+                    c2.metric("Sharpe", f"{sharpe_val:.2f}")
+                    c3.metric("Max Drawdown", f"%{dd_val:.1f}")
+                    c4.metric("Dönem Sayısı", entry.get("num_periods", 0))
+
+                    c5, c6, c7, c8 = st.columns(4)
+                    c5.metric("Evren", params.get("universe", ""))
+                    c6.metric("Profil", params.get("profile", ""))
+                    c7.metric("Mod", params.get("scan_mode", ""))
+                    c8.metric("Rebalance", params.get("rebalance", ""))
+
+                    c9, c10 = st.columns(2)
+                    c9.metric("Kalite", params.get("quality", ""))
+                    c10.metric("Top N", params.get("top_n", ""))
+
+                    if st.button("Sil", key=f"del_bt_{entry_id}", type="secondary"):
+                        delete_entry(entry_id)
+                        st.rerun()
 
 with tab_guide:
     st.markdown("## Doğru Kullanım Şekli")
