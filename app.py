@@ -806,8 +806,17 @@ with tab_backtest:
                 key="bt_universe_usa",
             )
 
+        bt_profile = st.selectbox(
+            "Strateji Profili",
+            options=list(STRATEGY_PROFILES.keys()),
+            format_func=lambda x: STRATEGY_PROFILES[x]["label"],
+            index=0,
+            key="bt_profile",
+        )
+        st.caption(STRATEGY_PROFILES[bt_profile]["description"])
+
         bt_scan_mode = st.selectbox(
-            "Tarama Modu",
+            "Ek Filtre (Opsiyonel)",
             options=list(SCAN_MODES.keys()),
             format_func=lambda x: SCAN_MODES[x],
             index=0,
@@ -899,6 +908,7 @@ with tab_backtest:
                         start_date=bt_start,
                         end_date=bt_end,
                         progress_callback=_bt_progress,
+                        inst_profile=bt_profile,
                     )
 
                 progress_bar.empty()
@@ -913,6 +923,7 @@ with tab_backtest:
                 st.session_state["bt_params"] = {
                     "market": SUPPORTED_MARKETS[bt_market]["label"],
                     "universe": bt_universe_label,
+                    "profile": STRATEGY_PROFILES[bt_profile]["label"],
                     "scan_mode": SCAN_MODES.get(bt_scan_mode, bt_scan_mode),
                     "quality": QUALITY_LABELS.get(bt_preset, bt_preset),
                     "sort_by": SORT_OPTIONS.get(bt_sort, bt_sort),
@@ -963,7 +974,8 @@ with tab_backtest:
                 cond_parts = [
                     f"Piyasa: {params.get('market', '?')}",
                     f"Evren: {params.get('universe', '?')}",
-                    f"Mod: {params.get('scan_mode', '?')}",
+                    f"Strateji: {params.get('profile', '?')}",
+                    f"Filtre: {params.get('scan_mode', '?')}",
                     f"Kalite: {params.get('quality', '?')}",
                     f"Siralama: {params.get('sort_by', '?')}",
                     f"Top-{params.get('top_n', '?')}",

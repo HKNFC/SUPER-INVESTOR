@@ -273,6 +273,7 @@ def run_backtest(
     end_date: date,
     min_avg_volume: Optional[float] = None,
     progress_callback=None,
+    inst_profile: str = "standard",
 ) -> BacktestResult:
     def _data_progress(pct, text):
         if progress_callback:
@@ -362,7 +363,7 @@ def run_backtest(
                     bench_trunc = None
         truncated = append_momentum_fields(truncated, benchmark_history=bench_trunc)
 
-        scored = compute_rs_scores(truncated, market=market)
+        scored = compute_rs_scores(truncated, market=market, inst_profile=inst_profile)
 
         filtered = apply_preset_filter(
             scored, preset=quality_preset, min_avg_volume=min_avg_volume,

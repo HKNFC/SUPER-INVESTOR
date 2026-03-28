@@ -24,7 +24,7 @@ The stock screener is built with Streamlit for the UI and Python for the backend
 - **Technical Signals:** `technical_signals.py` computes a Technical Signal Score based on Trend, Momentum, Breakout, Volume Flow, and Risk/Stability. Combined Score = 0.50*RS + 0.50*Tech.
 - **Institutional Score:** `institutional_score.py` computes a 0-100 Institutional Score from 5 sub-scores: Quality (25%), Growth (20%), Valuation (15%), Momentum (25%), Flow (15%). Uses independent percentile ranking, winsorization, adaptive block-level weighting. Features: Selection Score (Quality+Growth+Valuation), Timing Score (Momentum+Flow), 5 strategy profiles (Standard, Quality Compounders, Growth Leaders, Smart Money Breakout, Value+Confirmation) with different block weights, and per-stock debug panel showing used/missing metrics per block. Categories: Elit 85+, Güçlü 70+, İzleme 55+, Zayıf <55.
 - **Filters:** `filters.py` provides pre-ranking quality filters with configurable presets.
-- **Backtest Engine:** `backtest_engine.py` enables historical strategy backtesting using cached data, supporting various rebalance periods and providing performance metrics like equity curve, drawdown, Sharpe, and alpha.
+- **Backtest Engine:** `backtest_engine.py` enables historical strategy backtesting using cached data, supporting various rebalance periods and providing performance metrics like equity curve, drawdown, Sharpe, and alpha. Uses the same `inst_profile` (strategy profile) as the screener for consistent scoring. Scan modes (Standart/Akıllı Para/Erken Accumulation) are optional filters.
 - **Watchlist:** `watchlist.py` manages a local JSON-backed watchlist.
 
 ### UI/UX:
