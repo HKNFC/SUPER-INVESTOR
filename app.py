@@ -430,7 +430,7 @@ with tab_screener:
 
     if run_screening:
         market_info = SUPPORTED_MARKETS[market]
-        skip_fund = (selected_preset == "none")
+        skip_fund = False
 
         try:
             with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
