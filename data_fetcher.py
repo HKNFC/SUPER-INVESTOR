@@ -36,6 +36,9 @@ class FetchDiagnostics:
     timestamp: float = 0.0
     duration_seconds: float = 0.0
     errors: List[str] = field(default_factory=list)
+    fundamentals_with_data: int = 0
+    fundamentals_total: int = 0
+    provider_distribution: Dict[str, int] = field(default_factory=dict)
 
     @property
     def timestamp_str(self) -> str:
@@ -199,6 +202,30 @@ def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
     if cached is not None:
         return cached
 
+    is_usa = market and market.upper() in ("USA", "US", "ABD")
+
+    if is_usa and TWELVE_DATA_API_KEY:
+        try:
+            from twelve_data_provider import fetch_twelve_fundamentals
+            td_data = fetch_twelve_fundamentals(
+                symbol,
+                api_key=TWELVE_DATA_API_KEY,
+                base_url=TWELVE_DATA_BASE_URL,
+                market=market,
+            )
+            has_core = any(
+                td_data.get(f) is not None
+                and not (isinstance(td_data.get(f), float) and np.isnan(td_data.get(f)))
+                for f in ["revenue", "net_income", "equity"]
+            )
+            if has_core:
+                td_data["data_provider"] = "twelve_data"
+                _set_cached_fundamentals(symbol, td_data)
+                return td_data
+            logger.info("TD fundamentals incomplete for %s — falling back to Yahoo", symbol)
+        except Exception as e:
+            logger.warning("TD fundamentals error for %s: %s — falling back to Yahoo", symbol, e)
+
     try:
         from yahoo_provider import fetch_yahoo_fundamentals
         yahoo_data = fetch_yahoo_fundamentals(symbol, market=market)
@@ -208,11 +235,7 @@ def fetch_fundamentals(symbol: str, market: Optional[str] = None) -> dict:
             _set_cached_fundamentals(symbol, yahoo_data)
             return yahoo_data
 
-        result = {
-            "ticker": symbol,
-            "data_provider": "none",
-        }
-        return result
+        return {"ticker": symbol, "data_provider": "none"}
 
     except Exception as e:
         logger.error("Fundamentals error for %s: %s — %s", symbol, type(e).__name__, e)
@@ -373,16 +396,30 @@ def fetch_market_data(market: str, skip_fundamentals: bool = False) -> pd.DataFr
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
 
-    fin_count = 0
-    for col in ["revenue", "net_income", "equity"]:
-        if col in df.columns:
-            valid = df[col].dropna()
-            valid = valid[valid != 0]
-            if len(valid) > fin_count:
-                fin_count = len(valid)
+    core_fund_cols = ["revenue", "net_income", "equity"]
+    available_fund_cols = [c for c in core_fund_cols if c in df.columns]
+    if available_fund_cols:
+        has_any = df[available_fund_cols].apply(
+            lambda row: any(
+                pd.notna(v) and (not isinstance(v, (int, float)) or v != 0)
+                for v in row
+            ),
+            axis=1,
+        )
+        fin_count = int(has_any.sum())
+    else:
+        fin_count = 0
+
+    diag.fundamentals_total = len(df)
+    diag.fundamentals_with_data = fin_count
+
+    if "data_provider" in df.columns:
+        prov_counts = df["data_provider"].fillna("none").value_counts().to_dict()
+        diag.provider_distribution = {str(k): int(v) for k, v in prov_counts.items()}
+
     logger.info(
-        "Financial data summary for %s: %d/%d tickers have fundamental data",
-        market, fin_count, len(df),
+        "Fundamentals for %s: %d/%d have data | providers: %s",
+        market, fin_count, len(df), diag.provider_distribution,
     )
 
     benchmark = get_benchmark_history(market)

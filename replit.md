@@ -18,7 +18,8 @@ The stock screener is built with Streamlit for the UI and Python for the backend
 - **Symbol Mapping:** A centralized `symbol_mapper.py` handles provider-agnostic symbol resolution and caching.
 - **Disk Cache:** A Parquet-based disk cache (`disk_cache.py`) optimizes EOD OHLCV data retrieval, featuring daily refresh, incremental updates, and atomic writes.
 - **Indicators:** A consolidated `indicators.py` module provides various technical indicators (MA, RSI, MACD, etc.) for enriching the DataFrame.
-- **Data Fetching:** `data_fetcher.py` orchestrates data retrieval with an EOD cache-first architecture.
+- **Data Fetching:** `data_fetcher.py` orchestrates data retrieval with an EOD cache-first architecture. Fundamentals routing: USA → Twelve Data (`/statistics`, `/income_statement`, `/balance_sheet`, `/profile`) with Yahoo fallback; BIST → Yahoo only. Both normalize to common columns (revenue, net_income, equity, etc.). `FetchDiagnostics` tracks `fundamentals_with_data`, `provider_distribution`.
+- **Twelve Data Fundamentals:** `twelve_data_provider.py` includes `fetch_twelve_fundamentals()` for US stocks — fetches from `/statistics` (PE/PB/market cap/financials), `/income_statement` (revenue/net_income YoY), `/balance_sheet` (equity/debt/assets), `/profile` (sector/industry). Derives net_margin, D/E, ROE, ROA from raw data.
 - **Scoring Engine:** `scoring_engine.py` calculates percentile-based RS Scores with 0-100 scaling, winsorization, reverse-scoring for certain metrics, and NaN-aware weight redistribution across five dimensions: Financial Strength, Growth, Margin Quality, Valuation, and Momentum. It categorizes stocks into Elite, Strong, Watchlist, Weak, and Avoid.
 - **Technical Signals:** `technical_signals.py` computes a Technical Signal Score based on Trend, Momentum, Breakout, Volume Flow, and Risk/Stability.
 - **Filters:** `filters.py` provides pre-ranking quality filters with configurable presets.

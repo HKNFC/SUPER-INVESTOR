@@ -221,6 +221,19 @@ def _render_diagnostics(scan_df: Optional[pd.DataFrame] = None) -> None:
         if diag.failed_symbols:
             st.error(f"Başarısız hisseler: {', '.join(diag.failed_symbols)}")
 
+        if hasattr(diag, "fundamentals_total") and diag.fundamentals_total > 0:
+            fund_pct = round(diag.fundamentals_with_data / diag.fundamentals_total * 100) if diag.fundamentals_total else 0
+            fund_msg = f"Temel Veri: {diag.fundamentals_with_data}/{diag.fundamentals_total} hisse (%{fund_pct})"
+            if hasattr(diag, "provider_distribution") and diag.provider_distribution:
+                prov_parts = [f"{k}: {v}" for k, v in diag.provider_distribution.items()]
+                fund_msg += f" | Kaynak: {' · '.join(prov_parts)}"
+            if fund_pct >= 80:
+                st.success(fund_msg)
+            elif fund_pct >= 50:
+                st.info(fund_msg)
+            else:
+                st.warning(fund_msg)
+
         if diag.missing_fields_summary:
             missing_lines = [f"{k.replace('_', ' ').title()}: {v} hisse" for k, v in sorted(diag.missing_fields_summary.items(), key=lambda x: -x[1])]
             st.warning("Evrende eksik alanlar: " + " · ".join(missing_lines))
