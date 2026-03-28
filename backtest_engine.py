@@ -371,7 +371,12 @@ def run_backtest(
 
         filtered = _apply_scan_mode_filter(filtered, scan_mode)
 
-        effective_sort = "combined_score" if scan_mode != "standard" else sort_by
+        if inst_profile != "standard":
+            effective_sort = "institutional_score"
+        elif scan_mode != "standard":
+            effective_sort = "combined_score"
+        else:
+            effective_sort = sort_by
         selected = rank_and_limit(filtered, top_n=top_n, sort_by=effective_sort)
 
         if selected.empty:

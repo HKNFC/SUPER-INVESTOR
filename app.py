@@ -507,7 +507,12 @@ with tab_screener:
 
             passed_count = len(filtered_data)
 
-            effective_sort = "combined_score" if scan_mode != "standard" else sort_by
+            if inst_profile != "standard":
+                effective_sort = "institutional_score"
+            elif scan_mode != "standard":
+                effective_sort = "combined_score"
+            else:
+                effective_sort = sort_by
             filtered_data = rank_and_limit(filtered_data, top_n=top_n, sort_by=effective_sort)
 
             st.session_state["screener_scored"] = scored_data
