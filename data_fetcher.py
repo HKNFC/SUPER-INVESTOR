@@ -585,6 +585,8 @@ def calculate_mfi(price_data: pd.DataFrame, period: int = 14) -> Optional[float]
 
 
 def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.DataFrame:
+    from indicators import enrich_dataframe_with_indicators
+
     result = df.copy()
 
     has_price_data = "price_data" in result.columns
@@ -601,76 +603,7 @@ def build_technical_data(df: pd.DataFrame, market: Optional[str] = None) -> pd.D
             price_frames.append(hist)
         result["price_data"] = price_frames
 
-    tech_cols = {
-        "return_1m": [], "return_3m": [], "return_6m": [], "return_12m": [],
-        "ma20": [], "ma50": [], "ma200": [],
-        "ma20_ratio": [], "ma50_ratio": [], "ma200_ratio": [],
-        "rsi": [],
-        "macd_line": [], "macd_signal": [], "macd_histogram": [],
-        "atr": [],
-        "volume_ratio": [],
-        "mfi": [],
-        "obv_latest": [], "obv_trend_positive": [], "obv_slope": [],
-        "distance_to_52w_high": [],
-    }
-
-    for idx, row in result.iterrows():
-        price_data = row.get("price_data")
-        is_valid = isinstance(price_data, pd.DataFrame) and not price_data.empty
-
-        if is_valid and "datetime" in price_data.columns:
-            price_data = price_data.sort_values("datetime").reset_index(drop=True)
-            result.at[idx, "price_data"] = price_data
-
-        empty_rets = {"return_1m": None, "return_3m": None, "return_6m": None, "return_12m": None}
-        rets = calculate_returns(price_data) if is_valid else empty_rets
-        for k in empty_rets:
-            tech_cols[k].append(rets.get(k))
-
-        empty_mas = {"ma20": None, "ma50": None, "ma200": None, "ma20_ratio": None, "ma50_ratio": None, "ma200_ratio": None}
-        mas = calculate_moving_averages(price_data) if is_valid else empty_mas
-        for k in empty_mas:
-            tech_cols[k].append(mas.get(k))
-
-        tech_cols["rsi"].append(calculate_rsi(price_data) if is_valid else None)
-
-        empty_macd = {"macd_line": None, "macd_signal": None, "macd_histogram": None}
-        macd = calculate_macd(price_data) if is_valid else empty_macd
-        for k in empty_macd:
-            tech_cols[k].append(macd.get(k))
-
-        tech_cols["atr"].append(calculate_atr(price_data) if is_valid else None)
-        tech_cols["volume_ratio"].append(calculate_volume_ratio(price_data) if is_valid else None)
-        tech_cols["mfi"].append(calculate_mfi(price_data) if is_valid else None)
-
-        empty_obv = {"obv_latest": None, "obv_trend_positive": None, "obv_slope": None}
-        obv = calculate_obv(price_data) if is_valid else empty_obv
-        for k in empty_obv:
-            tech_cols[k].append(obv.get(k))
-
-        d52 = None
-        if is_valid and "high" in price_data.columns and "close" in price_data.columns and len(price_data) >= 21:
-            lookback = min(252, len(price_data))
-            high_52w = float(price_data["high"].tail(lookback).max())
-            current = float(price_data["close"].iloc[-1])
-            if high_52w > 0 and np.isfinite(high_52w) and np.isfinite(current):
-                d52 = round((current / high_52w - 1) * 100, 2)
-        tech_cols["distance_to_52w_high"].append(d52)
-
-    for col, values in tech_cols.items():
-        result[col] = values
-
-    numeric_cols = [
-        "return_1m", "return_3m", "return_6m", "return_12m",
-        "ma20", "ma50", "ma200", "ma20_ratio", "ma50_ratio", "ma200_ratio",
-        "rsi", "macd_line", "macd_signal", "macd_histogram", "atr",
-        "volume_ratio", "mfi", "obv_latest", "obv_slope", "distance_to_52w_high",
-    ]
-    for col in numeric_cols:
-        if col in result.columns:
-            result[col] = pd.to_numeric(result[col], errors="coerce")
-
-    return result
+    return enrich_dataframe_with_indicators(result)
 
 
 @dataclass

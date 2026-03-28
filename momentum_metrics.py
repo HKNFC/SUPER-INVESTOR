@@ -367,75 +367,8 @@ def append_momentum_fields(
     """
     Append all momentum-derived fields to the master DataFrame.
 
-    Computes from each row's 'price_data' column (daily OHLCV DataFrame):
-      - return_1m, return_3m, return_6m, return_12m
-      - distance_to_52w_high
-      - relative_return_vs_index (requires benchmark_history)
-      - avg_volume_20d
-
-    Existing values in these columns are overwritten with freshly
-    computed results. If a row lacks price_data, fields are set to NaN.
-
-    Args:
-        df: Master DataFrame with a 'price_data' column per stock.
-        benchmark_history: Daily OHLCV DataFrame for the benchmark index.
-            If None, relative_return_vs_index is set to NaN.
+    Delegates to indicators.enrich_dataframe_with_indicators for the
+    full computation from each row's 'price_data' column.
     """
-    result = df.copy()
-
-    returns_1m = []
-    returns_3m = []
-    returns_6m = []
-    returns_12m = []
-    dist_52w = []
-    rel_returns = []
-    avg_vols = []
-
-    for _, row in result.iterrows():
-        price_data = row.get("price_data")
-
-        if not isinstance(price_data, pd.DataFrame) or price_data.empty:
-            returns_1m.append(np.nan)
-            returns_3m.append(np.nan)
-            returns_6m.append(np.nan)
-            returns_12m.append(np.nan)
-            dist_52w.append(np.nan)
-            rel_returns.append(np.nan)
-            avg_vols.append(np.nan)
-            continue
-
-        closes = price_data["close"].values if "close" in price_data.columns else np.array([])
-
-        r1 = calc_return_1m(closes)
-        returns_1m.append(r1 if r1 is not None else np.nan)
-
-        r3 = calc_return_3m(closes)
-        returns_3m.append(r3 if r3 is not None else np.nan)
-
-        r6 = calc_return_6m(closes)
-        returns_6m.append(r6 if r6 is not None else np.nan)
-
-        r12 = calc_return_12m(closes)
-        returns_12m.append(r12 if r12 is not None else np.nan)
-
-        d52 = calc_distance_to_52w_high(price_data)
-        dist_52w.append(d52 if d52 is not None else np.nan)
-
-        if benchmark_history is not None and not benchmark_history.empty:
-            rel = calc_relative_return_aligned(price_data, benchmark_history)
-        else:
-            rel = None
-        rel_returns.append(rel if rel is not None else np.nan)
-
-        vol = calc_avg_volume_20d(price_data)
-        avg_vols.append(vol if vol is not None else np.nan)
-
-    result["return_1m"] = returns_1m
-    result["return_3m"] = returns_3m
-    result["return_6m"] = returns_6m
-    result["return_12m"] = returns_12m
-    result["distance_to_52w_high"] = dist_52w
-    result["relative_return_vs_index"] = rel_returns
-    result["avg_volume_20d"] = avg_vols
-
-    return result
+    from indicators import enrich_dataframe_with_indicators
+    return enrich_dataframe_with_indicators(df, benchmark_history=benchmark_history)
