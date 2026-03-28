@@ -31,10 +31,11 @@ from config import (
 from data_model import compute_derived_fields
 from data_fetcher import build_technical_data
 from technical_signals import append_technical_scores
-from institutional_score import append_institutional_scores
+from institutional_score import append_institutional_scores, STRATEGY_PROFILES
 
 
-def compute_rs_scores(df: pd.DataFrame, market: str = None) -> pd.DataFrame:
+def compute_rs_scores(df: pd.DataFrame, market: str = None,
+                      inst_profile: str = "standard") -> pd.DataFrame:
     if df.empty:
         return df
 
@@ -72,7 +73,7 @@ def compute_rs_scores(df: pd.DataFrame, market: str = None) -> pd.DataFrame:
 
     result = append_technical_scores(result)
 
-    result = append_institutional_scores(result)
+    result = append_institutional_scores(result, profile=inst_profile)
 
     result = result.sort_values("rs_score", ascending=False).reset_index(drop=True)
     result["rank"] = result.index + 1

@@ -23,6 +23,7 @@ from config import (
 from data_model import validate_dataframe
 from data_fetcher import fetch_market_data, get_last_diagnostics, refresh_eod_cache
 from scoring_engine import compute_rs_scores, get_score_breakdown
+from institutional_score import STRATEGY_PROFILES, get_debug_info, BLOCK_LABELS
 from filters import (
     apply_preset_filter, rank_and_limit,
     get_preset_names, get_preset_info,
@@ -57,6 +58,8 @@ SORT_OPTIONS = {
     "technical_score": "Technical Score",
     "combined_score": "Combined Score",
     "institutional_score": "Institutional Score",
+    "selection_score": "Selection Score",
+    "timing_score": "Timing Score",
 }
 REBALANCE_LABELS = {
     "1w": "1 Hafta",
@@ -104,7 +107,7 @@ def _missing_metric_warnings(stock_row: pd.Series) -> list:
     return [f for f in REQUIRED_FIELDS_FOR_SCORING if is_na(stock_row.get(f))]
 
 
-def _render_detail(stock_row: pd.Series) -> None:
+def _render_detail(stock_row: pd.Series, scored_df: Optional[pd.DataFrame] = None) -> None:
     bd = get_score_breakdown(stock_row)
 
     missing = _missing_metric_warnings(stock_row)
@@ -147,13 +150,38 @@ def _render_detail(stock_row: pd.Series) -> None:
     s4.metric("Değerleme", _score_fmt(bd.get("valuation")))
     s5.metric("Momentum", _score_fmt(bd.get("momentum")))
 
-    i1, i2, i3, i4, i5, i6 = st.columns(6)
+    i1, i2, i3, i4, i5, i6, i7, i8 = st.columns(8)
     i1.metric("Kurumsal Kat.", inst_cat)
-    i2.metric("K.Kalite", _score_fmt(stock_row.get("inst_quality")))
-    i3.metric("K.Büyüme", _score_fmt(stock_row.get("inst_growth")))
-    i4.metric("K.Değerleme", _score_fmt(stock_row.get("inst_valuation")))
-    i5.metric("K.Momentum", _score_fmt(stock_row.get("inst_momentum")))
-    i6.metric("K.Akış", _score_fmt(stock_row.get("inst_flow")))
+    i2.metric("Seçim Skoru", _score_fmt(stock_row.get("selection_score")))
+    i3.metric("Zamanlama Sk.", _score_fmt(stock_row.get("timing_score")))
+    i4.metric("K.Kalite", _score_fmt(stock_row.get("inst_quality")))
+    i5.metric("K.Büyüme", _score_fmt(stock_row.get("inst_growth")))
+    i6.metric("K.Değerleme", _score_fmt(stock_row.get("inst_valuation")))
+    i7.metric("K.Momentum", _score_fmt(stock_row.get("inst_momentum")))
+    i8.metric("K.Akış", _score_fmt(stock_row.get("inst_flow")))
+
+    ticker = stock_row.get("ticker", "")
+    if scored_df is not None:
+        dbg = get_debug_info(scored_df, ticker)
+        if dbg:
+            with st.expander("Kurumsal Skor Debug", expanded=False):
+                profile_name = scored_df.attrs.get("_inst_profile", "standard")
+                profile_label = STRATEGY_PROFILES.get(profile_name, {}).get("label", profile_name)
+                st.caption(f"Profil: **{profile_label}**")
+                for block_name, block_info in dbg.items():
+                    label = BLOCK_LABELS.get(block_name, block_name)
+                    score_str = _score_fmt(block_info.get("score"))
+                    used = block_info.get("used", [])
+                    missing_m = block_info.get("missing", [])
+                    if not used and not missing_m:
+                        st.text(f"{label}: {score_str}")
+                    else:
+                        status_icon = "🟢" if not missing_m else ("🟡" if used else "🔴")
+                        st.markdown(f"{status_icon} **{label}**: {score_str}")
+                        if used:
+                            st.caption(f"  Kullanılan: {', '.join(used)}")
+                        if missing_m:
+                            st.caption(f"  Eksik: {', '.join(missing_m)}")
 
     st.markdown("---")
 
@@ -334,6 +362,16 @@ with st.sidebar:
         index=2,
     )
 
+    st.divider()
+
+    inst_profile = st.selectbox(
+        "Skor Modeli",
+        options=list(STRATEGY_PROFILES.keys()),
+        format_func=lambda x: STRATEGY_PROFILES[x]["label"],
+        index=0,
+    )
+    st.caption(STRATEGY_PROFILES[inst_profile]["description"])
+
     min_avg_volume = st.number_input(
         "Minimum Hacim",
         min_value=0,
@@ -420,7 +458,9 @@ with tab_screener:
                 st.warning(f"Veri kalitesi uyarısı: eksik sütunlar {validation['missing_columns']}")
 
             with st.spinner("Puanlama yapılıyor..."):
-                scored_data = compute_rs_scores(raw_data, market=market)
+                scored_data = compute_rs_scores(raw_data, market=market, inst_profile=inst_profile)
+
+            st.session_state["last_scored_data"] = scored_data
 
             scored_rows = scored_data.to_dict("records")
             updated = update_watchlist_scores(scored_rows)
@@ -523,7 +563,8 @@ with tab_screener:
             display_cols = [
                 "ticker", "sector", "price",
                 "rs_score", "technical_score", "combined_score",
-                "institutional_score", "inst_category",
+                "institutional_score", "selection_score", "timing_score",
+                "inst_category",
                 "setup_label", "rs_category",
                 "financial_strength", "growth", "margin_quality",
                 "valuation", "momentum",
@@ -534,7 +575,7 @@ with tab_screener:
             display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
 
             for col in ["rs_score", "technical_score", "combined_score",
-                        "institutional_score",
+                        "institutional_score", "selection_score", "timing_score",
                         "financial_strength", "growth", "margin_quality", "valuation", "momentum",
                         "inst_quality", "inst_growth", "inst_valuation", "inst_momentum", "inst_flow"]:
                 if col in display_df.columns:
@@ -583,6 +624,12 @@ with tab_screener:
                     "institutional_score": st.column_config.ProgressColumn(
                         "Kurumsal Skor", min_value=0, max_value=100, format="%.1f",
                     ),
+                    "selection_score": st.column_config.ProgressColumn(
+                        "Seçim Sk.", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "timing_score": st.column_config.ProgressColumn(
+                        "Zamanlama Sk.", min_value=0, max_value=100, format="%.1f",
+                    ),
                     "inst_category": st.column_config.TextColumn("Kurumsal Kat.", width="small"),
                     "inst_quality": st.column_config.ProgressColumn(
                         "K.Kalite", min_value=0, max_value=100, format="%.1f",
@@ -606,7 +653,7 @@ with tab_screener:
             csv_cols = [
                 "rank", "ticker", "company_name", "sector", "price", "market_cap",
                 "rs_score", "technical_score", "combined_score",
-                "institutional_score", "inst_category",
+                "institutional_score", "selection_score", "timing_score", "inst_category",
                 "setup_label", "rs_category",
                 "financial_strength", "growth", "margin_quality", "valuation", "momentum",
                 "inst_quality", "inst_growth", "inst_valuation", "inst_momentum", "inst_flow",
@@ -659,7 +706,7 @@ with tab_screener:
                             remove_from_watchlist(ticker)
                             st.rerun()
 
-                    _render_detail(row)
+                    _render_detail(row, scored_df=st.session_state.get("last_scored_data"))
 
     else:
         st.markdown("Bir piyasa seçin ve hisseleri skorlarına göre sıralamak için **Taramayı Başlat** butonuna tıklayın.")
