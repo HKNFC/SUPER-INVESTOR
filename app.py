@@ -1211,7 +1211,8 @@ with tab_history:
                 except (TypeError, ValueError):
                     dd_val = 0.0
 
-                header = f"BACKTEST — {params.get('market', '')} | {params.get('start', '')} ~ {params.get('end', '')} | {entry_dt}"
+                ret_sign = "+" if total_ret >= 0 else ""
+                header = f"BACKTEST — {params.get('market', '')} | {ret_sign}%{total_ret:.1f} | {params.get('start', '')} ~ {params.get('end', '')} | {entry_dt}"
 
                 with st.expander(header, expanded=False):
                     c1, c2, c3, c4 = st.columns(4)

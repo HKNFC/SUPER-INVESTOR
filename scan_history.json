@@ -1,3 +1,56 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "id": "476cc431823d",
+      "type": "scan",
+      "timestamp": 1774731168.9324918,
+      "datetime": "2026-03-28 20:52",
+      "market": "ABD Hisseleri",
+      "segment": "Tüm USA (S&P 500 + MidCap 400)",
+      "scan_mode": "Standart Tarama",
+      "profile": "Standart",
+      "quality": "Kapalı",
+      "sort_by": "Combined Score",
+      "top_n": 20,
+      "result_count": 903,
+      "top_stocks": [
+        "VAL",
+        "VLO",
+        "PRI",
+        "WFRD",
+        "TRGP",
+        "VNOM",
+        "RRC",
+        "WDC",
+        "CTRA",
+        "EQT"
+      ],
+      "scan_date": null
+    },
+    {
+      "id": "c61e520b1d5a",
+      "type": "backtest",
+      "timestamp": 1774730925.8009257,
+      "datetime": "2026-03-28 20:48",
+      "params": {
+        "market": "ABD Hisseleri",
+        "universe": "Tüm USA (S&P 500 + MidCap 400)",
+        "profile": "Standart",
+        "scan_mode": "Standart Tarama",
+        "quality": "Kapalı",
+        "sort_by": "Combined Score",
+        "top_n": 5,
+        "rebalance": "15 Gün",
+        "weight": "Eşit Ağırlık",
+        "benchmark": "SPX",
+        "start": "2026-01-01",
+        "end": "2026-03-28"
+      },
+      "total_return": 2.3,
+      "benchmark_return": -34.62,
+      "num_periods": 6,
+      "sharpe": 0.72,
+      "max_drawdown": -3.22
+    }
+  ]
 }
