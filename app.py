@@ -19,7 +19,7 @@ from config import (
     TWELVE_DATA_API_KEY, BENCHMARK_INDEX,
     CACHE_TTL_MARKET_DATA, REQUIRED_FIELDS_FOR_SCORING,
     BIST100_TICKERS, BIST_SEGMENTS,
-    SP500_TICKERS, NASDAQ100_TICKERS, USA_SEGMENTS,
+    SP500_TICKERS, MIDCAP400_TICKERS, USA_SEGMENTS,
 )
 from data_model import validate_dataframe
 from data_fetcher import (
@@ -505,8 +505,8 @@ with tab_screener:
             if market == "USA" and usa_segment != "USA_ALL" and "ticker" in raw_data.columns:
                 if usa_segment == "SP500":
                     raw_data = raw_data[raw_data["ticker"].isin(SP500_TICKERS)].reset_index(drop=True)
-                elif usa_segment == "NASDAQ100":
-                    raw_data = raw_data[raw_data["ticker"].isin(NASDAQ100_TICKERS)].reset_index(drop=True)
+                elif usa_segment == "MIDCAP400":
+                    raw_data = raw_data[raw_data["ticker"].isin(MIDCAP400_TICKERS)].reset_index(drop=True)
 
             validation = validate_dataframe(raw_data)
             if not validation["valid"]:

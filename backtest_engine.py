@@ -203,7 +203,7 @@ def _apply_scan_mode_filter(
 def _apply_universe_filter(
     df: pd.DataFrame, market: str, universe: str
 ) -> pd.DataFrame:
-    from config import BIST100_TICKERS, SP500_TICKERS, NASDAQ100_TICKERS
+    from config import BIST100_TICKERS, SP500_TICKERS, MIDCAP400_TICKERS
 
     if market == "BIST" and universe != "BISTTUM" and "ticker" in df.columns:
         if universe == "BIST100":
@@ -214,8 +214,8 @@ def _apply_universe_filter(
     if market == "USA" and universe != "USA_ALL" and "ticker" in df.columns:
         if universe == "SP500":
             return df[df["ticker"].isin(SP500_TICKERS)].reset_index(drop=True)
-        elif universe == "NASDAQ100":
-            return df[df["ticker"].isin(NASDAQ100_TICKERS)].reset_index(drop=True)
+        elif universe == "MIDCAP400":
+            return df[df["ticker"].isin(MIDCAP400_TICKERS)].reset_index(drop=True)
 
     return df
 

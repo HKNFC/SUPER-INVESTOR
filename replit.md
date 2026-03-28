@@ -14,7 +14,7 @@ The stock screener is built with Streamlit for the UI and Python for the backend
 
 ### Core Components:
 - **Data Model:** A unified DataFrame schema ensures consistent data handling across the application, including validation, type coercion, and derived field computation.
-- **Data Providers:** Abstract `PriceProvider` interface allows for different market data sources. `Twelve Data` and `Yahoo Finance` are integrated for price and fundamental data, respectively, with caching mechanisms.
+- **Data Providers:** Abstract `PriceProvider` interface allows for different market data sources. `Twelve Data` and `Yahoo Finance` are integrated for price and fundamental data, respectively, with caching mechanisms. USA universe: 903 stocks (S&P 500 + S&P MidCap 400). Segments: Tüm USA, S&P 500, S&P MidCap 400.
 - **Symbol Mapping:** A centralized `symbol_mapper.py` handles provider-agnostic symbol resolution and caching.
 - **Disk Cache:** A Parquet-based disk cache (`disk_cache.py`) optimizes EOD OHLCV data retrieval, featuring daily refresh, incremental updates, and atomic writes.
 - **Indicators:** A consolidated `indicators.py` module provides various technical indicators (MA, RSI, MACD, etc.) for enriching the DataFrame.
