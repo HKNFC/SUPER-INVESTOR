@@ -56,6 +56,7 @@ SORT_OPTIONS = {
     "rs_score": "RS Score",
     "technical_score": "Technical Score",
     "combined_score": "Combined Score",
+    "institutional_score": "Institutional Score",
 }
 REBALANCE_LABELS = {
     "1w": "1 Hafta",
@@ -127,12 +128,15 @@ def _render_detail(stock_row: pd.Series) -> None:
     comb_val = stock_row.get("combined_score")
     setup_val = stock_row.get("setup_label", "N/A")
 
-    h1, h2, h3, h4, h5 = st.columns(5)
+    h1, h2, h3, h4, h5, h6 = st.columns(6)
     h1.metric("Fiyat", price_str)
     h2.metric("RS Skoru", _score_fmt(rs_val))
     h3.metric("Teknik Skor", _score_fmt(tech_val))
     h4.metric("Kombine Skor", _score_fmt(comb_val))
-    h5.metric("Kurulum", setup_val)
+    inst_val = stock_row.get("institutional_score")
+    inst_cat = stock_row.get("inst_category", "N/A")
+    h5.metric("Kurumsal Skor", _score_fmt(inst_val))
+    h6.metric("Kurulum", setup_val)
 
     st.markdown("---")
 
@@ -142,6 +146,14 @@ def _render_detail(stock_row: pd.Series) -> None:
     s3.metric("Marj Kalitesi", _score_fmt(bd.get("margin_quality")))
     s4.metric("Değerleme", _score_fmt(bd.get("valuation")))
     s5.metric("Momentum", _score_fmt(bd.get("momentum")))
+
+    i1, i2, i3, i4, i5, i6 = st.columns(6)
+    i1.metric("Kurumsal Kat.", inst_cat)
+    i2.metric("K.Kalite", _score_fmt(stock_row.get("inst_quality")))
+    i3.metric("K.Büyüme", _score_fmt(stock_row.get("inst_growth")))
+    i4.metric("K.Değerleme", _score_fmt(stock_row.get("inst_valuation")))
+    i5.metric("K.Momentum", _score_fmt(stock_row.get("inst_momentum")))
+    i6.metric("K.Akış", _score_fmt(stock_row.get("inst_flow")))
 
     st.markdown("---")
 
@@ -510,16 +522,21 @@ with tab_screener:
         else:
             display_cols = [
                 "ticker", "sector", "price",
-                "rs_score", "technical_score", "combined_score", "setup_label",
-                "rs_category",
+                "rs_score", "technical_score", "combined_score",
+                "institutional_score", "inst_category",
+                "setup_label", "rs_category",
                 "financial_strength", "growth", "margin_quality",
                 "valuation", "momentum",
+                "inst_quality", "inst_growth", "inst_valuation",
+                "inst_momentum", "inst_flow",
                 "data_source",
             ]
             display_df = filtered_data[[c for c in display_cols if c in filtered_data.columns]].copy()
 
             for col in ["rs_score", "technical_score", "combined_score",
-                        "financial_strength", "growth", "margin_quality", "valuation", "momentum"]:
+                        "institutional_score",
+                        "financial_strength", "growth", "margin_quality", "valuation", "momentum",
+                        "inst_quality", "inst_growth", "inst_valuation", "inst_momentum", "inst_flow"]:
                 if col in display_df.columns:
                     display_df[col] = display_df[col].apply(
                         lambda x: round(x, 1) if not is_na(x) else None
@@ -563,15 +580,36 @@ with tab_screener:
                     "momentum": st.column_config.ProgressColumn(
                         "Momentum", min_value=0, max_value=100, format="%.1f",
                     ),
+                    "institutional_score": st.column_config.ProgressColumn(
+                        "Kurumsal Skor", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "inst_category": st.column_config.TextColumn("Kurumsal Kat.", width="small"),
+                    "inst_quality": st.column_config.ProgressColumn(
+                        "K.Kalite", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "inst_growth": st.column_config.ProgressColumn(
+                        "K.Büyüme", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "inst_valuation": st.column_config.ProgressColumn(
+                        "K.Değerleme", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "inst_momentum": st.column_config.ProgressColumn(
+                        "K.Momentum", min_value=0, max_value=100, format="%.1f",
+                    ),
+                    "inst_flow": st.column_config.ProgressColumn(
+                        "K.Akış", min_value=0, max_value=100, format="%.1f",
+                    ),
                     "data_source": st.column_config.TextColumn("Kaynak", width="small"),
                 },
             )
 
             csv_cols = [
                 "rank", "ticker", "company_name", "sector", "price", "market_cap",
-                "rs_score", "technical_score", "combined_score", "setup_label",
-                "rs_category",
+                "rs_score", "technical_score", "combined_score",
+                "institutional_score", "inst_category",
+                "setup_label", "rs_category",
                 "financial_strength", "growth", "margin_quality", "valuation", "momentum",
+                "inst_quality", "inst_growth", "inst_valuation", "inst_momentum", "inst_flow",
                 "return_1m", "return_3m", "return_6m", "return_12m",
                 "data_source",
             ]
