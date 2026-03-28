@@ -686,13 +686,70 @@ class DataPrepStats:
     duration_seconds: float = 0.0
 
 
+def refresh_eod_cache(market: str, progress_callback=None) -> Dict[str, int]:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from disk_cache import read_cache, needs_refresh, get_cached_or_fetch, write_cache
+
+    if market not in SUPPORTED_MARKETS:
+        raise ValueError(f"Unsupported market: {market}")
+
+    symbols = SUPPORTED_MARKETS[market]["symbols"]
+    provider = get_provider()
+
+    from symbol_mapper import resolve_twelve_symbol
+    result = {"total": len(symbols), "fresh": 0, "updated": 0, "failed": 0}
+
+    def _refresh_one(symbol: str) -> tuple:
+        resolved = resolve_twelve_symbol(symbol, market) if provider else symbol
+        try:
+            if not needs_refresh(resolved):
+                return ("fresh", symbol)
+
+            if provider is not None:
+                def _disk_fetch(sym, outputsize=500, start_date=None):
+                    return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
+                fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=500)
+                if fetched is not None and not fetched.empty:
+                    return ("updated", symbol)
+                return ("failed", symbol)
+            else:
+                yahoo_data = _try_yahoo_fallback(symbol, market=market, outputsize=500)
+                if not yahoo_data.empty:
+                    from disk_cache import merge_cache as _merge
+                    _merge(resolved, yahoo_data)
+                    return ("updated", symbol)
+                cached = read_cache(resolved)
+                if cached is not None and not cached.empty:
+                    return ("fresh", symbol)
+                return ("failed", symbol)
+        except Exception as e:
+            logger.warning("Cache refresh failed for %s: %s", symbol, e)
+            return ("failed", symbol)
+
+    with ThreadPoolExecutor(max_workers=_PARALLEL_WORKERS) as executor:
+        futures = {executor.submit(_refresh_one, sym): sym for sym in symbols}
+        done_count = 0
+        for future in as_completed(futures):
+            done_count += 1
+            if progress_callback:
+                progress_callback(done_count / len(symbols), f"Cache güncelleniyor: {done_count}/{len(symbols)}")
+            try:
+                status, sym = future.result()
+                result[status] = result.get(status, 0) + 1
+            except Exception:
+                result["failed"] += 1
+
+    logger.info("EOD cache refresh for %s: %s", market, result)
+    return result
+
+
 def fetch_backtest_data(
     market: str,
     progress_callback=None,
     skip_momentum: bool = False,
 ) -> tuple:
     from momentum_metrics import append_momentum_fields
-    from disk_cache import read_cache, needs_refresh, get_cached_or_fetch
+    from disk_cache import read_cache
 
     if market not in SUPPORTED_MARKETS:
         raise ValueError(f"Unsupported market: {market}. Choose from {list(SUPPORTED_MARKETS.keys())}")
@@ -704,7 +761,8 @@ def fetch_backtest_data(
     provider = get_provider()
 
     records = []
-    has_any_cache = False
+
+    from symbol_mapper import resolve_twelve_symbol
 
     for idx, symbol in enumerate(symbols):
         if progress_callback:
@@ -714,55 +772,17 @@ def fetch_backtest_data(
             )
 
         try:
-            from symbol_mapper import resolve_twelve_symbol
             resolved = resolve_twelve_symbol(symbol, market) if provider else symbol
             cached = read_cache(resolved)
 
             if cached is not None and not cached.empty:
-                has_any_cache = True
-                if not needs_refresh(resolved) or provider is None:
-                    price_data = _ensure_sorted(cached)
-                    stats.cache_hits += 1
-                else:
-                    def _disk_fetch(sym, outputsize=300, start_date=None):
-                        return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
-
-                    fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
-                    if fetched is not None and not fetched.empty:
-                        price_data = _ensure_sorted(fetched)
-                        stats.incremental_updates += 1
-                    else:
-                        price_data = _ensure_sorted(cached)
-                        stats.cache_hits += 1
-            elif provider is not None:
-                def _disk_fetch(sym, outputsize=300, start_date=None):
-                    return provider._fetch_from_api(sym, outputsize=outputsize, start_date=start_date)
-
-                fetched = get_cached_or_fetch(resolved, _disk_fetch, outputsize=300)
-                if fetched is not None and not fetched.empty:
-                    price_data = _ensure_sorted(fetched)
-                    stats.full_fetches += 1
-                else:
-                    yahoo_data = _try_yahoo_fallback(symbol, market=market)
-                    if not yahoo_data.empty:
-                        logger.info("Yahoo fallback for backtest: %s (%d rows)", symbol, len(yahoo_data))
-                        price_data = _ensure_sorted(yahoo_data)
-                        stats.full_fetches += 1
-                    else:
-                        logger.warning("No data for %s, using placeholder", symbol)
-                        price_data = _generate_placeholder_price_data(symbol)
-                        stats.failed += 1
-                        stats.failed_symbols.append(symbol)
+                price_data = _ensure_sorted(cached)
+                stats.cache_hits += 1
             else:
-                yahoo_data = _try_yahoo_fallback(symbol, market=market)
-                if not yahoo_data.empty:
-                    logger.info("Yahoo fallback for backtest (no API key): %s (%d rows)", symbol, len(yahoo_data))
-                    price_data = _ensure_sorted(yahoo_data)
-                    stats.full_fetches += 1
-                else:
-                    price_data = _generate_placeholder_price_data(symbol)
-                    stats.failed += 1
-                    stats.failed_symbols.append(symbol)
+                logger.info("Backtest: no cache for %s — skipping (cache-only mode)", symbol)
+                stats.failed += 1
+                stats.failed_symbols.append(symbol)
+                continue
 
             records.append({
                 "ticker": symbol,
@@ -774,39 +794,37 @@ def fetch_backtest_data(
             })
 
         except Exception as e:
-            logger.error("Failed to load data for %s: %s — %s", symbol, type(e).__name__, e)
+            logger.error("Failed to load cache for %s: %s — %s", symbol, type(e).__name__, e)
             stats.failed += 1
             stats.failed_symbols.append(symbol)
-            records.append({
-                "ticker": symbol,
-                "company_name": symbol,
-                "market": market,
-                "sector": "",
-                "industry": "",
-                "price_data": _generate_placeholder_price_data(symbol),
-            })
+
+    if not records:
+        logger.warning("Backtest: no cached data found for %s — run a screener scan first to populate cache", market)
+        df = pd.DataFrame(columns=["ticker", "company_name", "market", "sector", "industry", "price_data"])
+        df = ensure_columns(df)
+        stats.duration_seconds = time.time() - start_time
+        return df, stats
 
     df = pd.DataFrame(records)
     df = ensure_columns(df)
     df = coerce_numeric_columns(df)
 
     if not skip_momentum:
-        benchmark = get_cached_benchmark(market)
+        benchmark = get_cached_benchmark(market, cache_only=True)
         df = append_momentum_fields(df, benchmark_history=benchmark)
 
     stats.duration_seconds = time.time() - start_time
     logger.info(
-        "Data prep complete for %s: %d symbols, %d cache hits, %d incremental, %d full fetch, %d failed in %.1fs",
-        market, stats.total_symbols, stats.cache_hits, stats.incremental_updates,
-        stats.full_fetches, stats.failed, stats.duration_seconds,
+        "Backtest data (cache-only) for %s: %d symbols, %d cache hits, %d missing in %.1fs",
+        market, stats.total_symbols, stats.cache_hits, stats.failed, stats.duration_seconds,
     )
     if stats.failed_symbols:
-        logger.warning("Failed symbols: %s", ", ".join(stats.failed_symbols))
+        logger.warning("No cache for: %s", ", ".join(stats.failed_symbols[:20]))
 
     return df, stats
 
 
-def get_cached_benchmark(market: str) -> pd.DataFrame:
+def get_cached_benchmark(market: str, cache_only: bool = False) -> pd.DataFrame:
     from config import BENCHMARK_INDEX
     from disk_cache import read_cache, needs_refresh, get_cached_or_fetch
 
@@ -820,6 +838,12 @@ def get_cached_benchmark(market: str) -> pd.DataFrame:
     resolved = resolve_twelve_benchmark(index_ticker, market) if provider else index_ticker
 
     cached = read_cache(resolved)
+
+    if cache_only:
+        if cached is not None and not cached.empty:
+            return _ensure_sorted(cached)
+        logger.info("Benchmark cache-only: no cache for %s", index_ticker)
+        return _generate_placeholder_price_data(index_ticker, days=300)
 
     if cached is not None and not cached.empty:
         if not needs_refresh(resolved) or provider is None:

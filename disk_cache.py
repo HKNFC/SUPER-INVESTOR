@@ -15,6 +15,8 @@ OHLCV_COLUMNS = ["datetime", "open", "high", "low", "close", "volume"]
 DEFAULT_OUTPUTSIZE = 300
 CACHE_REFRESH_HOURS = 20
 
+os.makedirs(CACHE_DIR, exist_ok=True)
+
 _write_locks: dict[str, threading.Lock] = {}
 _locks_lock = threading.Lock()
 

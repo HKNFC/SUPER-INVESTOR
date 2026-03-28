@@ -21,7 +21,7 @@ from config import (
     SP500_TICKERS, NASDAQ100_TICKERS, USA_SEGMENTS,
 )
 from data_model import validate_dataframe
-from data_fetcher import fetch_market_data, get_last_diagnostics
+from data_fetcher import fetch_market_data, get_last_diagnostics, refresh_eod_cache
 from scoring_engine import compute_rs_scores, get_score_breakdown
 from filters import (
     apply_preset_filter, rank_and_limit,
@@ -208,6 +208,14 @@ def _render_diagnostics(scan_df: Optional[pd.DataFrame] = None) -> None:
         if diag.fallback_triggered:
             info_parts.append("Yedek tetiklendi — API veri döndürmedi")
         info_parts.append(f"Çekme süresi: {diag.duration_seconds:.1f}s")
+
+        cache_stats = st.session_state.get("last_cache_stats")
+        if cache_stats:
+            info_parts.append(
+                f"EOD Cache: {cache_stats.get('fresh', 0)} güncel, "
+                f"{cache_stats.get('updated', 0)} güncellendi, "
+                f"{cache_stats.get('failed', 0)} başarısız"
+            )
         st.caption(" · ".join(info_parts))
 
         if diag.failed_symbols:
@@ -362,7 +370,11 @@ with tab_screener:
         skip_fund = (selected_preset == "none")
 
         try:
-            with st.spinner(f"{market_info['label']} verileri çekiliyor..."):
+            with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
+                cache_stats = refresh_eod_cache(market)
+                st.session_state["last_cache_stats"] = cache_stats
+
+            with st.spinner(f"{market_info['label']} verileri işleniyor..."):
                 cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
                 raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
 
@@ -666,6 +678,7 @@ with tab_backtest:
     from datetime import date, timedelta
 
     st.markdown("Tarama stratejisinin geçmiş performansını simüle edin.")
+    st.info("Backtest sadece disk cache'indeki verileri kullanır. Verilerin güncel olması için önce **Hisse Tarama** sekmesinden tarama yapın.")
 
     bt_p1, bt_p2, bt_p3 = st.columns(3)
 
