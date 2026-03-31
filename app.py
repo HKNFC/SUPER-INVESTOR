@@ -1147,6 +1147,15 @@ with tab_backtest:
                             st.caption(" · ".join(score_items))
 
 with tab_history:
+    if "pending_delete_id" in st.session_state:
+        _del_id = st.session_state.pop("pending_delete_id")
+        delete_entry(_del_id)
+        st.rerun()
+    if "pending_clear_history" in st.session_state:
+        st.session_state.pop("pending_clear_history")
+        clear_history()
+        st.rerun()
+
     st.subheader("Tarama ve Backtest Geçmişi")
     history_entries = get_history()
 
@@ -1159,9 +1168,12 @@ with tab_history:
             bt_count = sum(1 for e in history_entries if e.get("type") == "backtest")
             st.caption(f"Toplam {len(history_entries)} kayıt ({scan_count} tarama, {bt_count} backtest)")
         with col_clear:
-            if st.button("Tüm Geçmişi Temizle", type="secondary", key="clear_all_history"):
-                clear_history()
-                st.rerun()
+            st.button(
+                "Tüm Geçmişi Temizle",
+                type="secondary",
+                key="clear_all_history",
+                on_click=lambda: st.session_state.update({"pending_clear_history": True}),
+            )
 
         for idx, entry in enumerate(history_entries):
             entry_id = entry.get("id", idx)
@@ -1188,9 +1200,13 @@ with tab_history:
                     if top_stocks:
                         st.markdown(f"**En İyi Hisseler:** {', '.join(top_stocks)}")
 
-                    if st.button("Sil", key=f"del_scan_{entry_id}", type="secondary"):
-                        delete_entry(entry_id)
-                        st.rerun()
+                    _scan_id = entry_id
+                    st.button(
+                        "Bu Kaydı Sil",
+                        key=f"del_scan_{idx}",
+                        type="secondary",
+                        on_click=lambda eid=_scan_id: st.session_state.update({"pending_delete_id": eid}),
+                    )
 
             elif entry_type == "backtest":
                 params = entry.get("params", {})
@@ -1231,9 +1247,13 @@ with tab_history:
                     c9.metric("Kalite", params.get("quality", ""))
                     c10.metric("Top N", params.get("top_n", ""))
 
-                    if st.button("Sil", key=f"del_bt_{entry_id}", type="secondary"):
-                        delete_entry(entry_id)
-                        st.rerun()
+                    _bt_id = entry_id
+                    st.button(
+                        "Bu Kaydı Sil",
+                        key=f"del_bt_{idx}",
+                        type="secondary",
+                        on_click=lambda eid=_bt_id: st.session_state.update({"pending_delete_id": eid}),
+                    )
 
 with tab_guide:
     st.markdown("## Doğru Kullanım Şekli")
