@@ -1,6 +1,33 @@
 {
   "entries": [
     {
+      "id": "528054358830",
+      "type": "scan",
+      "timestamp": 1774985141.6137938,
+      "datetime": "2026-03-31 19:25",
+      "market": "ABD Hisseleri",
+      "segment": "Tüm USA (S&P 500 + MidCap 400)",
+      "scan_mode": "Standart Tarama",
+      "profile": "Standart",
+      "quality": "Kapalı",
+      "sort_by": "Technical Score",
+      "top_n": 20,
+      "result_count": 903,
+      "top_stocks": [
+        "SRE",
+        "DAR",
+        "LII",
+        "HUBB",
+        "LIN",
+        "KNSL",
+        "ODFL",
+        "HON",
+        "XOM",
+        "ROST"
+      ],
+      "scan_date": null
+    },
+    {
       "id": "a7db91c1e03e",
       "type": "backtest",
       "timestamp": 1774961646.4685326,
