@@ -313,6 +313,45 @@ def _render_diagnostics(scan_df: Optional[pd.DataFrame] = None) -> None:
 with st.sidebar:
     st.header("Hisse Tarayıcı")
 
+    # ── Rebalans Tarihi Hesaplayıcı ─────────────────────────────────────
+    from rebalance_utils import next_rebalance_date, trading_days_until, holiday_name
+    from datetime import date as _date
+
+    st.markdown("---")
+    st.markdown("**Rebalans Takibi**")
+    _freq_options = {"1m": "1 Ay (21 iş günü)", "15d": "15 Gün (11 iş günü)", "1w": "1 Hafta (5 iş günü)"}
+    _freq_key = st.selectbox(
+        "Periyot",
+        options=list(_freq_options.keys()),
+        format_func=lambda x: _freq_options[x],
+        key="reb_freq",
+    )
+    _default_last = _date.today() - __import__('datetime').timedelta(days=21)
+    _last_reb = st.date_input(
+        "Son Rebalans Tarihi",
+        value=_default_last,
+        key="last_reb_date",
+    )
+    _next_reb = next_rebalance_date(_last_reb, freq=_freq_key)
+    _today = _date.today()
+    _days_left = trading_days_until(_next_reb, from_date=_today)
+
+    if _today >= _next_reb:
+        st.error(f"Rebalans günü: **{_next_reb.strftime('%d.%m.%Y')}** — BUGÜN veya GEÇTI!")
+    elif _days_left <= 3:
+        st.warning(f"Rebalans: **{_next_reb.strftime('%d.%m.%Y')}** — {_days_left} iş günü kaldı")
+    else:
+        st.success(f"Rebalans: **{_next_reb.strftime('%d.%m.%Y')}** — {_days_left} iş günü kaldı")
+
+    _hn = holiday_name(_next_reb)
+    if _hn:
+        _fixed_day = _next_reb
+        while holiday_name(_fixed_day):
+            _fixed_day += __import__('datetime').timedelta(days=1)
+        st.caption(f"{_next_reb.strftime('%d.%m.%Y')} tatil ({_hn}) → İlk iş günü: **{_fixed_day.strftime('%d.%m.%Y')}**")
+
+    st.markdown("---")
+
     market = st.radio(
         "Piyasa",
         options=list(SUPPORTED_MARKETS.keys()),
@@ -642,6 +681,49 @@ with tab_screener:
         _render_diagnostics(scored_data)
 
         st.divider()
+
+        # --- Öne Çıkan 5 Hisse: 3 Sütunlu Liste ---
+        if not filtered_data.empty:
+            def _top5_table(score_col: str, label: str) -> None:
+                if score_col not in filtered_data.columns:
+                    st.caption(f"{label} verisi yok")
+                    return
+                _df = (
+                    filtered_data.nlargest(5, score_col)[["ticker", "price", score_col]]
+                    .reset_index(drop=True)
+                )
+                _df["#"] = range(1, len(_df) + 1)
+                _df["price"] = _df["price"].apply(lambda x: round(x, 2) if not is_na(x) else None)
+                _df[score_col] = _df[score_col].apply(lambda x: round(x, 1) if not is_na(x) else None)
+                st.dataframe(
+                    _df[["#", "ticker", "price"]],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "#": st.column_config.NumberColumn("#", width="small"),
+                        "ticker": st.column_config.TextColumn("Hisse"),
+                        "price": st.column_config.NumberColumn("Fiyat", format="%.2f"),
+                    },
+                )
+
+            st.subheader("Öne Çıkan 5 Hisse")
+            _col1, _col2, _col3 = st.columns(3)
+            with _col1:
+                st.markdown("**COMBİNE SKOR**")
+                _top5_table("combined_score", "Kombine Skor")
+            with _col2:
+                st.markdown("**RS SKOR**")
+                _top5_table("rs_score", "RS Skor")
+            with _col3:
+                st.markdown("**TEKNİK SKOR**")
+                _top5_table("technical_score", "Teknik Skor")
+            st.divider()
+
+        if market == "USA":
+            st.caption(
+                "Değerleme skoru (F/K, F/DD, EV/FAVÖK, PEG) "
+                "sektör içi görece sıralamaya göre hesaplanmaktadır."
+            )
 
         if filtered_data.empty:
             st.warning("Mevcut filtrelere uyan hisse bulunamadı. Kalite filtresini gevşetmeyi veya hacim eşiğini düşürmeyi deneyin.")
@@ -1036,6 +1118,7 @@ with tab_backtest:
                     num_periods=result.num_periods,
                     sharpe=result.sharpe_ratio,
                     max_drawdown=result.max_drawdown,
+                    rebalance_history=result.rebalance_history,
                 )
 
             except Exception as e:
@@ -1246,6 +1329,43 @@ with tab_history:
                     c9, c10 = st.columns(2)
                     c9.metric("Kalite", params.get("quality", ""))
                     c10.metric("Top N", params.get("top_n", ""))
+
+                    # ── İşlem Listesi (Rebalance Geçmişi) ──────────────
+                    reb_hist = entry.get("rebalance_history", [])
+                    if reb_hist:
+                        st.markdown("---")
+                        st.markdown("**İşlem Listesi**")
+                        _rows = []
+                        for _ri, _rec in enumerate(reb_hist):
+                            _tickers = _rec.get("tickers", [])
+                            _prev_tickers = reb_hist[_ri - 1].get("tickers", []) if _ri > 0 else []
+                            _sold = [t for t in _prev_tickers if t not in _tickers]
+                            _bought = [t for t in _tickers if t not in _prev_tickers]
+                            _held = [t for t in _tickers if t in _prev_tickers]
+                            _rows.append({
+                                "Tarih": _rec.get("date", ""),
+                                "Dönem Getiri (%)": _rec.get("period_return", 0),
+                                "Portföy": ", ".join(_tickers),
+                                "Alınanlar": ", ".join(_bought) if _bought else ("—" if _ri > 0 else ", ".join(_tickers)),
+                                "Satılanlar": ", ".join(_sold) if _sold else "—",
+                                "Tutulanlar": ", ".join(_held) if _held else "—",
+                            })
+                        _reb_df = pd.DataFrame(_rows)
+                        st.dataframe(
+                            _reb_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            column_config={
+                                "Tarih": st.column_config.TextColumn("Tarih", width="small"),
+                                "Dönem Getiri (%)": st.column_config.NumberColumn("Dönem %", format="%.1f"),
+                                "Portföy": st.column_config.TextColumn("Portföy"),
+                                "Alınanlar": st.column_config.TextColumn("Alınanlar"),
+                                "Satılanlar": st.column_config.TextColumn("Satılanlar"),
+                                "Tutulanlar": st.column_config.TextColumn("Tutulanlar"),
+                            },
+                        )
+                    else:
+                        st.caption("Bu backtest için işlem listesi mevcut değil. Yeni bir backtest çalıştırın.")
 
                     _bt_id = entry_id
                     st.button(

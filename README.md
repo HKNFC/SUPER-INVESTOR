@@ -16,14 +16,48 @@ A production-ready Python Streamlit stock screening web app that ranks BIST (Tur
 - **Live Data** — Twelve Data API integration with in-memory caching, rate-limit tracking, and mock data fallback
 - **Diagnostics** — Fetch status (fetched/failed/incomplete), missing-field summaries, per-stock warnings
 
-## Quick Start
+## Kurulum ve Başlatma
+
+### Gereksinimler
+- Python 3.12+
+- Node.js 20+ ve [pnpm](https://pnpm.io/installation)
+
+### 1. Python ortamı kurulumu
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py --server.port 5000
+bash setup.sh
 ```
 
-Set the `TWELVE_DATA_API_KEY` environment variable for live market data. Without it, the app uses built-in demo data.
+Bu komut:
+- `.venv` adında bir Python sanal ortamı oluşturur
+- Tüm Python bağımlılıklarını yükler
+- `env.example` dosyasını `.env` olarak kopyalar
+
+### 2. API anahtarını girin
+
+`.env` dosyasını açıp `TWELVE_DATA_API_KEY` değerini girin:
+
+```
+TWELVE_DATA_API_KEY=your_key_here
+```
+
+API anahtarı olmadan uygulama demo/mock veri ile çalışır.
+
+### 3. Uygulamayı başlatın
+
+**Sadece Streamlit (ana uygulama):**
+```bash
+bash run_app.sh
+# → http://localhost:5000
+```
+
+**Tüm servisler (Streamlit + React + API):**
+```bash
+bash run_all.sh
+# Streamlit  → http://localhost:5000
+# API Server → http://localhost:4000
+# React App  → http://localhost:3000
+```
 
 ## Supported Markets
 

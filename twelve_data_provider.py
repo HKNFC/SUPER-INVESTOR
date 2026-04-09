@@ -191,6 +191,16 @@ class TwelveDataProvider(PriceProvider):
         outputsize: int = 300,
         market: Optional[str] = None,
     ) -> pd.DataFrame:
+        # BIST stocks: Twelve Data's BIST data is unreliable (returns mixed/wrong
+        # prices for many symbols).  Always use Yahoo Finance directly and skip
+        # the Twelve Data disk-cache pipeline entirely for this market.
+        if market and market.upper() == "BIST":
+            df = self._yahoo_fallback(f"{ticker}:BIST", outputsize)
+            if not df.empty:
+                return df
+            logger.warning("Yahoo fallback empty for BIST ticker %s", ticker)
+            return pd.DataFrame(columns=OHLCV_COLUMNS)
+
         symbol = self._resolve_symbol(ticker, market)
         ck = _cache_key("history", symbol=symbol, outputsize=outputsize)
 
@@ -233,14 +243,17 @@ class TwelveDataProvider(PriceProvider):
             logger.warning("No quote data for %s", ticker)
             return None
 
+        # Twelve Data /quote: "price" = current real-time price, "close" = previous close
+        current_price = _safe_float(data.get("price")) or _safe_float(data.get("close"))
         result = {
-            "price": _safe_float(data.get("close")),
+            "price": current_price,
             "open": _safe_float(data.get("open")),
             "high": _safe_float(data.get("high")),
             "low": _safe_float(data.get("low")),
             "volume": _safe_float(data.get("volume")),
             "change": _safe_float(data.get("change")),
             "percent_change": _safe_float(data.get("percent_change")),
+            "previous_close": _safe_float(data.get("previous_close") or data.get("close")),
             "fifty_two_week_high": _safe_float(data.get("fifty_two_week", {}).get("high")),
             "fifty_two_week_low": _safe_float(data.get("fifty_two_week", {}).get("low")),
             "name": data.get("name", ticker),
@@ -291,8 +304,18 @@ class TwelveDataProvider(PriceProvider):
             return result
 
         closes = history["close"].values
-        current = closes[-1]
-        result["price"] = round(float(current), 2)
+        history_last_close = float(closes[-1])
+
+        # Try real-time quote first; fall back to last historical close
+        quote = self.get_quote(ticker, market=market)
+        if quote and quote.get("price") is not None:
+            current = quote["price"]
+            result["price"] = round(float(current), 2)
+            logger.debug("Price for %s from quote: %.2f", ticker, current)
+        else:
+            current = history_last_close
+            result["price"] = round(float(current), 2)
+            logger.debug("Price for %s from history close: %.2f", ticker, current)
 
         periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
         for field, days in periods.items():

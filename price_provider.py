@@ -158,8 +158,15 @@ class PriceProvider(ABC):
             return result
 
         closes = history["close"].values
-        current = closes[-1]
-        result["price"] = round(float(current), 2)
+        history_last_close = float(closes[-1])
+
+        # Try real-time quote first; fall back to last historical close
+        current = history_last_close
+        quote = self.get_quote(ticker, market=market)
+        if quote and quote.get("price") is not None:
+            current = float(quote["price"])
+            logger.debug("Price for %s from quote: %.2f", ticker, current)
+        result["price"] = round(current, 2)
 
         periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
         for field, days in periods.items():

@@ -48,7 +48,7 @@ def compute_rs_scores(df: pd.DataFrame, market: str = None,
     all_metrics = _collect_all_metrics()
     result = _winsorize_metrics(result, all_metrics)
 
-    percentiles = _percentile_rank_all(result, all_metrics)
+    percentiles = _percentile_rank_all(result, all_metrics, market=market)
 
     result["financial_strength"] = _weighted_sub_score(
         percentiles, FINANCIAL_STRENGTH_WEIGHTS
@@ -153,9 +153,30 @@ def _winsorize_metrics(
 # Percentile Ranking
 # ---------------------------------------------------------------------------
 
+# Valuation metrikleri: USA'da sektör içinde, BIST'te global rank
+SECTOR_RELATIVE_COLS: set = {"pe", "pb", "ev_ebitda", "peg"}
+MIN_SECTOR_SIZE: int = 5  # bu eşiğin altında global rank'a düşer
+
+
+def _single_col_rank(series: pd.Series, col: str, n_total: int) -> pd.Series:
+    """Tek bir sütun için global percentile rank hesaplar (0-100)."""
+    valid_mask = series.notna()
+    n_valid = valid_mask.sum()
+    if n_valid < 2:
+        if n_valid == 1:
+            return series.where(~valid_mask, 50.0)
+        return pd.Series(np.nan, index=series.index)
+    dense_rank = series.rank(method="average", na_option="keep")
+    pct = ((dense_rank - 1) / (n_valid - 1)) * 100
+    if col in REVERSE_SCORED_METRICS:
+        pct = pct.where(~valid_mask, 100 - pct)
+    return pct.round(2)
+
+
 def _percentile_rank_all(
     df: pd.DataFrame,
     metrics: List[str],
+    market: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Compute percentile ranks (0-100) for all metric columns.
@@ -170,10 +191,20 @@ def _percentile_rank_all(
     treated as NaN before ranking since negative values are not meaningful.
 
     NaN values receive NaN percentile ranks.
+
+    USA market: pe, pb, ev_ebitda, peg are ranked within each sector
+    (sector-relative scoring). Groups smaller than MIN_SECTOR_SIZE fall
+    back to global rank. BIST and other markets always use global rank.
     """
     ranked = pd.DataFrame(index=df.index)
-
     valuation_metrics = {"pe", "pb", "ev_ebitda", "peg"}
+
+    use_sector_rank = (
+        market is not None
+        and market.upper() == "USA"
+        and "sector" in df.columns
+        and df["sector"].notna().any()
+    )
 
     for col in metrics:
         if col not in df.columns:
@@ -181,27 +212,31 @@ def _percentile_rank_all(
             continue
 
         series = df[col].copy()
-
         if col in valuation_metrics:
             series = series.where(series > 0, np.nan)
 
-        valid_mask = series.notna()
-        n_valid = valid_mask.sum()
+        # ── Sektör-görece rank (yalnızca USA) ──────────────────────────
+        if use_sector_rank and col in SECTOR_RELATIVE_COLS:
+            sector_counts = df.groupby("sector")[col].transform("count")
+            big_enough = sector_counts >= MIN_SECTOR_SIZE
 
-        if n_valid < 2:
-            if n_valid == 1:
-                ranked[col] = series.where(~valid_mask, 50.0)
-            else:
-                ranked[col] = np.nan
-            continue
+            def _sector_pct(x: pd.Series) -> pd.Series:
+                n = x.notna().sum()
+                if n < 2:
+                    return x.where(x.isna(), 50.0)
+                r = x.rank(method="average", na_option="keep")
+                p = ((r - 1) / (n - 1)) * 100
+                if col in REVERSE_SCORED_METRICS:
+                    p = p.where(x.isna(), 100 - p)
+                return p.round(2)
 
-        dense_rank = series.rank(method="average", na_option="keep")
-        pct = ((dense_rank - 1) / (n_valid - 1)) * 100
+            sector_rank = df.groupby("sector")[col].transform(_sector_pct)
+            global_rank = _single_col_rank(series, col, len(df))
+            ranked[col] = sector_rank.where(big_enough, global_rank)
 
-        if col in REVERSE_SCORED_METRICS:
-            pct = pct.where(~valid_mask, 100 - pct)
-
-        ranked[col] = pct.round(2)
+        # ── Global rank (BIST ve diğerleri) ────────────────────────────
+        else:
+            ranked[col] = _single_col_rank(series, col, len(df))
 
     return ranked
 

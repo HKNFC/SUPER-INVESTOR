@@ -22,12 +22,14 @@ def fetch_yahoo_history(
     symbol = resolve_yahoo_symbol(ticker, market)
 
     try:
-        data = yf.download(
-            symbol,
+        # Use Ticker.history() instead of yf.download() to avoid the batch-merge
+        # bug in yfinance 1.x where concurrent downloads get combined into a
+        # MultiIndex DataFrame with shape (N, 3) instead of (N,) per column.
+        ticker_obj = yf.Ticker(symbol)
+        data = ticker_obj.history(
             period=period,
             interval="1d",
             auto_adjust=True,
-            progress=False,
             timeout=15,
         )
 
@@ -35,22 +37,19 @@ def fetch_yahoo_history(
             logger.warning("Yahoo Finance: no data for %s (resolved: %s)", ticker, symbol)
             return pd.DataFrame(columns=OHLCV_COLUMNS)
 
+        # Ticker.history() returns a flat-column DataFrame (no MultiIndex)
         if isinstance(data.columns, pd.MultiIndex):
             data.columns = data.columns.get_level_values(0)
 
         df = pd.DataFrame()
         df["datetime"] = data.index
-        df["open"] = data["Open"].values
-        df["high"] = data["High"].values
-        df["low"] = data["Low"].values
-        df["close"] = data["Close"].values
-        df["volume"] = data["Volume"].values
+        df["open"]   = pd.to_numeric(data["Open"],   errors="coerce").values
+        df["high"]   = pd.to_numeric(data["High"],   errors="coerce").values
+        df["low"]    = pd.to_numeric(data["Low"],    errors="coerce").values
+        df["close"]  = pd.to_numeric(data["Close"],  errors="coerce").values
+        df["volume"] = pd.to_numeric(data["Volume"], errors="coerce").values
 
         df["datetime"] = pd.to_datetime(df["datetime"]).dt.tz_localize(None)
-
-        for col in ["open", "high", "low", "close", "volume"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
         df = df.dropna(subset=["close"])
         df = df.sort_values("datetime").reset_index(drop=True)
 

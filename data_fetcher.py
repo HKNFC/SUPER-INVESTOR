@@ -274,8 +274,25 @@ def _enrich_via_yahoo(record: dict) -> dict:
         return result
 
     closes = history["close"].values
-    current = closes[-1]
-    result["price"] = round(float(current), 2)
+    history_last_close = float(closes[-1])
+
+    # Try real-time price from yfinance fast_info first
+    current = history_last_close
+    try:
+        import yfinance as yf
+        from symbol_mapper import resolve_yahoo_symbol
+        sym = resolve_yahoo_symbol(ticker, market)
+        fi = yf.Ticker(sym).fast_info
+        rt_price = getattr(fi, "last_price", None)
+        if rt_price is not None and float(rt_price) > 0:
+            current = float(rt_price)
+            logger.debug("Yahoo real-time price for %s: %.2f", ticker, current)
+        else:
+            logger.debug("Yahoo fast_info unavailable for %s — using history close", ticker)
+    except Exception as e:
+        logger.debug("Yahoo fast_info error for %s: %s — using history close", ticker, e)
+
+    result["price"] = round(current, 2)
 
     periods = {"return_1m": 21, "return_3m": 63, "return_6m": 126, "return_12m": 252}
     for field_name, days in periods.items():
@@ -843,6 +860,18 @@ def refresh_eod_cache(market: str, progress_callback=None) -> Dict[str, int]:
         try:
             if not needs_refresh(resolved):
                 return ("fresh", symbol)
+
+            # BIST market: Yahoo Finance üzerinden çek ve cache'e yaz
+            if market.upper() == "BIST":
+                yahoo_data = _try_yahoo_fallback(symbol, market=market, outputsize=500)
+                if not yahoo_data.empty:
+                    from disk_cache import merge_cache as _merge
+                    _merge(resolved, yahoo_data)
+                    return ("updated", symbol)
+                cached = read_cache(resolved)
+                if cached is not None and not cached.empty:
+                    return ("fresh", symbol)
+                return ("failed", symbol)
 
             if provider is not None:
                 def _disk_fetch(sym, outputsize=500, start_date=None):

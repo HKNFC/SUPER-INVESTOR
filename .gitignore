@@ -48,3 +48,9 @@ Thumbs.db
 .cache/
 .local/
 data/cache/
+
+# Local environment
+.env
+.venv/
+__pycache__/
+*.pyc

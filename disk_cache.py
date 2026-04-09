@@ -28,6 +28,80 @@ def _get_lock(symbol: str) -> threading.Lock:
         return _write_locks[symbol]
 
 
+def _clean_price_outliers(df: pd.DataFrame, gap_ratio: float = 2.5) -> pd.DataFrame:
+    """
+    Remove rows whose close price belongs to a spurious price cluster.
+
+    Algorithm:
+    1. Sort valid prices and detect natural cluster boundaries where
+       consecutive sorted values jump by > gap_ratio.
+    2. Among all detected clusters, pick the one with the LOWEST log-space
+       standard deviation (most internally consistent = real prices).
+    3. Remove rows that fall outside the winning cluster range.
+
+    This correctly handles cases where an API mixes two or more different
+    stocks' prices in the same time series, even when the spurious cluster
+    contains more rows than the true cluster.
+
+    Example: ASGYO true price ~10-11 TL (log_std≈0.05, 229 rows)
+             spurious data ~50-200 TL (log_std≈0.60, 272 rows)
+             → picks ASGYO cluster because log_std is lower.
+    """
+    if df.empty or "close" not in df.columns or len(df) < 10:
+        return df
+
+    closes = df["close"].values.astype(float)
+    valid = closes[closes > 0]
+    if len(valid) < 10:
+        return df
+
+    sorted_v = np.sort(valid)
+
+    # Detect cluster boundaries
+    boundaries = [0]
+    for i in range(len(sorted_v) - 1):
+        ratio = sorted_v[i + 1] / sorted_v[i]
+        if ratio > gap_ratio:
+            boundaries.append(i + 1)
+    boundaries.append(len(sorted_v))
+
+    if len(boundaries) == 2:
+        # Single cluster — nothing to remove
+        return df
+
+    # Build clusters and compute log-space std (lower = more consistent)
+    clusters = []
+    for lo_i, hi_i in zip(boundaries[:-1], boundaries[1:]):
+        segment = sorted_v[lo_i:hi_i]
+        log_std = float(np.std(np.log(segment))) if len(segment) >= 2 else float("inf")
+        clusters.append({
+            "lo": float(segment.min()),
+            "hi": float(segment.max()),
+            "count": len(segment),
+            "log_std": log_std,
+        })
+
+    # Pick the most internally consistent cluster
+    best = min(clusters, key=lambda c: c["log_std"])
+
+    lo_bound = best["lo"] / gap_ratio
+    hi_bound = best["hi"] * gap_ratio
+
+    mask = np.ones(len(df), dtype=bool)
+    for i, c in enumerate(closes):
+        if c > 0 and not (lo_bound <= c <= hi_bound):
+            mask[i] = False
+
+    removed = int((~mask).sum())
+    if removed > 0:
+        logger.info(
+            "Price cluster filter: removed %d/%d rows "
+            "(best cluster lo=%.2f hi=%.2f log_std=%.3f count=%d)",
+            removed, len(df), best["lo"], best["hi"], best["log_std"], best["count"],
+        )
+    return df[mask].reset_index(drop=True)
+
+
 def _ensure_cache_dir() -> None:
     os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -99,6 +173,7 @@ def write_cache(symbol: str, df: pd.DataFrame) -> bool:
     with lock:
         save_df = df[OHLCV_COLUMNS].copy() if all(c in df.columns for c in OHLCV_COLUMNS) else df.copy()
         save_df = save_df.sort_values("datetime").drop_duplicates(subset=["datetime"], keep="last").reset_index(drop=True)
+        save_df = _clean_price_outliers(save_df)
         return _atomic_write(path, save_df)
 
 
@@ -108,12 +183,14 @@ def merge_cache(symbol: str, new_data: pd.DataFrame) -> pd.DataFrame:
         existing = read_cache(symbol)
         if existing is None or existing.empty:
             save_df = new_data.sort_values("datetime").drop_duplicates(subset=["datetime"], keep="last").reset_index(drop=True)
+            save_df = _clean_price_outliers(save_df)
             _atomic_write(_cache_path(symbol), save_df[OHLCV_COLUMNS] if all(c in save_df.columns for c in OHLCV_COLUMNS) else save_df)
             return save_df
 
         combined = pd.concat([existing, new_data], ignore_index=True)
         combined["datetime"] = pd.to_datetime(combined["datetime"])
         combined = combined.sort_values("datetime").drop_duplicates(subset=["datetime"], keep="last").reset_index(drop=True)
+        combined = _clean_price_outliers(combined)
 
         save_df = combined[OHLCV_COLUMNS] if all(c in combined.columns for c in OHLCV_COLUMNS) else combined
         _atomic_write(_cache_path(symbol), save_df)
@@ -154,12 +231,14 @@ def get_cached_or_fetch(
     if _is_cache_fresh(path):
         cached = read_cache(symbol)
         if cached is not None and not cached.empty:
+            cached = _clean_price_outliers(cached)
             logger.debug("Disk cache hit for %s (%d rows)", symbol, len(cached))
             return cached.tail(outputsize).reset_index(drop=True)
 
     cached = read_cache(symbol)
 
     if cached is not None and not cached.empty:
+        cached = _clean_price_outliers(cached)
         start_date = get_missing_date_range(symbol)
         if start_date is None:
             logger.debug("Cache for %s is complete up to today", symbol)

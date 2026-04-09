@@ -79,8 +79,22 @@ def add_backtest_entry(
     num_periods: int,
     sharpe: Optional[float] = None,
     max_drawdown: Optional[float] = None,
+    rebalance_history: Optional[list] = None,
 ) -> bool:
     data = _load_raw()
+
+    # RebalanceRecord nesnelerini JSON-serileştirilebilir dict'e çevir
+    reb_list = []
+    if rebalance_history:
+        for rec in rebalance_history:
+            scores = getattr(rec, "scores", {}) or {}
+            reb_list.append({
+                "date": rec.date.strftime("%Y-%m-%d"),
+                "tickers": list(rec.tickers),
+                "period_return": round(float(getattr(rec, "period_return", 0) or 0), 2),
+                "scores": {k: round(float(v), 1) for k, v in scores.items()},
+            })
+
     entry = {
         "id": _gen_id(),
         "type": "backtest",
@@ -92,6 +106,7 @@ def add_backtest_entry(
         "num_periods": num_periods,
         "sharpe": sharpe,
         "max_drawdown": max_drawdown,
+        "rebalance_history": reb_list,
     }
     data["entries"].insert(0, entry)
     return _save_raw(data)
