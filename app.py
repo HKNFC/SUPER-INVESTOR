@@ -8,6 +8,7 @@ Main entry point for the stock screening dashboard. Provides two tabs:
 Sidebar controls screening parameters; backtest has its own inline controls.
 """
 
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -42,6 +43,15 @@ from scan_history import (
     add_scan_entry, add_backtest_entry,
     get_history, delete_entry, clear_history,
 )
+
+# Rebalance scheduler'ı arka planda başlat (tek seferlik)
+if "scheduler_started" not in st.session_state:
+    try:
+        from rebalance_scheduler import start_background_scheduler
+        start_background_scheduler()
+    except Exception:
+        pass
+    st.session_state["scheduler_started"] = True
 
 st.set_page_config(
     page_title="Hisse Tarayıcı",
@@ -319,36 +329,157 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("**Rebalans Takibi**")
+    import json as _json, os as _os
+    _reb_save_path = _os.path.join(_os.path.dirname(__file__), ".last_rebalance_date.json")
     _freq_options = {"1m": "1 Ay (21 iş günü)", "15d": "15 Gün (11 iş günü)", "1w": "1 Hafta (5 iş günü)"}
-    _freq_key = st.selectbox(
-        "Periyot",
+
+    def _load_reb_date(key, default_days=21):
+        d = _date.today() - __import__('datetime').timedelta(days=default_days)
+        if _os.path.exists(_reb_save_path):
+            try:
+                _saved = _json.load(open(_reb_save_path))
+                d = _date.fromisoformat(_saved.get(key, str(d)))
+            except Exception:
+                pass
+        return d
+
+    def _save_reb_date(key, val):
+        data = {}
+        if _os.path.exists(_reb_save_path):
+            try:
+                data = _json.load(open(_reb_save_path))
+            except Exception:
+                pass
+        data[key] = str(val)
+        try:
+            with open(_reb_save_path, "w") as _wf:
+                _json.dump(data, _wf)
+        except Exception:
+            pass
+
+    # ── BIST Rebalans ──────────────────────────────────────────────────
+    st.markdown("🇹🇷 **BIST İçin Rebalance**")
+    _bist_freq_key = st.selectbox(
+        "BIST Periyot",
         options=list(_freq_options.keys()),
         format_func=lambda x: _freq_options[x],
-        key="reb_freq",
+        key="reb_freq_bist",
     )
-    _default_last = _date.today() - __import__('datetime').timedelta(days=21)
-    _last_reb = st.date_input(
-        "Son Rebalans Tarihi",
-        value=_default_last,
-        key="last_reb_date",
+    _bist_last_reb = st.date_input(
+        "BIST İçin Rebalance Tarihi",
+        value=_load_reb_date("bist_last_reb"),
+        key="last_reb_date_bist",
     )
-    _next_reb = next_rebalance_date(_last_reb, freq=_freq_key)
+    _save_reb_date("bist_last_reb", _bist_last_reb)
+    _bist_next = next_rebalance_date(_bist_last_reb, freq=_bist_freq_key)
     _today = _date.today()
-    _days_left = trading_days_until(_next_reb, from_date=_today)
-
-    if _today >= _next_reb:
-        st.error(f"Rebalans günü: **{_next_reb.strftime('%d.%m.%Y')}** — BUGÜN veya GEÇTI!")
-    elif _days_left <= 3:
-        st.warning(f"Rebalans: **{_next_reb.strftime('%d.%m.%Y')}** — {_days_left} iş günü kaldı")
+    _bist_days = trading_days_until(_bist_next, from_date=_today)
+    if _today >= _bist_next:
+        st.error(f"BIST Rebalans: **{_bist_next.strftime('%d.%m.%Y')}** — BUGÜN veya GEÇTİ!")
+    elif _bist_days <= 3:
+        st.warning(f"BIST Rebalans: **{_bist_next.strftime('%d.%m.%Y')}** — {_bist_days} iş günü kaldı")
     else:
-        st.success(f"Rebalans: **{_next_reb.strftime('%d.%m.%Y')}** — {_days_left} iş günü kaldı")
+        st.success(f"BIST Rebalans: **{_bist_next.strftime('%d.%m.%Y')}** — {_bist_days} iş günü kaldı")
+    _hn_bist = holiday_name(_bist_next)
+    if _hn_bist:
+        _fd = _bist_next
+        while holiday_name(_fd):
+            _fd += __import__('datetime').timedelta(days=1)
+        st.caption(f"{_bist_next.strftime('%d.%m.%Y')} tatil ({_hn_bist}) → İlk iş günü: **{_fd.strftime('%d.%m.%Y')}**")
 
-    _hn = holiday_name(_next_reb)
-    if _hn:
-        _fixed_day = _next_reb
-        while holiday_name(_fixed_day):
-            _fixed_day += __import__('datetime').timedelta(days=1)
-        st.caption(f"{_next_reb.strftime('%d.%m.%Y')} tatil ({_hn}) → İlk iş günü: **{_fixed_day.strftime('%d.%m.%Y')}**")
+    st.markdown("---")
+
+    # ── USA Rebalans ───────────────────────────────────────────────────
+    st.markdown("🇺🇸 **USA İçin Rebalance**")
+    _usa_freq_key = st.selectbox(
+        "USA Periyot",
+        options=list(_freq_options.keys()),
+        format_func=lambda x: _freq_options[x],
+        key="reb_freq_usa",
+    )
+    _usa_last_reb = st.date_input(
+        "USA İçin Rebalance Tarihi",
+        value=_load_reb_date("usa_last_reb"),
+        key="last_reb_date_usa",
+    )
+    _save_reb_date("usa_last_reb", _usa_last_reb)
+    _usa_next = next_rebalance_date(_usa_last_reb, freq=_usa_freq_key)
+    _usa_days = trading_days_until(_usa_next, from_date=_today)
+    if _today >= _usa_next:
+        st.error(f"USA Rebalans: **{_usa_next.strftime('%d.%m.%Y')}** — BUGÜN veya GEÇTİ!")
+    elif _usa_days <= 3:
+        st.warning(f"USA Rebalans: **{_usa_next.strftime('%d.%m.%Y')}** — {_usa_days} iş günü kaldı")
+    else:
+        st.success(f"USA Rebalans: **{_usa_next.strftime('%d.%m.%Y')}** — {_usa_days} iş günü kaldı")
+    _hn_usa = holiday_name(_usa_next)
+    if _hn_usa:
+        _fd = _usa_next
+        while holiday_name(_fd):
+            _fd += __import__('datetime').timedelta(days=1)
+        st.caption(f"{_usa_next.strftime('%d.%m.%Y')} tatil ({_hn_usa}) → İlk iş günü: **{_fd.strftime('%d.%m.%Y')}**")
+
+    st.markdown("---")
+
+    # ── Telegram Bildirim Ayarları ────────────────────────────────────
+    st.markdown("📲 **Telegram Bildirimleri**")
+    try:
+        from telegram_notifier import load_config as _tg_load, save_config as _tg_save, send_message as _tg_send, build_rebalance_message as _tg_build
+
+        _tg_cfg = _tg_load()
+
+        _tg_enabled = st.checkbox(
+            "Rebalance Bildirimlerini Etkinleştir",
+            value=bool(_tg_cfg.get("enabled", False)),
+            key="tg_enabled",
+        )
+        _tg_token = st.text_input(
+            "Bot Token",
+            value=_tg_cfg.get("bot_token", ""),
+            type="password",
+            key="tg_token",
+            help="@BotFather'dan alınan token",
+        )
+        _tg_chat = st.text_input(
+            "Chat ID",
+            value=_tg_cfg.get("chat_id", ""),
+            key="tg_chat",
+            help="@userinfobot ile öğrenebilirsiniz",
+        )
+        _tg_days = st.selectbox(
+            "Kaç iş günü öncesinde bildir?",
+            options=[0, 1, 2, 3],
+            index=[0,1,2,3].index(int(_tg_cfg.get("notify_days_before", 1))),
+            format_func=lambda x: "Sadece rebalance günü" if x == 0 else f"{x} iş günü önce",
+            key="tg_days",
+        )
+
+        _tg_col1, _tg_col2 = st.columns(2)
+        if _tg_col1.button("Kaydet", key="tg_save"):
+            _tg_save({
+                "bot_token": _tg_token,
+                "chat_id": _tg_chat,
+                "enabled": _tg_enabled,
+                "notify_days_before": _tg_days,
+            })
+            st.success("Telegram ayarları kaydedildi.")
+
+        if _tg_col2.button("Test Mesajı Gönder", key="tg_test"):
+            if not _tg_token or not _tg_chat:
+                st.error("Lütfen Bot Token ve Chat ID girin.")
+            else:
+                from datetime import date as _d2
+                _test_msg = "\u2705 <b>Super Investor Telegram baglantisi basarili!</b>\n\nRebalance bildirimleri aktif.\n\n<i>Super Investor - Test Mesaji</i>"
+                _ok, _err = _tg_send(_tg_token, _tg_chat, _test_msg)
+                if _ok:
+                    st.success("Test mesajı gönderildi!")
+                else:
+                    st.error(f"Gönderilemedi: {_err}")
+
+        if _tg_enabled and not _tg_token:
+            st.warning("Bildirim etkin ama Bot Token girilmemiş.")
+
+    except Exception as _tg_err:
+        st.error(f"Telegram modülü yüklenemedi: {_tg_err}")
 
     st.markdown("---")
 
@@ -447,7 +578,22 @@ with st.sidebar:
         )
         st.caption("Cache'deki fiyat verileri seçilen tarihe kadar kesilir.")
     else:
-        scan_date = None
+        # Piyasa kapalı/seans öncesiyse son iş gününü otomatik cutoff olarak kullan
+        import datetime as _dt
+        _today = date.today()
+        _now_hour = _dt.datetime.now().hour  # Yerel saat
+        _offset = 0
+        _wd = _today.weekday()
+        if _wd == 5:    # Cumartesi → Cuma
+            _offset = 1
+        elif _wd == 6:  # Pazar → Cuma
+            _offset = 2
+        elif _wd == 0 and _now_hour < 10:   # Pazartesi seans öncesi (BIST 10:00)
+            _offset = 3  # Cuma'ya git
+        elif _wd in (1,2,3,4) and _now_hour < 10:  # Salı-Cuma seans öncesi
+            _offset = 1  # Bir önceki güne git
+        _market_closed = _offset > 0
+        scan_date = (_today - timedelta(days=_offset)) if _market_closed else None
 
     st.divider()
     api_status = "Canlı Veri" if TWELVE_DATA_API_KEY else "Demo Veri"
@@ -492,7 +638,7 @@ with tab_screener:
     if run_screening:
         market_info = SUPPORTED_MARKETS[market]
         skip_fund = False
-        is_historical = scan_date is not None
+        is_historical = use_historical  # Sadece checkbox işaretliyse gerçek geçmiş mod
 
         try:
             if is_historical:
@@ -508,6 +654,8 @@ with tab_screener:
                 from momentum_metrics import append_momentum_fields
                 from data_fetcher import get_cached_benchmark
                 truncated_rows = []
+                from disk_cache import read_cache
+                from symbol_mapper import resolve_twelve_symbol
                 for _, row in raw_data.iterrows():
                     pd_data = row.get("price_data")
                     if isinstance(pd_data, pd.DataFrame) and "datetime" in pd_data.columns:
@@ -515,6 +663,21 @@ with tab_screener:
                         if len(sliced) >= 20:
                             new_row = row.copy()
                             new_row["price_data"] = sliced.reset_index(drop=True)
+                            # Tarama tarihindeki fiyatı ham cache'den al (spike filtresi bypass)
+                            try:
+                                ticker_key = row.get("ticker", "")
+                                raw_cache = read_cache(resolve_twelve_symbol(ticker_key, market))
+                                if raw_cache is not None and not raw_cache.empty:
+                                    raw_cache["datetime"] = pd.to_datetime(raw_cache["datetime"])
+                                    raw_sliced = raw_cache[raw_cache["datetime"] <= cutoff]
+                                    if not raw_sliced.empty:
+                                        price_col = "close" if "close" in raw_sliced.columns else None
+                                        if price_col:
+                                            last_close = raw_sliced[price_col].iloc[-1]
+                                            if pd.notna(last_close):
+                                                new_row["price"] = round(float(last_close), 2)
+                            except Exception:
+                                pass
                             truncated_rows.append(new_row)
                 if not truncated_rows:
                     st.error(f"{scan_date} tarihinde yeterli veri bulunamadı.")
@@ -527,13 +690,27 @@ with tab_screener:
                 raw_data = append_momentum_fields(raw_data, benchmark_history=bench)
                 st.session_state["last_cache_stats"] = None
             else:
-                with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
-                    cache_stats = refresh_eod_cache(market)
-                    st.session_state["last_cache_stats"] = cache_stats
+                import datetime as _dt2
+                _today_wd = date.today().weekday()
+                _now_h = _dt2.datetime.now().hour
+                _use_cache_only = (
+                    _today_wd >= 5 or                          # hafta sonu
+                    (_today_wd == 0 and _now_h < 10) or        # Pazartesi seans öncesi
+                    (_today_wd in (1,2,3,4) and _now_h < 10)   # Salı-Cuma seans öncesi
+                )
+                if _use_cache_only:
+                    with st.spinner(f"{market_info['label']} verileri işleniyor (seans öncesi — önceki kapanış kullanılıyor)..."):
+                        cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
+                        raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
+                    st.session_state["last_cache_stats"] = None
+                else:
+                    with st.spinner(f"{market_info['label']} EOD verileri güncelleniyor..."):
+                        cache_stats = refresh_eod_cache(market)
+                        st.session_state["last_cache_stats"] = cache_stats
 
-                with st.spinner(f"{market_info['label']} verileri işleniyor..."):
-                    cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
-                    raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
+                    with st.spinner(f"{market_info['label']} verileri işleniyor..."):
+                        cache_bust = int(time.time() // CACHE_TTL_MARKET_DATA)
+                        raw_data = _cached_fetch(market, cache_bust, skip_fundamentals=skip_fund)
 
             if market == "BIST" and bist_segment != "BISTTUM" and "ticker" in raw_data.columns:
                 if bist_segment == "BIST100":
@@ -562,7 +739,8 @@ with tab_screener:
                 st.toast(f"{updated} izleme listesi hissesinin skorları güncellendi")
 
             filtered_data = apply_preset_filter(
-                scored_data, preset=selected_preset, min_avg_volume=min_avg_volume,
+                scored_data, preset=selected_preset,
+                min_avg_volume=min_avg_volume, market=market,
             )
 
             if scan_mode == "smart_money" and not filtered_data.empty:
@@ -753,6 +931,20 @@ with tab_screener:
             if "price" in display_df.columns:
                 display_df["price"] = display_df["price"].apply(
                     lambda x: round(x, 2) if not is_na(x) else None
+                )
+
+            # Piyasa başlığı
+            if market == "BIST":
+                st.markdown(
+                    "<h3 style='color:#f59e0b;border-bottom:2px solid #f59e0b;padding-bottom:0.4rem;margin-bottom:1rem;'>"
+                    f"🇹🇷 BIST Tarama Sonuçları — {len(display_df)} hisse</h3>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    "<h3 style='color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:0.4rem;margin-bottom:1rem;'>"
+                    f"🇺🇸 USA Tarama Sonuçları — {len(display_df)} hisse</h3>",
+                    unsafe_allow_html=True
                 )
 
             st.dataframe(
@@ -1011,7 +1203,7 @@ with tab_backtest:
 
         bt_top_n = st.selectbox(
             "Portföy Hisse Sayısı",
-            options=[5, 10, 15, 20],
+            options=[3, 5, 7, 9],
             index=1,
             key="bt_top_n",
         )
@@ -1226,8 +1418,265 @@ with tab_backtest:
                     for rec in result.rebalance_history:
                         if rec.tickers:
                             st.markdown(f"**{rec.date.strftime('%Y-%m-%d')}** — Getiri: %{rec.period_return:.1f}")
-                            score_items = [f"{t}: {s:.1f}" for t, s in rec.scores.items()]
-                            st.caption(" · ".join(score_items))
+                            if rec.ticker_returns:
+                                return_items = [f"{t}: %{r:+.1f}" for t, r in rec.ticker_returns.items()]
+                            else:
+                                return_items = [f"{t}: %{s:.1f}" for t, s in rec.scores.items()]
+                            st.caption(" · ".join(return_items))
+
+def _build_backtest_excel(entry: dict) -> bytes:
+    """
+    Backtest kaydını Excel dosyasına dönüştürür.
+
+    Sheet 1 – Özet: Parametreler ve genel istatistikler
+    Sheet 2 – İşlem Geçmişi: Rebalance tarihleri + alış/satış/tutulan hisseler
+    """
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    params = entry.get("params", {})
+    reb_hist = entry.get("rebalance_history", [])
+
+    try: total_ret  = float(entry.get("total_return", 0) or 0)
+    except: total_ret = 0.0
+    try: bench_ret  = float(entry.get("benchmark_return", 0) or 0)
+    except: bench_ret = 0.0
+    try: sharpe_val = float(entry.get("sharpe", 0) or 0)
+    except: sharpe_val = 0.0
+    try: dd_val     = float(entry.get("max_drawdown", 0) or 0)
+    except: dd_val = 0.0
+
+    wb = Workbook()
+
+    # ── RENK PALETİ ──────────────────────────────────────
+    COLOR_HEADER_BG  = "1E3A5F"   # koyu lacivert
+    COLOR_HEADER_FG  = "FFFFFF"   # beyaz
+    COLOR_LABEL_BG   = "2D6A9F"   # orta mavi
+    COLOR_ALT_ROW    = "EBF3FB"   # açık mavi (zebra)
+    COLOR_SECTION    = "2563EB"   # bölüm başlığı
+    COLOR_BUY        = "D1FAE5"   # yeşil
+    COLOR_SELL       = "FEE2E2"   # kırmızı
+    COLOR_HOLD       = "FEF9C3"   # sarı
+    COLOR_POS        = "16A34A"   # pozitif getiri yazısı
+    COLOR_NEG        = "DC2626"   # negatif getiri yazısı
+
+    thin = Side(style="thin")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    def _hdr(ws, row, col, val, bold=True, bg=COLOR_HEADER_BG, fg=COLOR_HEADER_FG, sz=11):
+        c = ws.cell(row=row, column=col, value=val)
+        c.font = Font(bold=bold, color=fg, size=sz)
+        c.fill = PatternFill(fill_type="solid", fgColor=bg)
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        c.border = border
+        return c
+
+    def _val(ws, row, col, val, bold=False, bg="FFFFFF", align="left", number_fmt=None):
+        c = ws.cell(row=row, column=col, value=val)
+        c.font = Font(bold=bold, size=10)
+        c.fill = PatternFill(fill_type="solid", fgColor=bg)
+        c.alignment = Alignment(horizontal=align, vertical="center", wrap_text=True)
+        c.border = border
+        if number_fmt:
+            c.number_format = number_fmt
+        return c
+
+    def _section(ws, row, text):
+        ws.row_dimensions[row].height = 22
+        c = ws.cell(row=row, column=1, value=text)
+        c.font = Font(bold=True, color=COLOR_SECTION, size=11)
+        c.alignment = Alignment(vertical="center")
+
+    # ══════════════════════════════════════════════════════
+    # SHEET 1 – ÖZET
+    # ══════════════════════════════════════════════════════
+    ws1 = wb.active
+    ws1.title = "Özet"
+    ws1.column_dimensions["A"].width = 28
+    ws1.column_dimensions["B"].width = 32
+
+    # Başlık bandı
+    ws1.merge_cells("A1:B1")
+    c = ws1["A1"]
+    c.value = "SUPER INVESTOR — BACKTEST RAPORU"
+    c.font = Font(bold=True, color=COLOR_HEADER_FG, size=13)
+    c.fill = PatternFill(fill_type="solid", fgColor=COLOR_HEADER_BG)
+    c.alignment = Alignment(horizontal="center", vertical="center")
+    ws1.row_dimensions[1].height = 28
+
+    r = 2
+    # ── BACKTEST PARAMETRELERİ ──
+    _section(ws1, r, "BACKTEST PARAMETRELERİ"); r += 1
+
+    params_rows = [
+        ("Piyasa",                 params.get("market", "")),
+        ("Başlangıç Tarihi",       params.get("start", "")),
+        ("Bitiş Tarihi",           params.get("end",   "")),
+        ("Portföy Hisse Sayısı",   str(params.get("top_n", ""))),
+        ("Rebalance Sıklığı",      params.get("rebalance", "")),
+        ("Temel Kalite Seviyesi",  params.get("quality", "")),
+        ("Sıralama Türü",          params.get("sort_by", "")),
+        ("Strateji Profili",       params.get("profile", "")),
+        ("Evren",                  params.get("universe", "")),
+        ("Tarama Modu",            params.get("scan_mode", "")),
+    ]
+
+    for label, val in params_rows:
+        bg = COLOR_ALT_ROW if r % 2 == 0 else "FFFFFF"
+        _hdr(ws1, r, 1, label, bg=COLOR_LABEL_BG, sz=10)
+        _val(ws1, r, 2, val, bold=True, bg=bg, align="center")
+        r += 1
+
+    r += 1
+    # ── PERFORMANS SONUÇLARI ──
+    _section(ws1, r, "PERFORMANS SONUÇLARI"); r += 1
+
+    perf_rows = [
+        ("Toplam Getiri",        f"%{total_ret:.2f}"),
+        ("Benchmark Getirisi",   f"%{bench_ret:.2f}"),
+        ("Fazla Getiri (Alpha)",  f"%{total_ret - bench_ret:.2f}"),
+        ("Sharpe Oranı",         f"{sharpe_val:.3f}"),
+        ("Maksimum Drawdown",    f"%{dd_val:.2f}"),
+        ("Dönem Sayısı",         str(entry.get("num_periods", ""))),
+        ("Backtest Tarihi",      entry.get("datetime", "")),
+    ]
+
+    for label, val in perf_rows:
+        bg = COLOR_ALT_ROW if r % 2 == 0 else "FFFFFF"
+        _hdr(ws1, r, 1, label, bg=COLOR_LABEL_BG, sz=10)
+        c = _val(ws1, r, 2, val, bold=True, bg=bg, align="center")
+        # Renk: pozitif/negatif getiri
+        if "Getiri" in label or "Alpha" in label:
+            try:
+                num = float(val.replace("%",""))
+                c.font = Font(bold=True, color=COLOR_POS if num >= 0 else COLOR_NEG, size=10)
+            except: pass
+        r += 1
+
+    # ══════════════════════════════════════════════════════
+    # SHEET 2 – İŞLEM GEÇMİŞİ
+    # ══════════════════════════════════════════════════════
+    ws2 = wb.create_sheet(title="İşlem Geçmişi")
+
+    # Sütun genişlikleri
+    col_widths = {1: 14, 2: 16, 3: 36, 4: 36, 5: 36, 6: 36}
+    for c_idx, w in col_widths.items():
+        ws2.column_dimensions[get_column_letter(c_idx)].width = w
+
+    # Başlık bandı
+    ws2.merge_cells("A1:F1")
+    c = ws2["A1"]
+    piyasa_str = params.get("market", "")
+    tarih_str  = f"{params.get('start','')} – {params.get('end','')}"
+    c.value = f"{piyasa_str}  |  {tarih_str}  |  Top {params.get('top_n','')} Hisse  |  {params.get('rebalance','')} Rebalance"
+    c.font = Font(bold=True, color=COLOR_HEADER_FG, size=12)
+    c.fill = PatternFill(fill_type="solid", fgColor=COLOR_HEADER_BG)
+    c.alignment = Alignment(horizontal="center", vertical="center")
+    ws2.row_dimensions[1].height = 26
+
+    # Sütun başlıkları
+    headers = ["Tarih", "Dönem Getirisi", "Portföydeki Hisseler",
+               "Alınan (Yeni Giriş)", "Satılan (Çıkış)", "Tutulan"]
+    for col_i, h in enumerate(headers, 1):
+        _hdr(ws2, 2, col_i, h, sz=10)
+    ws2.row_dimensions[2].height = 20
+
+    if not reb_hist:
+        ws2.merge_cells("A3:F3")
+        ws2["A3"].value = "İşlem geçmişi bulunamadı."
+    else:
+        for r_idx, rec in enumerate(reb_hist):
+            row_n  = r_idx + 3
+            tickers      = rec.get("tickers", [])
+            prev_tickers = reb_hist[r_idx-1].get("tickers", []) if r_idx > 0 else []
+            sold   = [t for t in prev_tickers if t not in tickers]
+            bought = [t for t in tickers      if t not in prev_tickers]
+            held   = [t for t in tickers      if t in  prev_tickers]
+
+            try:
+                pret = float(rec.get("period_return", 0) or 0)
+            except:
+                pret = 0.0
+
+            # Zebralar
+            row_bg = COLOR_ALT_ROW if r_idx % 2 == 0 else "FFFFFF"
+
+            # Tarih
+            _val(ws2, row_n, 1, str(rec.get("date", "")),
+                 bg=row_bg, align="center")
+
+            # Dönem getirisi — renkli
+            c_ret = _val(ws2, row_n, 2, f"%{pret:.1f}",
+                         bold=True, bg=row_bg, align="center")
+            c_ret.font = Font(bold=True, size=10,
+                              color=COLOR_POS if pret >= 0 else COLOR_NEG)
+
+            # Portföydeki hisseler
+            _val(ws2, row_n, 3, ", ".join(tickers), bg=row_bg)
+
+            # Alınan → yeşil
+            c_buy = _val(ws2, row_n, 4,
+                         ", ".join(bought) if bought else "—",
+                         bg=COLOR_BUY if bought else row_bg)
+            if bought:
+                c_buy.font = Font(bold=True, color="166534", size=10)
+
+            # Satılan → kırmızı
+            c_sell = _val(ws2, row_n, 5,
+                          ", ".join(sold) if sold else "—",
+                          bg=COLOR_SELL if sold else row_bg)
+            if sold:
+                c_sell.font = Font(bold=True, color="991B1B", size=10)
+
+            # Tutulan → sarı
+            _val(ws2, row_n, 6,
+                 ", ".join(held) if held else "—",
+                 bg=COLOR_HOLD if held else row_bg)
+
+            ws2.row_dimensions[row_n].height = 18
+
+    # ══════════════════════════════════════════════════════
+    # SHEET 3 – HISSE BAZLI GETİRİLER
+    # ══════════════════════════════════════════════════════
+    ws3 = wb.create_sheet(title="Hisse Bazlı Getiriler")
+    ws3.column_dimensions["A"].width = 14
+    ws3.column_dimensions["B"].width = 18
+    ws3.column_dimensions["C"].width = 22
+    ws3.row_dimensions[1].height = 24
+
+    ws3.merge_cells("A1:C1")
+    c = ws3["A1"]
+    c.value = "DÖNEM BAZLI HİSSE GETİRİLERİ"
+    c.font = Font(bold=True, color=COLOR_HEADER_FG, size=12)
+    c.fill = PatternFill(fill_type="solid", fgColor=COLOR_HEADER_BG)
+    c.alignment = Alignment(horizontal="center", vertical="center")
+
+    _hdr(ws3, 2, 1, "Tarih", sz=10)
+    _hdr(ws3, 2, 2, "Hisse", sz=10)
+    _hdr(ws3, 2, 3, "Getiri (%)", sz=10)
+
+    r3 = 3
+    if reb_hist:
+        for rec in reb_hist:
+            tr = rec.get("ticker_returns", {})
+            if tr:
+                for ticker, ret in tr.items():
+                    try: ret_f = float(ret)
+                    except: ret_f = 0.0
+                    bg = COLOR_ALT_ROW if r3 % 2 == 0 else "FFFFFF"
+                    _val(ws3, r3, 1, str(rec.get("date","")), bg=bg, align="center")
+                    _val(ws3, r3, 2, str(ticker), bg=bg, align="center")
+                    c_r = _val(ws3, r3, 3, round(ret_f, 2), bg=bg, align="center", number_fmt="0.00")
+                    c_r.font = Font(bold=False, size=10,
+                                   color=COLOR_POS if ret_f >= 0 else COLOR_NEG)
+                    r3 += 1
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
 
 with tab_history:
     if "pending_delete_id" in st.session_state:
@@ -1243,137 +1692,181 @@ with tab_history:
     history_entries = get_history()
 
     if not history_entries:
-        st.info("Henüz kayıtlı tarama veya backtest bulunmuyor. Tarama veya backtest yaptıktan sonra burada listelenecektir.")
+        st.info("Henüz kayıtlı tarama veya backtest bulunmuyor.")
     else:
         col_info, col_clear = st.columns([4, 1])
         with col_info:
             scan_count = sum(1 for e in history_entries if e.get("type") == "scan")
-            bt_count = sum(1 for e in history_entries if e.get("type") == "backtest")
+            bt_count   = sum(1 for e in history_entries if e.get("type") == "backtest")
             st.caption(f"Toplam {len(history_entries)} kayıt ({scan_count} tarama, {bt_count} backtest)")
         with col_clear:
-            st.button(
-                "Tüm Geçmişi Temizle",
-                type="secondary",
-                key="clear_all_history",
-                on_click=lambda: st.session_state.update({"pending_clear_history": True}),
-            )
+            st.button("Tüm Geçmişi Temizle", type="secondary", key="clear_all_history",
+                      on_click=lambda: st.session_state.update({"pending_clear_history": True}))
 
-        for idx, entry in enumerate(history_entries):
-            entry_id = entry.get("id", idx)
-            entry_type = entry.get("type", "scan")
-            entry_dt = entry.get("datetime", "")
+        def _market_of(e):
+            m = str(e.get("market") or e.get("params", {}).get("market", "") or "")
+            m_up = m.upper()
+            if "BIST" in m_up or "TÜRKİYE" in m_up or "TURKEY" in m_up:
+                return "BIST"
+            return "USA"
 
-            if entry_type == "scan":
+        bist_bt   = [e for e in history_entries if e.get("type") == "backtest" and _market_of(e) == "BIST"]
+        usa_bt    = [e for e in history_entries if e.get("type") == "backtest" and _market_of(e) == "USA"]
+        bist_scan = [e for e in history_entries if e.get("type") == "scan"     and _market_of(e) == "BIST"]
+        usa_scan  = [e for e in history_entries if e.get("type") == "scan"     and _market_of(e) == "USA"]
+
+        def _render_scan(entries, base_key):
+            for idx, entry in enumerate(entries):
+                entry_id  = entry.get("id", f"{base_key}_{idx}")
+                entry_dt  = entry.get("datetime", "")
                 scan_date_str = entry.get("scan_date")
-                date_badge = f" | Tarih: {scan_date_str}" if scan_date_str else ""
-                header = f"TARAMA — {entry.get('market', '')} | {entry.get('segment', '')} | {entry_dt}{date_badge}"
-
+                date_badge    = f" | Tarih: {scan_date_str}" if scan_date_str else ""
+                header = f"TARAMA — {entry.get('market','')} | {entry.get('segment','')} | {entry_dt}{date_badge}"
                 with st.expander(header, expanded=False):
                     c1, c2, c3, c4 = st.columns(4)
-                    c1.metric("Mod", entry.get("scan_mode", ""))
-                    c2.metric("Profil", entry.get("profile", ""))
-                    c3.metric("Kalite", entry.get("quality", ""))
+                    c1.metric("Mod",      entry.get("scan_mode", ""))
+                    c2.metric("Profil",   entry.get("profile", ""))
+                    c3.metric("Kalite",   entry.get("quality", ""))
                     c4.metric("Sıralama", entry.get("sort_by", ""))
-
                     c5, c6 = st.columns(2)
-                    c5.metric("Top N", entry.get("top_n", ""))
+                    c5.metric("Top N",        entry.get("top_n", ""))
                     c6.metric("Sonuç Sayısı", entry.get("result_count", ""))
-
                     top_stocks = entry.get("top_stocks", [])
                     if top_stocks:
                         st.markdown(f"**En İyi Hisseler:** {', '.join(top_stocks)}")
-
                     _scan_id = entry_id
-                    st.button(
-                        "Bu Kaydı Sil",
-                        key=f"del_scan_{idx}",
-                        type="secondary",
-                        on_click=lambda eid=_scan_id: st.session_state.update({"pending_delete_id": eid}),
-                    )
+                    st.button("Bu Kaydı Sil", key=f"del_scan_{base_key}_{idx}", type="secondary",
+                              on_click=lambda eid=_scan_id: st.session_state.update({"pending_delete_id": eid}))
 
-            elif entry_type == "backtest":
-                params = entry.get("params", {})
-                try:
-                    total_ret = float(entry.get("total_return", 0) or 0)
-                except (TypeError, ValueError):
-                    total_ret = 0.0
-                try:
-                    bench_ret = float(entry.get("benchmark_return", 0) or 0)
-                except (TypeError, ValueError):
-                    bench_ret = 0.0
-                try:
-                    sharpe_val = float(entry.get("sharpe", 0) or 0)
-                except (TypeError, ValueError):
-                    sharpe_val = 0.0
-                try:
-                    dd_val = float(entry.get("max_drawdown", 0) or 0)
-                except (TypeError, ValueError):
-                    dd_val = 0.0
-
+        def _render_bt(entries, base_key):
+            for idx, entry in enumerate(entries):
+                entry_id = entry.get("id", f"{base_key}_{idx}")
+                entry_dt = entry.get("datetime", "")
+                params   = entry.get("params", {})
+                try:    total_ret = float(entry.get("total_return", 0) or 0)
+                except: total_ret = 0.0
+                try:    bench_ret = float(entry.get("benchmark_return", 0) or 0)
+                except: bench_ret = 0.0
+                try:    sharpe_val = float(entry.get("sharpe", 0) or 0)
+                except: sharpe_val = 0.0
+                try:    dd_val = float(entry.get("max_drawdown", 0) or 0)
+                except: dd_val = 0.0
                 ret_sign = "+" if total_ret >= 0 else ""
-                header = f"BACKTEST — {params.get('market', '')} | {ret_sign}%{total_ret:.1f} | {params.get('start', '')} ~ {params.get('end', '')} | {entry_dt}"
+                _bt_id = entry_id
+                header = f"BACKTEST — {params.get('market','')} | {ret_sign}%{total_ret:.1f} | {params.get('start','')} ~ {params.get('end','')} | {entry_dt}"
+                _row_col1, _row_col2 = st.columns([11, 1])
+                with _row_col2:
+                    st.button("🗑️", key=f"del_bt_{base_key}_{idx}", help="Bu kaydı sil",
+                              on_click=lambda eid=_bt_id: st.session_state.update({"pending_delete_id": eid}))
+                with _row_col1:
+                    with st.expander(header, expanded=False):
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("Getiri",       f"%{total_ret:.1f}", delta=f"vs Benchmark %{bench_ret:.1f}")
+                        c2.metric("Sharpe",       f"{sharpe_val:.2f}")
+                        c3.metric("Max Drawdown", f"%{dd_val:.1f}")
+                        c4.metric("Dönem Sayısı", entry.get("num_periods", 0))
+                        c5, c6, c7, c8 = st.columns(4)
+                        c5.metric("Evren",    params.get("universe", ""))
+                        c6.metric("Profil",   params.get("profile", ""))
+                        c7.metric("Mod",      params.get("scan_mode", ""))
+                        c8.metric("Rebalance",params.get("rebalance", ""))
+                        c9, c10, c11 = st.columns(3)
+                        c9.metric("Kalite",       params.get("quality", ""))
+                        c10.metric("Top N",       params.get("top_n", ""))
+                        c11.metric("Sıralama Türü", params.get("sort_by", ""))
+                        reb_hist = entry.get("rebalance_history", [])
+                        if reb_hist:
+                            st.markdown("---")
+                            st.markdown("**İşlem Listesi**")
+                            _rows = []
+                            for _ri, _rec in enumerate(reb_hist):
+                                _tickers      = _rec.get("tickers", [])
+                                _prev_tickers = reb_hist[_ri-1].get("tickers", []) if _ri > 0 else []
+                                _sold    = [t for t in _prev_tickers if t not in _tickers]
+                                _bought  = [t for t in _tickers if t not in _prev_tickers]
+                                _held    = [t for t in _tickers if t in _prev_tickers]
+                                _rows.append({
+                                    "Tarih":        _rec.get("date",""),
+                                    "Dönem Getirisi": f"%{_rec.get('period_return',0):.1f}",
+                                    "Hisseler":     ", ".join(_tickers),
+                                    "Alınan":       ", ".join(_bought) if _bought else "-",
+                                    "Satılan":      ", ".join(_sold) if _sold else "-",
+                                    "Tutulan":      ", ".join(_held) if _held else "-",
+                                })
+                            st.dataframe(pd.DataFrame(_rows), use_container_width=True, hide_index=True)
+                            with st.expander("Detaylı Dönem Skorları", expanded=False):
+                                for _rec in reb_hist:
+                                    _tickers = _rec.get("tickers", [])
+                                    _ret     = _rec.get("period_return", 0)
+                                    _tr      = _rec.get("ticker_returns", {})
+                                    st.markdown(f"**{_rec.get('date','')}** — Dönem getirisi: **%{_ret:.1f}**")
+                                    if _tr:
+                                        items = [f"{t}: %{r:+.1f}" for t, r in _tr.items()]
+                                    else:
+                                        items = _tickers
+                                    st.caption(" · ".join(items))
 
-                with st.expander(header, expanded=False):
-                    c1, c2, c3, c4 = st.columns(4)
-                    c1.metric("Getiri", f"%{total_ret:.1f}", delta=f"vs Benchmark %{bench_ret:.1f}")
-                    c2.metric("Sharpe", f"{sharpe_val:.2f}")
-                    c3.metric("Max Drawdown", f"%{dd_val:.1f}")
-                    c4.metric("Dönem Sayısı", entry.get("num_periods", 0))
-
-                    c5, c6, c7, c8 = st.columns(4)
-                    c5.metric("Evren", params.get("universe", ""))
-                    c6.metric("Profil", params.get("profile", ""))
-                    c7.metric("Mod", params.get("scan_mode", ""))
-                    c8.metric("Rebalance", params.get("rebalance", ""))
-
-                    c9, c10 = st.columns(2)
-                    c9.metric("Kalite", params.get("quality", ""))
-                    c10.metric("Top N", params.get("top_n", ""))
-
-                    # ── İşlem Listesi (Rebalance Geçmişi) ──────────────
-                    reb_hist = entry.get("rebalance_history", [])
-                    if reb_hist:
+                        # Excel indirme butonu
                         st.markdown("---")
-                        st.markdown("**İşlem Listesi**")
-                        _rows = []
-                        for _ri, _rec in enumerate(reb_hist):
-                            _tickers = _rec.get("tickers", [])
-                            _prev_tickers = reb_hist[_ri - 1].get("tickers", []) if _ri > 0 else []
-                            _sold = [t for t in _prev_tickers if t not in _tickers]
-                            _bought = [t for t in _tickers if t not in _prev_tickers]
-                            _held = [t for t in _tickers if t in _prev_tickers]
-                            _rows.append({
-                                "Tarih": _rec.get("date", ""),
-                                "Dönem Getiri (%)": _rec.get("period_return", 0),
-                                "Portföy": ", ".join(_tickers),
-                                "Alınanlar": ", ".join(_bought) if _bought else ("—" if _ri > 0 else ", ".join(_tickers)),
-                                "Satılanlar": ", ".join(_sold) if _sold else "—",
-                                "Tutulanlar": ", ".join(_held) if _held else "—",
-                            })
-                        _reb_df = pd.DataFrame(_rows)
-                        st.dataframe(
-                            _reb_df,
-                            use_container_width=True,
-                            hide_index=True,
-                            column_config={
-                                "Tarih": st.column_config.TextColumn("Tarih", width="small"),
-                                "Dönem Getiri (%)": st.column_config.NumberColumn("Dönem %", format="%.1f"),
-                                "Portföy": st.column_config.TextColumn("Portföy"),
-                                "Alınanlar": st.column_config.TextColumn("Alınanlar"),
-                                "Satılanlar": st.column_config.TextColumn("Satılanlar"),
-                                "Tutulanlar": st.column_config.TextColumn("Tutulanlar"),
-                            },
-                        )
-                    else:
-                        st.caption("Bu backtest için işlem listesi mevcut değil. Yeni bir backtest çalıştırın.")
+                        _p = entry.get("params", {})
+                        _fname = (
+                            f"backtest_{_p.get('market','MKT')}"
+                            f"_{_p.get('start','')}_{_p.get('end','')}"
+                            f"_top{_p.get('top_n','')}.xlsx"
+                        ).replace(" ", "_")
+                        _downloads_dir = os.path.expanduser("~/Downloads")
+                        _save_path = os.path.join(_downloads_dir, _fname)
+                        _excel_col1, _excel_col2, _excel_col3 = st.columns([2, 1, 1])
+                        try:
+                            _xl_bytes = _build_backtest_excel(entry)
+                            with _excel_col2:
+                                st.download_button(
+                                    label="Tarayıcıdan İndir",
+                                    data=_xl_bytes,
+                                    file_name=_fname,
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    key=f"xl_{base_key}_{idx}",
+                                    use_container_width=True,
+                                )
+                            with _excel_col3:
+                                if st.button("Downloads Klasörüne Kaydet", key=f"xl_save_{base_key}_{idx}",
+                                             use_container_width=True):
+                                    os.makedirs(_downloads_dir, exist_ok=True)
+                                    with open(_save_path, "wb") as _fh:
+                                        _fh.write(_xl_bytes)
+                                    st.success(f"Kaydedildi: ~/Downloads/{_fname}")
+                        except Exception as _xl_err:
+                            st.warning(f"Excel oluşturulamadı: {_xl_err}")
 
-                    _bt_id = entry_id
-                    st.button(
-                        "Bu Kaydı Sil",
-                        key=f"del_bt_{idx}",
-                        type="secondary",
-                        on_click=lambda eid=_bt_id: st.session_state.update({"pending_delete_id": eid}),
-                    )
+        # ── BACKTEST SONUÇLARI ──────────────────────────────────────────────
+        if bist_bt or usa_bt:
+            st.markdown("---")
+            st.markdown("### 📈 Backtest Sonuçları")
+            if bist_bt:
+                st.markdown(
+                    "<h4 style='color:#f59e0b;border-left:4px solid #f59e0b;padding-left:0.6rem;'>🇹🇷 BIST Backtest Sonuçları</h4>",
+                    unsafe_allow_html=True)
+                _render_bt(bist_bt, "bist_bt")
+            if usa_bt:
+                st.markdown(
+                    "<h4 style='color:#3b82f6;border-left:4px solid #3b82f6;padding-left:0.6rem;'>🇺🇸 USA Backtest Sonuçları</h4>",
+                    unsafe_allow_html=True)
+                _render_bt(usa_bt, "usa_bt")
+
+        # ── TARAMA SONUÇLARI ───────────────────────────────────────────────
+        if bist_scan or usa_scan:
+            st.markdown("---")
+            st.markdown("### 🔍 Tarama Sonuçları")
+            if bist_scan:
+                st.markdown(
+                    "<h4 style='color:#f59e0b;border-left:4px solid #f59e0b;padding-left:0.6rem;'>🇹🇷 BIST Tarama Sonuçları</h4>",
+                    unsafe_allow_html=True)
+                _render_scan(bist_scan, "bist_scan")
+            if usa_scan:
+                st.markdown(
+                    "<h4 style='color:#3b82f6;border-left:4px solid #3b82f6;padding-left:0.6rem;'>🇺🇸 USA Tarama Sonuçları</h4>",
+                    unsafe_allow_html=True)
+                _render_scan(usa_scan, "usa_scan")
 
 with tab_guide:
     st.markdown("## Doğru Kullanım Şekli")

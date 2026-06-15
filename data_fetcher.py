@@ -944,6 +944,7 @@ def fetch_backtest_data(
     progress_callback=None,
     skip_momentum: bool = False,
     skip_fundamentals: bool = False,
+    universe: str = None,
 ) -> tuple:
     from momentum_metrics import append_momentum_fields
     from disk_cache import read_cache

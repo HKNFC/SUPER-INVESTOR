@@ -292,6 +292,14 @@ def compute_all_indicators(price_data: pd.DataFrame) -> Dict[str, Any]:
     result["distance_to_52w_high"] = calc_distance_to_52w_high(price_data)
     result["avg_volume_20d"] = calc_avg_volume_20d(price_data)
 
+    # Günlük ortalama işlem hacmi (fiyat × hacim) — BIST/USA likidite filtresi için
+    avg_vol = result["avg_volume_20d"]
+    last_close = float(price_data["close"].iloc[-1]) if len(price_data) > 0 else None
+    if avg_vol is not None and last_close is not None and last_close > 0:
+        result["avg_dollar_volume_20d"] = round(avg_vol * last_close, 0)
+    else:
+        result["avg_dollar_volume_20d"] = None
+
     return result
 
 

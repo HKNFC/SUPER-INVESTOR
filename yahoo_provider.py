@@ -29,7 +29,8 @@ def fetch_yahoo_history(
         data = ticker_obj.history(
             period=period,
             interval="1d",
-            auto_adjust=True,
+            auto_adjust=False,   # Gerçek işlem fiyatları — retroaktif değişmez
+            actions=False,       # Temettü/bölünme ayrı sütun istemiyoruz
             timeout=15,
         )
 
@@ -192,3 +193,17 @@ def fetch_yahoo_benchmark(index_symbol: str) -> pd.DataFrame:
     from symbol_mapper import resolve_yahoo_benchmark
     resolved = resolve_yahoo_benchmark(index_symbol)
     return fetch_yahoo_history(resolved, period="2y", market=None)
+
+
+def fetch_latest_price_yahoo(ticker: str) -> float:
+    """yfinance üzerinden son kapanış fiyatını döndürür."""
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+        hist = t.history(period="5d")
+        if not hist.empty:
+            return float(hist["Close"].iloc[-1])
+        info = t.info
+        return float(info.get("regularMarketPrice") or info.get("previousClose") or 0)
+    except Exception:
+        return None

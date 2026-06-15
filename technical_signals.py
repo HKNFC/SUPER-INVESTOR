@@ -328,7 +328,7 @@ def compute_volume_flow_score_from_row(row) -> tuple:
     return max(min(base_score, 100.0), 0.0), divergence_bonus
 
 
-def compute_risk_score_from_row(row) -> float:
+def compute_risk_score_from_row(row, market: str = None) -> float:
     atr = _safe_float(row.get("atr"))
     if np.isnan(atr):
         return 50.0
@@ -339,27 +339,46 @@ def compute_risk_score_from_row(row) -> float:
 
     atr_pct = (atr / current) * 100
 
-    if atr_pct <= 1.0:
-        return 100.0
-    elif atr_pct <= 2.0:
-        return 90.0
-    elif atr_pct <= 3.0:
-        return 75.0
-    elif atr_pct <= 5.0:
-        return 60.0
-    elif atr_pct <= 8.0:
-        return 40.0
+    # BIST hisseleri yüksek enflasyon/volatilite nedeniyle doğal olarak
+    # 3-8% ATR'e sahiptir. USA eşiklerini uygulamak tüm BIST hisselerini
+    # sistematik olarak cezalandırır — bu yüzden BIST için 3x daha geniş eşikler.
+    _is_bist = (market or "").upper() == "BIST"
+    if _is_bist:
+        if atr_pct <= 3.0:
+            return 100.0
+        elif atr_pct <= 5.0:
+            return 90.0
+        elif atr_pct <= 7.0:
+            return 80.0
+        elif atr_pct <= 10.0:
+            return 65.0
+        elif atr_pct <= 15.0:
+            return 45.0
+        else:
+            return max(25.0 - (atr_pct - 15.0) * 2, 0.0)
     else:
-        return max(20.0 - (atr_pct - 8.0) * 2, 0.0)
+        # USA/diğer piyasalar — orijinal eşikler
+        if atr_pct <= 1.0:
+            return 100.0
+        elif atr_pct <= 2.0:
+            return 90.0
+        elif atr_pct <= 3.0:
+            return 75.0
+        elif atr_pct <= 5.0:
+            return 60.0
+        elif atr_pct <= 8.0:
+            return 40.0
+        else:
+            return max(20.0 - (atr_pct - 8.0) * 2, 0.0)
 
 
-def compute_technical_score_for_row(price_data, row=None) -> float:
+def compute_technical_score_for_row(price_data, row=None, market: str = None) -> float:
     if row is not None and _has_precomputed(row):
         trend = compute_trend_score_from_row(row)
         momentum = compute_momentum_score_from_row(row)
         breakout = compute_breakout_score_from_row(row)
         volume_flow, divergence_bonus = compute_volume_flow_score_from_row(row)
-        risk = compute_risk_score_from_row(row)
+        risk = compute_risk_score_from_row(row, market=market)
     else:
         closes = _get_closes(price_data)
         if closes is None:
@@ -638,7 +657,7 @@ def _extract_close_from_row(row) -> float:
     return np.nan
 
 
-def append_technical_scores(df: pd.DataFrame) -> pd.DataFrame:
+def append_technical_scores(df: pd.DataFrame, market: str = None) -> pd.DataFrame:
     result = df.copy()
 
     has_precomputed = all(col in result.columns for col in ["ma50", "rsi", "mfi"])
@@ -656,7 +675,7 @@ def append_technical_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     for _, row in result.iterrows():
         price_data = row.get("price_data")
-        tech_scores.append(compute_technical_score_for_row(price_data, row=row))
+        tech_scores.append(compute_technical_score_for_row(price_data, row=row, market=market))
         vi = _compute_volume_indicators(row, price_data)
         mfi_vals.append(vi["mfi"])
         obv_trend_vals.append(vi["obv_trend_positive"])

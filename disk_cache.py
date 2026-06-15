@@ -13,7 +13,8 @@ logger = logging.getLogger("stock_screener.disk_cache")
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "cache")
 OHLCV_COLUMNS = ["datetime", "open", "high", "low", "close", "volume"]
 DEFAULT_OUTPUTSIZE = 300
-CACHE_REFRESH_HOURS = 20
+CACHE_REFRESH_HOURS          = 20    # Güncel/son 3 gün verisi için TTL
+CACHE_REFRESH_HOURS_HISTORICAL = 168  # 7 gün: tamamen geçmiş tarihli veriler için TTL
 
 os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -114,12 +115,32 @@ def _cache_path(symbol: str) -> str:
     return os.path.join(CACHE_DIR, _safe_filename(symbol))
 
 
-def _is_cache_fresh(path: str) -> bool:
+def _is_cache_fresh(path: str, symbol: str = "") -> bool:
+    """
+    Akıllı TTL:
+    - Son 3 günü kapsayan veri: 20 saat TTL (fiyat güncellemeleri için kısa)
+    - Tamamen geçmiş tarihli veri: 168 saat (7 gün) TTL
+      → auto_adjust=False kullandığımız için geçmiş fiyatlar değişmez,
+        uzun TTL backtest tutarlılığını garantiler.
+    """
     if not os.path.exists(path):
         return False
     try:
         mtime = os.path.getmtime(path)
         age_hours = (time.time() - mtime) / 3600
+
+        # Geçmiş tarihli veri mi? cache içeriğini kontrol et
+        try:
+            df = pd.read_parquet(path)
+            if not df.empty and "datetime" in df.columns:
+                last_date = pd.to_datetime(df["datetime"]).max()
+                cutoff = pd.Timestamp.now() - pd.Timedelta(days=3)
+                if last_date < cutoff:
+                    # Tamamen geçmiş tarihli → uzun TTL
+                    return age_hours < CACHE_REFRESH_HOURS_HISTORICAL
+        except Exception:
+            pass
+
         return age_hours < CACHE_REFRESH_HOURS
     except OSError:
         return False

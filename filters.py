@@ -81,6 +81,7 @@ _RULE_COLUMN_MAP = {
     "pe_gt": ("pe", "gt"),
     "return_12m_gt": ("return_12m", "gt"),
     "avg_volume_20d_gte": ("avg_volume_20d", "gte"),
+    "avg_dollar_volume_20d_gte": ("avg_dollar_volume_20d", "gte"),
 }
 
 
@@ -88,6 +89,7 @@ def apply_preset_filter(
     df: pd.DataFrame,
     preset: str = "none",
     min_avg_volume: Optional[float] = None,
+    market: Optional[str] = None,
 ) -> pd.DataFrame:
     """Apply a named preset filter to the DataFrame, returning only passing rows."""
     if preset not in FILTER_PRESETS:
@@ -97,6 +99,14 @@ def apply_preset_filter(
 
     if min_avg_volume is not None and min_avg_volume > 0:
         rules["avg_volume_20d_gte"] = min_avg_volume
+
+    # Market-aware likidite filtresi (avg_dollar_volume_20d)
+    # BIST: >= 50,000,000 TRY/gün  |  USA: >= 20,000,000 USD/gün
+    if market and "avg_dollar_volume_20d" in (df.columns if not df.empty else []):
+        if market.upper() == "BIST":
+            rules["avg_dollar_volume_20d_gte"] = 50_000_000
+        elif market.upper() == "USA":
+            rules["avg_dollar_volume_20d_gte"] = 20_000_000
 
     if not rules:
         return df.copy()

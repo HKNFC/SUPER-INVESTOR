@@ -88,11 +88,13 @@ def add_backtest_entry(
     if rebalance_history:
         for rec in rebalance_history:
             scores = getattr(rec, "scores", {}) or {}
+            ticker_rets = getattr(rec, "ticker_returns", {}) or {}
             reb_list.append({
                 "date": rec.date.strftime("%Y-%m-%d"),
                 "tickers": list(rec.tickers),
                 "period_return": round(float(getattr(rec, "period_return", 0) or 0), 2),
                 "scores": {k: round(float(v), 1) for k, v in scores.items()},
+                "ticker_returns": {k: round(float(v), 2) for k, v in ticker_rets.items()},
             })
 
     entry = {

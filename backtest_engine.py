@@ -13,11 +13,13 @@ Outputs equity curve, drawdown, per-period holdings, and summary metrics.
 """
 
 import logging
+import os
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Tuple
 from datetime import date, timedelta
+from historical_fundamentals import batch_prefetch, inject_fundamentals_at_date
 
 from data_fetcher import fetch_backtest_data, get_cached_benchmark, _generate_placeholder_price_data, DataPrepStats
 from momentum_metrics import append_momentum_fields
@@ -25,6 +27,8 @@ from scoring_engine import compute_rs_scores
 from filters import apply_preset_filter, rank_and_limit
 
 logger = logging.getLogger("stock_screener.backtest")
+
+FMP_API_KEY = os.environ.get("FMP_API_KEY") or ""
 
 REBALANCE_BUSINESS_DAYS = {
     "1w": 5,
@@ -45,6 +49,7 @@ class RebalanceRecord:
     tickers: List[str]
     scores: Dict[str, float]
     period_return: float = 0.0
+    ticker_returns: Dict[str, float] = None
 
 
 @dataclass
@@ -279,18 +284,50 @@ def run_backtest(
         if progress_callback:
             progress_callback(pct * 0.3, text)
 
+    # BIST: teknik/momentum bazlı backtest — bugünkü bilanço verisi geçmiş dönemlere uygulanırsa
+    # look-ahead bias oluşur (CRDFA gibi hisseler her dönemde üstte çıkar). Bu yüzden
+    # BIST backtestinde temel veri atlanır; yalnızca fiyat/momentum/teknik skorlar kullanılır.
+    # USA: tarihsel FMP verisi loop içinde enjekte edilir (inject_fundamentals_at_date)
+    _use_current_fundamentals = False  # her iki piyasada da look-ahead bias önlenir
     raw_data, prep_stats = fetch_backtest_data(
         market, progress_callback=_data_progress, skip_momentum=True,
+        skip_fundamentals=True,  # backtest: her dönemde truncated price datadan hesaplanır
+        universe=universe,  # sadece seçili evrendeki hisseleri yükle (BIST100, SP500 vb.)
     )
+
+    # USA: tarihsel temel verileri paralel olarak önceden cache'le
+    if market.upper() != "BIST" and FMP_API_KEY:
+        _hist_symbols = list({row.get("ticker") for _, row in raw_data.iterrows() if row.get("ticker")})
+        def _hist_progress(pct, text):
+            if progress_callback:
+                progress_callback(0.28 + pct * 0.04, text)
+        batch_prefetch(_hist_symbols, market, _hist_progress)
 
     raw_data = _apply_universe_filter(raw_data, market, universe)
 
+    # full_price_lookup: spike filtresiz orijinal veri — ileriye dönük getiri hesabı için
+    # Scoring (truncated) için spike filtresi uygulanır, ama forward return için ham veri gerekir
     full_price_lookup: Dict[str, pd.DataFrame] = {}
     for _, row in raw_data.iterrows():
         ticker = row.get("ticker")
         pd_data = row.get("price_data")
         if ticker and isinstance(pd_data, pd.DataFrame):
-            full_price_lookup[ticker] = pd_data.copy()
+            # Cache'den orijinal veriyi al — spike filtresi uygulanmamış
+            try:
+                from disk_cache import read_cache
+                from symbol_mapper import resolve_twelve_symbol
+                market_val = row.get("market", market)
+                resolved = resolve_twelve_symbol(ticker, market_val)
+                raw_cached = read_cache(resolved)
+                if raw_cached is not None and not raw_cached.empty:
+                    from yahoo_provider import fetch_yahoo_history as _fyh
+                    # datetime sütunu tz-normalize
+                    raw_cached["datetime"] = pd.to_datetime(raw_cached["datetime"]).dt.tz_localize(None)
+                    full_price_lookup[ticker] = raw_cached.sort_values("datetime").reset_index(drop=True)
+                else:
+                    full_price_lookup[ticker] = pd_data.copy()
+            except Exception:
+                full_price_lookup[ticker] = pd_data.copy()
 
     trading_dates = _get_all_trading_dates(raw_data)
     rebalance_dates = _generate_rebalance_dates(
@@ -363,10 +400,15 @@ def run_backtest(
                     bench_trunc = None
         truncated = append_momentum_fields(truncated, benchmark_history=bench_trunc)
 
+        # USA: o rebalance tarihinde mevcut olan tarihsel temel verileri enjekte et
+        if market.upper() != "BIST":
+            truncated = inject_fundamentals_at_date(truncated, reb_date, market)
+
         scored = compute_rs_scores(truncated, market=market, inst_profile=inst_profile)
 
         filtered = apply_preset_filter(
-            scored, preset=quality_preset, min_avg_volume=min_avg_volume,
+            scored, preset=quality_preset,
+            min_avg_volume=min_avg_volume, market=market,
         )
 
         filtered = _apply_scan_mode_filter(filtered, scan_mode)
@@ -397,11 +439,13 @@ def run_backtest(
             scores[t] = round(float(row.get(effective_sort, 0) or 0), 2)
 
         stock_returns = []
+        ticker_returns = {}
         for ticker in tickers:
             full_pd = full_price_lookup.get(ticker)
             fwd = _get_forward_return(full_pd, reb_date, next_reb_date)
             if fwd is not None:
                 stock_returns.append(fwd)
+                ticker_returns[ticker] = round(fwd * 100, 2)
 
         if stock_returns:
             period_return = np.mean(stock_returns)
@@ -421,6 +465,7 @@ def run_backtest(
                 tickers=tickers,
                 scores=scores,
                 period_return=round(period_return * 100, 2),
+                ticker_returns=ticker_returns,
             )
         )
 

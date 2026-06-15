@@ -23,6 +23,12 @@ from config import (
     MARGIN_QUALITY_WEIGHTS,
     VALUATION_WEIGHTS,
     MOMENTUM_WEIGHTS,
+    BIST_SCORING_WEIGHTS,
+    BIST_FINANCIAL_STRENGTH_WEIGHTS,
+    BIST_GROWTH_WEIGHTS,
+    BIST_MARGIN_QUALITY_WEIGHTS,
+    BIST_VALUATION_WEIGHTS,
+    BIST_MOMENTUM_WEIGHTS,
     REVERSE_SCORED_METRICS,
     RS_CATEGORIES,
     WINSORIZE_LOWER,
@@ -31,6 +37,7 @@ from config import (
 from data_model import compute_derived_fields
 from data_fetcher import build_technical_data
 from technical_signals import append_technical_scores
+from bist_adaptations import apply_all as _bist_apply_all
 from institutional_score import append_institutional_scores, STRATEGY_PROFILES
 
 
@@ -45,35 +52,75 @@ def compute_rs_scores(df: pd.DataFrame, market: str = None,
 
     result = _compute_margin_trend(result)
 
+    # BIST: enflasyon düzeltmesi, sektörel değerleme, bankacılık istisnası
+    result = _bist_apply_all(result, market or "")
+
     all_metrics = _collect_all_metrics()
     result = _winsorize_metrics(result, all_metrics)
 
     percentiles = _percentile_rank_all(result, all_metrics, market=market)
 
-    result["financial_strength"] = _weighted_sub_score(
-        percentiles, FINANCIAL_STRENGTH_WEIGHTS
-    )
-    result["growth"] = _weighted_sub_score(
-        percentiles, GROWTH_WEIGHTS
-    )
-    result["margin_quality"] = _weighted_sub_score(
-        percentiles, MARGIN_QUALITY_WEIGHTS
-    )
-    result["valuation"] = _weighted_sub_score(
-        percentiles, VALUATION_WEIGHTS
-    )
-    result["momentum"] = _weighted_sub_score(
-        percentiles, MOMENTUM_WEIGHTS
-    )
+    # Market'a göre doğru ağırlıkları seç
+    _is_bist = (market or "").upper() == "BIST"
+    _w_financial  = BIST_FINANCIAL_STRENGTH_WEIGHTS  if _is_bist else FINANCIAL_STRENGTH_WEIGHTS
+    _w_growth     = BIST_GROWTH_WEIGHTS               if _is_bist else GROWTH_WEIGHTS
+    _w_margin     = BIST_MARGIN_QUALITY_WEIGHTS       if _is_bist else MARGIN_QUALITY_WEIGHTS
+    _w_valuation  = BIST_VALUATION_WEIGHTS            if _is_bist else VALUATION_WEIGHTS
+    _w_momentum   = BIST_MOMENTUM_WEIGHTS             if _is_bist else MOMENTUM_WEIGHTS
+    _w_top        = BIST_SCORING_WEIGHTS              if _is_bist else SCORING_WEIGHTS
 
-    sub_score_cols = list(SCORING_WEIGHTS.keys())
-    result["rs_score"] = _final_rs_score(result, sub_score_cols)
+    result["financial_strength"] = _weighted_sub_score(percentiles, _w_financial)
+    result["growth"]             = _weighted_sub_score(percentiles, _w_growth)
+    result["margin_quality"]     = _weighted_sub_score(percentiles, _w_margin)
+    result["valuation"]          = _weighted_sub_score(percentiles, _w_valuation)
+    result["momentum"]           = _weighted_sub_score(percentiles, _w_momentum)
+
+    sub_score_cols = list(_w_top.keys())
+    result["rs_score"] = _final_rs_score(result, sub_score_cols, weights=_w_top)
 
     result["rs_category"] = result["rs_score"].apply(_categorize)
 
-    result = append_technical_scores(result)
+    result = append_technical_scores(result, market=market)
 
     result = append_institutional_scores(result, profile=inst_profile)
+
+    # BIST: momentum-öncelikli hibrit yaklaşım
+    # - Fundamentals tamamen yoksa: saf momentum (bist_momentum_rs)
+    # - Fundamentals kısmen varsa: %65 momentum + %35 fundamental hybrid
+    # - Per-stock: yeterli fundamental olmayan hisseler saf momentum alır
+    if _is_bist:
+        import numpy as _np_bist
+        from bist_adaptations import compute_bist_pure_momentum_score
+        result = compute_bist_pure_momentum_score(result)
+
+        _fin_cols = ["roe", "revenue_growth", "earnings_growth", "debt_to_equity"]
+        _existing_fin = [c for c in _fin_cols if c in result.columns]
+        _available = sum(
+            1 for c in _existing_fin
+            if result[c].notna().sum() > len(result) * 0.30
+        )
+
+        if _available < 2:
+            # Hiç fundamental → saf momentum
+            result["rs_score"] = result["bist_momentum_rs"]
+        else:
+            # Per-stock fundamental coverage kontrolü
+            fin_coverage = result[_existing_fin].notna().sum(axis=1)
+            has_enough = fin_coverage >= 2
+
+            # Hybrid blend: momentum her zaman baskın (%65)
+            blended = (
+                0.65 * result["bist_momentum_rs"].fillna(50) +
+                0.35 * result["rs_score"].fillna(50)
+            ).clip(0, 100)
+
+            result["rs_score"] = _np_bist.where(
+                has_enough,
+                blended,
+                result["bist_momentum_rs"].fillna(50)
+            ).round(1)
+
+        result["rs_category"] = result["rs_score"].apply(_categorize)
 
     result = result.sort_values("rs_score", ascending=False).reset_index(drop=True)
     result["rank"] = result.index + 1
@@ -291,13 +338,16 @@ def _weighted_sub_score(
 def _final_rs_score(
     df: pd.DataFrame,
     sub_score_cols: List[str],
+    weights: Optional[Dict] = None,
 ) -> pd.Series:
     """
     Compute the final weighted RS Score from sub-scores.
 
     Uses the same proportional weight redistribution for missing sub-scores.
+    weights: üst-seviye ağırlık dict (default: SCORING_WEIGHTS)
     """
-    wts = np.array([SCORING_WEIGHTS[c] for c in sub_score_cols])
+    _w = weights if weights is not None else SCORING_WEIGHTS
+    wts = np.array([_w.get(c, 0.0) for c in sub_score_cols])
     scores = np.full(len(df), np.nan)
 
     for i in range(len(df)):

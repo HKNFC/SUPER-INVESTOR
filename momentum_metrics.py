@@ -269,7 +269,37 @@ def get_benchmark_history(market: str) -> pd.DataFrame:
         return pd.DataFrame()
 
     provider = get_provider()
+
+    # Provider yoksa (Twelve Data iptal) → doğrudan Yahoo Finance
     if provider is None:
+        logger.info("No provider — fetching benchmark %s via Yahoo Finance", index_ticker)
+        try:
+            from yahoo_provider import fetch_yahoo_benchmark
+            history = fetch_yahoo_benchmark(index_ticker)
+            if history is not None and not history.empty:
+                # fetch_yahoo_history lowercase/datetime-kolon formatını normalize et
+                if "datetime" in history.columns:
+                    history = history.rename(columns={
+                        "datetime": "Date", "open": "Open", "high": "High",
+                        "low": "Low", "close": "Close", "volume": "Volume"
+                    })
+                    history = history.set_index("Date")
+                elif "close" in history.columns:
+                    history = history.rename(columns={
+                        "open": "Open", "high": "High", "low": "Low",
+                        "close": "Close", "volume": "Volume"
+                    })
+                logger.info("Yahoo benchmark OK: %d rows for %s", len(history), index_ticker)
+                if market and market.upper() == "BIST":
+                    try:
+                        from bist_adaptations import convert_benchmark_to_usd
+                        history = convert_benchmark_to_usd(history)
+                    except Exception as _e:
+                        logger.debug("USD benchmark dönüşümü atlandı: %s", _e)
+                return history
+        except Exception as e:
+            logger.error("Yahoo benchmark fetch error for %s: %s", index_ticker, e)
+        logger.error("Benchmark verisi alınamadı: %s — placeholder kullanılıyor", index_ticker)
         return _generate_placeholder_price_data(index_ticker, days=TRADING_DAYS_12M + 10)
 
     try:
@@ -284,6 +314,27 @@ def get_benchmark_history(market: str) -> pd.DataFrame:
                 index_ticker,
             )
             return _generate_placeholder_price_data(index_ticker, days=TRADING_DAYS_12M + 10)
+        # lowercase/datetime-kolon formatını normalize et (Twelve Data provider formatı)
+        if "datetime" in history.columns:
+            history = history.rename(columns={
+                "datetime": "Date", "open": "Open", "high": "High",
+                "low": "Low", "close": "Close", "volume": "Volume"
+            })
+            history = history.set_index("Date")
+        elif "close" in history.columns:
+            history = history.rename(columns={
+                "open": "Open", "high": "High", "low": "Low",
+                "close": "Close", "volume": "Volume"
+            })
+        if not isinstance(history.index, pd.DatetimeIndex):
+            history.index = pd.to_datetime(history.index)
+        # BIST → USD bazlı benchmark (XU100/TL → XU100/USD)
+        if market and market.upper() == "BIST":
+            try:
+                from bist_adaptations import convert_benchmark_to_usd
+                history = convert_benchmark_to_usd(history)
+            except Exception as _e:
+                logger.debug("USD benchmark dönüşümü atlandı: %s", _e)
         return history
     except Exception as e:
         logger.error(

@@ -1,7 +1,46 @@
 import os
+import json
+import time
+import requests as _req
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _fetch_bist_dynamic():
+    """Bigpara'dan BIST listesini çek. Başarısız olursa None döndür."""
+    _cache_dir = os.path.join(os.path.dirname(__file__), "data")
+    os.makedirs(_cache_dir, exist_ok=True)
+    _cache_file = os.path.join(_cache_dir, "bist_list_cache.json")
+    if os.path.exists(_cache_file):
+        try:
+            with open(_cache_file) as _f:
+                _cached = json.load(_f)
+            if time.time() - _cached.get("ts", 0) < 86400 and len(_cached.get("tickers", [])) > 200:
+                return _cached["tickers"]
+        except Exception:
+            pass
+    try:
+        _r = _req.get(
+            "https://bigpara.hurriyet.com.tr/api/v1/hisse/list",
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=15,
+        )
+        _data = _r.json().get("data", [])
+        _tickers = sorted(set(
+            x["kod"].strip() for x in _data
+            if x.get("kod", "").strip().isalpha() and 4 <= len(x.get("kod", "").strip()) <= 6
+        ))
+        if len(_tickers) > 200:
+            try:
+                with open(_cache_file, "w") as _f:
+                    json.dump({"ts": time.time(), "tickers": _tickers}, _f)
+            except Exception:
+                pass
+            return _tickers
+    except Exception:
+        pass
+    return None
 
 TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
 TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
@@ -13,65 +52,64 @@ BIST_ALL_TICKERS = [
     "A1CAP", "A1YEN", "ACSEL", "ADEL", "ADESE", "ADGYO", "AEFES", "AFYON", "AGESA", "AGHOL",
     "AGROT", "AGYO", "AHGAZ", "AHSGY", "AKBNK", "AKCNS", "AKENR", "AKFGY", "AKFIS", "AKFYE",
     "AKGRT", "AKHAN", "AKMGY", "AKSA", "AKSEN", "AKSGY", "AKSUE", "AKYHO", "ALARK", "ALBRK",
-    "ALCAR", "ALCTL", "ALFAS", "ALGYO", "ALKA", "ALKIM", "ALKLC", "ALTNY", "ALVES",
-    "ANELE", "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK", "ARDYZ", "ARENA", "ARFYE", "ARMGD",
-    "ARSAN", "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY", "ATAKP", "ATATP",
-    "ATATR", "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR", "AYCES",
-    "AYDEM", "AYEN", "AYES", "AYGAZ", "AZTEK", "BAGFS", "BAHKM", "BAKAB", "BALAT", "BALSU",
-    "BANVT", "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BESLR", "BESTE", "BEYAZ",
-    "BFREN", "BIENY", "BIGCH", "BIGEN", "BIGTK", "BIMAS", "BINBN", "BINHO", "BIOEN", "BIZIM",
-    "BJKAS", "BLCYT", "BLUME", "BMSCH", "BMSTL", "BNTAS", "BOBET", "BORLS", "BORSK", "BOSSA",
-    "BRISA", "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN", "BRYAT", "BSOKE", "BTCIM",
-    "BUCIM", "BULGS", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CASA", "CATES", "CCOLA",
-    "CELHA", "CEMAS", "CEMTS", "CEMZY", "CEOEM", "CGCAM", "CIMSA", "CLEBI", "CMBTN", "CMENT",
-    "CONSE", "COSMO", "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGI", "DAPGM", "DARDL",
-    "DCTTR", "DENGE", "DERHL", "DERIM", "DESA", "DESPC", "DEVA", "DGATE", "DGGYO", "DGNMO",
-    "DIRIT", "DITAS", "DMRGD", "DMSAS", "DNISI", "DOAS", "DOCO", "DOFER", "DOFRB",
-    "DOGUB", "DOHOL", "DOKTA", "DSTKF", "DUNYH", "DURDO", "DURKN", "DYOBY", "DZGYO", "EBEBK",
-    "ECILC", "ECOGR", "ECZYT", "EDATA", "EDIP", "EFOR", "EGEEN", "EGEGY", "EGEPO", "EGGUB",
-    "EGPRO", "EGSER", "EKGYO", "EKIZ", "EKOS", "EKSUN", "ELITE", "EMKEL", "EMNIS", "EMPAE",
-    "ENDAE", "ENERY", "ENJSA", "ENKAI", "ENSRI", "ENTRA", "EPLAS", "ERBOS", "ERCB", "EREGL",
-    "ERSU", "ESCAR", "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO", "EUPWR", "EUREN",
-    "EUYO", "EYGYO", "FADE", "FENER", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE", "FRIGO",
-    "FRMPL", "FROTO", "FZLGY", "GARAN", "GARFA", "GATEG", "GEDIK", "GEDZA", "GENIL", "GENKM",
-    "GENTS", "GEREL", "GESAN", "GIPTA", "GLBMD", "GLCVY", "GLRMK", "GLRYH", "GLYHO", "GMTAS",
-    "GOKNR", "GOLTS", "GOODY", "GOZDE", "GRNYO", "GRSEL", "GRTHO", "GSDDE", "GSDHO", "GSRAY",
-    "GUBRF", "GUNDG", "GWIND", "GZNMI", "HALKB", "HATEK", "HATSN", "HDFGS", "HEDEF", "HEKTS",
-    "HKTM", "HLGYO", "HOROZ", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ", "ICBCT", "ICUGS",
-    "IDGYO", "IEYHO", "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY", "IMASM", "INDES",
-    "INFO", "INGRM", "INTEK", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR", "ISCTR",
-    "ISDMR", "ISFIN", "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT", "IZENR",
-    "IZFAS", "IZINV", "IZMDC", "JANTS", "KAPLM", "KAREL", "KARSN", "KARTN", "KATMR", "KAYSE",
-    "KBORU", "KCAER", "KCHOL", "KENT", "KERVN", "KERVT", "KFEIN", "KGYO", "KIMMR", "KLGYO", "KLKIM",
-    "KLMSN", "KLNMA", "KLRHO", "KLSER", "KLSYN", "KLYPV", "KMPUR", "KNFRT", "KOCMT", "KONKA",
-    "KONTR", "KONYA", "KOPOL", "KORDS", "KOTON", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT",
-    "KRPLS", "KRSTL", "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS",
-    "KOZAL", "KZBGY", "KZGYO", "LIDER", "LIDFA", "LILAK", "LINK", "LKMNH", "LMKDC", "LOGO", "LRSHO",
-    "LUKSK", "LXGYO", "LYDHO", "LYDYE", "MAALT", "MACKO", "MAGEN", "MAKIM", "MAKTK", "MANAS",
-    "MARBL", "MARKA", "MARMR", "MARTI", "MAVI", "MCARD", "MEDTR", "MEGAP", "MEGMT", "MEKAG",
-    "MEPET", "MERCN", "MERIT", "MERKO", "METRO", "MEYSU", "MGROS", "MHRGY", "MIATK", "MMCAS",
-    "MNDRS", "MNDTR", "MOBTL", "MOGAN", "MOPAS", "MPARK", "MRGYO", "MRSHL", "MSGYO", "MTRKS",
-    "MTRYO", "MZHLD", "NATEN", "NETAS", "NETCD", "NIBAS", "NTGAZ", "NTHOL", "NUGYO", "NUHCM",
-    "OBAMS", "OBASE", "ODAS", "ODINE", "OFSYM", "ONCSM", "ONRYT", "ORCAY", "ORGE", "ORMA",
-    "OSMEN", "OSTIM", "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZATD", "OZGYO",
-    "OZKGY", "OZRDN", "OZSUB", "OZYSR", "PAGYO", "PAHOL", "PAMEL", "PAPIL", "PARSN", "PASEU",
-    "PATEK", "PCILT", "PEKGY", "PENGD", "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART",
-    "PKENT", "PLTUR", "PNLSN", "PNSUT", "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA",
-    "PSDTC", "PSGYO", "QNBFK", "QNBTR", "QUAGR", "RALYH", "RAYSG", "REEDR", "RGYAS", "RNPOL",
-    "RODRG", "RTALB", "RUBNS", "RUZYE", "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL",
-    "SANFM", "SANKO", "SARKY", "SASA", "SAYAS", "SDTTR", "SEGMN", "SEGYO", "SEKFK", "SEKUR",
-    "SELEC", "SELVA", "SERNT", "SEYKM", "SILVR", "SISE", "SKBNK", "SKTAS", "SKYLP", "SKYMD",
-    "SMART", "SMRTG", "SMRVA", "SNGYO", "SNICA", "SNPAM", "SODSN", "SOKE", "SOKM", "SONME",
-    "SRVGY", "SUMAS", "SUNTK", "SURGY", "SUWEN", "SVGYO", "TABGD", "TARKM", "TATEN", "TATGD",
-    "TAVHL", "TBORG", "TCELL", "TCKRC", "TDGYO", "TEHOL", "TEKTU", "TERA", "TEZOL", "TGSAS",
-    "THYAO", "TKFEN", "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRALT", "TRCAS",
-    "TRENJ", "TRGYO", "TRHOL", "TRILC", "TRMET", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK",
-    "TUCLK", "TUKAS", "TUPRS", "TUREX", "TURGG", "TURSG", "UCAYM", "UFUK", "ULAS", "ULKER",
-    "ULUFA", "ULUSE", "ULUUN", "UMPAS", "UNLU", "USAK", "VAKBN", "VAKFA", "VAKFN", "VAKKO",
-    "VANGD", "VBTYZ", "VERTU", "VERUS", "VESBE", "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO",
-    "VSNMD", "YAPRK", "YATAS", "YAYLA", "YBTAS", "YEOTK", "YESIL", "YGGYO", "YGYO", "YIGIT",
-    "YKBNK", "YKSLN", "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZERGY", "ZGYO", "ZOREN",
-    "ZRGYO",
+    "ALCAR", "ALCTL", "ALFAS", "ALGYO", "ALKA", "ALKIM", "ALKLC", "ALTNY", "ALVES", "ANELE",
+    "ANGEN", "ANHYT", "ANSGR", "ARASE", "ARCLK", "ARDYZ", "ARENA", "ARFYE", "ARMGD", "ARSAN",
+    "ARTMS", "ARZUM", "ASELS", "ASGYO", "ASTOR", "ASUZU", "ATAGY", "ATAKP", "ATATP", "ATATR",
+    "ATEKS", "ATLAS", "ATSYH", "AVGYO", "AVHOL", "AVOD", "AVPGY", "AVTUR", "AYCES", "AYDEM",
+    "AYEN", "AYES", "AYGAZ", "AZTEK", "BAGFS", "BAHKM", "BAKAB", "BALAT", "BALSU", "BANVT",
+    "BARMA", "BASCM", "BASGZ", "BAYRK", "BEGYO", "BERA", "BESLR", "BESTE", "BEYAZ", "BFREN",
+    "BIENY", "BIGCH", "BIGEN", "BIGTK", "BIMAS", "BINBN", "BINHO", "BIOEN", "BIZIM", "BJKAS",
+    "BLCYT", "BLUME", "BMSCH", "BMSTL", "BNTAS", "BOBET", "BORLS", "BORSK", "BOSSA", "BRISA",
+    "BRKO", "BRKSN", "BRKVY", "BRLSM", "BRMEN", "BRSAN", "BRYAT", "BSOKE", "BTCIM", "BUCIM",
+    "BULGS", "BURCE", "BURVA", "BVSAN", "BYDNR", "CANTE", "CASA", "CATES", "CCOLA", "CELHA",
+    "CEMAS", "CEMTS", "CEMZY", "CEOEM", "CGCAM", "CIMSA", "CLEBI", "CMBTN", "CMENT", "CONSE",
+    "COSMO", "CRDFA", "CRFSA", "CUSAN", "CVKMD", "CWENE", "DAGI", "DAPGM", "DARDL", "DCTTR",
+    "DENGE", "DERHL", "DERIM", "DESA", "DESPC", "DEVA", "DGATE", "DGGYO", "DGNMO", "DIRIT",
+    "DITAS", "DMRGD", "DMSAS", "DNISI", "DOAS", "DOCO", "DOFER", "DOFRB", "DOGUB", "DOHOL",
+    "DOKTA", "DSTKF", "DUNYH", "DURDO", "DURKN", "DYOBY", "DZGYO", "EBEBK", "ECILC", "ECOGR",
+    "ECZYT", "EDATA", "EDIP", "EFOR", "EGEEN", "EGEGY", "EGEPO", "EGGUB", "EGPRO", "EGSER",
+    "EKGYO", "EKIZ", "EKOS", "EKSUN", "ELITE", "EMKEL", "EMNIS", "EMPAE", "ENDAE", "ENERY",
+    "ENJSA", "ENKAI", "ENSRI", "ENTRA", "EPLAS", "ERBOS", "ERCB", "EREGL", "ERSU", "ESCAR",
+    "ESCOM", "ESEN", "ETILR", "ETYAT", "EUHOL", "EUKYO", "EUPWR", "EUREN", "EUYO", "EYGYO",
+    "FADE", "FENER", "FLAP", "FMIZP", "FONET", "FORMT", "FORTE", "FRIGO", "FRMPL", "FROTO",
+    "FZLGY", "GARAN", "GARFA", "GATEG", "GEDIK", "GEDZA", "GENIL", "GENKM", "GENTS", "GEREL",
+    "GESAN", "GIPTA", "GLBMD", "GLCVY", "GLRMK", "GLRYH", "GLYHO", "GMTAS", "GOKNR", "GOLTS",
+    "GOODY", "GOZDE", "GRNYO", "GRSEL", "GRTHO", "GSDDE", "GSDHO", "GSRAY", "GUBRF", "GUNDG",
+    "GWIND", "GZNMI", "HALKB", "HATEK", "HATSN", "HDFGS", "HEDEF", "HEKTS", "HKTM", "HLGYO",
+    "HOROZ", "HRKET", "HTTBT", "HUBVC", "HUNER", "HURGZ", "ICBCT", "ICUGS", "IDGYO", "IEYHO",
+    "IHAAS", "IHEVA", "IHGZT", "IHLAS", "IHLGM", "IHYAY", "IMASM", "INDES", "INFO", "INGRM",
+    "INTEK", "INTEM", "INVEO", "INVES", "ISATR", "ISBIR", "ISBTR", "ISCTR", "ISDMR", "ISFIN",
+    "ISGSY", "ISGYO", "ISKPL", "ISKUR", "ISMEN", "ISSEN", "ISYAT", "IZENR", "IZFAS", "IZINV",
+    "IZMDC", "JANTS", "KAPLM", "KAREL", "KARSN", "KARTN", "KATMR", "KAYSE", "KBORU", "KCAER",
+    "KCHOL", "KENT", "KERVN", "KFEIN", "KGYO", "KIMMR", "KLGYO", "KLKIM", "KLMSN", "KLNMA",
+    "KLRHO", "KLSER", "KLSYN", "KLYPV", "KMPUR", "KNFRT", "KOCMT", "KONKA", "KONTR", "KONYA",
+    "KOPOL", "KORDS", "KOTON", "KRDMA", "KRDMB", "KRDMD", "KRGYO", "KRONT", "KRPLS", "KRSTL",
+    "KRTEK", "KRVGD", "KSTUR", "KTLEV", "KTSKR", "KUTPO", "KUVVA", "KUYAS", "KZBGY", "KZGYO",
+    "LIDER", "LIDFA", "LILAK", "LINK", "LKMNH", "LMKDC", "LOGO", "LRSHO", "LUKSK", "LXGYO",
+    "LYDHO", "LYDYE", "MAALT", "MACKO", "MAGEN", "MAKIM", "MAKTK", "MANAS", "MARBL", "MARKA",
+    "MARMR", "MARTI", "MAVI", "MCARD", "MEDTR", "MEGAP", "MEGMT", "MEKAG", "MEPET", "MERCN",
+    "MERIT", "MERKO", "METRO", "MEYSU", "MGROS", "MHRGY", "MIATK", "MMCAS", "MNDRS", "MNDTR",
+    "MOBTL", "MOGAN", "MOPAS", "MPARK", "MRGYO", "MRSHL", "MSGYO", "MTRKS", "MTRYO", "MZHLD",
+    "NATEN", "NETAS", "NETCD", "NIBAS", "NTGAZ", "NTHOL", "NUGYO", "NUHCM", "OBAMS", "OBASE",
+    "ODAS", "ODINE", "OFSYM", "ONCSM", "ONRYT", "ORCAY", "ORGE", "ORMA", "OSMEN", "OSTIM",
+    "OTKAR", "OTTO", "OYAKC", "OYAYO", "OYLUM", "OYYAT", "OZATD", "OZGYO", "OZKGY", "OZRDN",
+    "OZSUB", "OZYSR", "PAGYO", "PAHOL", "PAMEL", "PAPIL", "PARSN", "PASEU", "PATEK", "PCILT",
+    "PEKGY", "PENGD", "PENTA", "PETKM", "PETUN", "PGSUS", "PINSU", "PKART", "PKENT", "PLTUR",
+    "PNLSN", "PNSUT", "POLHO", "POLTK", "PRDGS", "PRKAB", "PRKME", "PRZMA", "PSDTC", "PSGYO",
+    "QNBFK", "QNBTR", "QUAGR", "RALYH", "RAYSG", "REEDR", "RGYAS", "RNPOL", "RODRG", "RTALB",
+    "RUBNS", "RUZYE", "RYGYO", "RYSAS", "SAFKR", "SAHOL", "SAMAT", "SANEL", "SANFM", "SANKO",
+    "SARKY", "SASA", "SAYAS", "SDTTR", "SEGMN", "SEGYO", "SEKFK", "SEKUR", "SELEC", "SELVA",
+    "SERNT", "SEYKM", "SILVR", "SISE", "SKBNK", "SKTAS", "SKYLP", "SKYMD", "SMART", "SMRTG",
+    "SMRVA", "SNGYO", "SNICA", "SNPAM", "SODSN", "SOKE", "SOKM", "SONME", "SRVGY", "SUMAS",
+    "SUNTK", "SURGY", "SUWEN", "SVGYO", "TABGD", "TARKM", "TATEN", "TATGD", "TAVHL", "TBORG",
+    "TCELL", "TCKRC", "TDGYO", "TEHOL", "TEKTU", "TERA", "TEZOL", "TGSAS", "THYAO", "TKFEN",
+    "TKNSA", "TLMAN", "TMPOL", "TMSN", "TNZTP", "TOASO", "TRALT", "TRCAS", "TRENJ", "TRGYO",
+    "TRHOL", "TRILC", "TRMET", "TSGYO", "TSKB", "TSPOR", "TTKOM", "TTRAK", "TUCLK", "TUKAS",
+    "TUPRS", "TUREX", "TURGG", "TURSG", "UCAYM", "UFUK", "ULAS", "ULKER", "ULUFA", "ULUSE",
+    "ULUUN", "UMPAS", "UNLU", "USAK", "VAKBN", "VAKFA", "VAKFN", "VAKKO", "VANGD", "VBTYZ",
+    "VERTU", "VERUS", "VESBE", "VESTL", "VKFYO", "VKGYO", "VKING", "VRGYO", "VSNMD", "YAPRK",
+    "YATAS", "YAYLA", "YBTAS", "YEOTK", "YESIL", "YGGYO", "YGYO", "YIGIT", "YKBNK", "YKSLN",
+    "YONGA", "YUNSA", "YYAPI", "YYLGD", "ZEDUR", "ZERGY", "ZGYO", "ZOREN", "ZRGYO",
 ]
 
 USA_ALL_TICKERS = [
@@ -168,6 +206,34 @@ USA_ALL_TICKERS = [
     "ZBRA", "ZION", "ZTS",
 ]
 
+# Delisted / ETF / fon olduğu bilinen hisseler — havuzda istenmiyor
+_EXCLUDED_BIST = {
+    "KOZAL","KERVT","LYDIA","APGLD","ENRYA","GMSTRF","USDTRF","ZGOLDF",
+    "GLDTR","GMSTR","USDTR","QTEMZ","APMDL","APBDL","APLIB",
+    "ISGLK","NPTLR","OPTGY","OPTLR","ZGOLD",
+}
+
+# Dynamic BIST: mevcut statik liste + Bigpara'dan gelen dinamik liste (filtreli)
+_dynamic_bist = _fetch_bist_dynamic()
+if _dynamic_bist:
+    _dynamic_bist = [t for t in _dynamic_bist if t not in _EXCLUDED_BIST]
+    BIST_ALL_TICKERS = sorted(set(BIST_ALL_TICKERS) | set(_dynamic_bist))
+BIST_ALL_TICKERS = [t for t in BIST_ALL_TICKERS if t not in _EXCLUDED_BIST]
+
+def _load_usa_symbols():
+    """FMP'den USA hisse listesini yükle; başarısız olursa sabit listeye dön."""
+    try:
+        import sys as _sys
+        _sys.path.insert(0, '/Users/hakanficicilar/Documents/Aİ')
+        from fmp_provider import get_usa_symbols as _fmp_syms
+        syms = _fmp_syms()
+        if len(syms) > 100:
+            return syms
+    except Exception:
+        pass
+    return USA_ALL_TICKERS
+
+
 SUPPORTED_MARKETS = {
     "BIST": {
         "label": "BIST (Türkiye)",
@@ -179,7 +245,7 @@ SUPPORTED_MARKETS = {
         "label": "ABD Hisseleri",
         "exchange": "NASDAQ/NYSE",
         "currency": "USD",
-        "symbols": USA_ALL_TICKERS,
+        "symbols": _load_usa_symbols(),
     },
 }
 
@@ -191,7 +257,7 @@ BENCHMARK_INDEX = {
 BIST100_TICKERS = [
     "THYAO", "GARAN", "AKBNK", "EREGL", "BIMAS",
     "KCHOL", "SAHOL", "SISE", "TUPRS", "ASELS",
-    "TCELL", "PGSUS", "TOASO", "FROTO", "KOZAL",
+    "TCELL", "PGSUS", "TOASO", "FROTO", 
     "HEKTS", "MGROS", "TAVHL", "ARCLK", "SASA",
     "PETKM", "ISCTR", "YKBNK", "VAKBN", "HALKB",
     "TKFEN", "TTKOM", "EKGYO", "ENKAI", "GUBRF",
@@ -204,7 +270,7 @@ BIST100_TICKERS = [
     "CWENE", "TURSG", "ISMEN", "ZOREN", "SARKY",
     "AYDEM", "ODAS", "BRSAN", "VESBE", "PENTA",
     "MAVI", "DOAS", "TMSN", "NETAS", "GLYHO",
-    "ANHYT", "ANELE", "KERVT", "KCAER", "AHGAZ",
+    "ANHYT", "ANELE", "KCAER", "AHGAZ",
     "BIOEN", "EGEEN", "GEDZA", "GOODY", "KARTN",
     "KLRHO", "KUYAS", "MAGEN", "OZKGY", "SILVR",
     "TMPOL", "TUKAS", "YATAS", "ADEL", "VESTL",
@@ -320,6 +386,9 @@ USA_SEGMENTS = {
     "MIDCAP400": "S&P MidCap 400",
 }
 
+# ---------------------------------------------------------------------------
+# USA Scoring Weights (varsayılan)
+# ---------------------------------------------------------------------------
 SCORING_WEIGHTS = {
     "financial_strength": 0.25,
     "growth": 0.20,
@@ -362,6 +431,60 @@ MOMENTUM_WEIGHTS = {
     "return_12m": 0.25,
     "distance_to_52w_high": 0.10,
     "relative_return_vs_index": 0.20,
+}
+
+# ---------------------------------------------------------------------------
+# BIST'e Özel Scoring Weights
+#
+# Gerekçe:
+#   - financial_strength: BIST'te şirket kalitesi kritik, ağırlık artırıldı
+#   - growth: Reel büyüme (TÜFE düzeltmeli) BIST'te belirleyici sinyal
+#   - valuation: BIST yapısal olarak ucuz → value trap riski yüksek, ağırlık düşürüldü
+#   - momentum: TL bazlı 12m momentum yanıltıcı (kur etkisi), ağırlık düşürüldü
+#   - margin_quality: Şirket temeli için önemli, sabit tutuldu
+# ---------------------------------------------------------------------------
+BIST_SCORING_WEIGHTS = {
+    "financial_strength": 0.20,  # 0.30 → 0.20 (azaltıldı: NaN riski)
+    "growth": 0.20,              # 0.25 → 0.20 (azaltıldı: enflasyon etkisi)
+    "margin_quality": 0.10,      # 0.15 → 0.10
+    "valuation": 0.10,           # 0.15 → 0.10 (BIST'te valuation yanıltıcı)
+    "momentum": 0.40,            # 0.15 → 0.40 (BIST momentum-driven)
+}
+
+BIST_FINANCIAL_STRENGTH_WEIGHTS = {
+    "roic": 0.45,                # Sermaye verimliliği BIST'te daha belirleyici
+    "debt_to_equity": 0.25,      # Aynı (bankalar için zaten NaN yapılıyor)
+    "equity_to_assets": 0.15,    # Düşürüldü
+    "net_income_to_assets": 0.15,
+}
+
+BIST_GROWTH_WEIGHTS = {
+    "revenue_growth": 0.35,      # Gelir büyümesi EPS'ten daha güvenilir (tek seferlik kalemler)
+    "earnings_growth": 0.25,     # Düşürüldü
+    "revenue_cagr_3y": 0.25,     # Artırıldı — uzun dönem trend
+    "eps_cagr_3y": 0.15,
+}
+
+BIST_MARGIN_QUALITY_WEIGHTS = {
+    "gross_margin": 0.20,
+    "operating_margin": 0.35,    # Faaliyet marjı enflasyonist ortamda daha güvenilir
+    "net_margin": 0.25,
+    "margin_trend": 0.20,
+}
+
+BIST_VALUATION_WEIGHTS = {
+    "pe": 0.30,                  # Sektör normalize edildi (bist_adaptations), ağırlık artırıldı
+    "pb": 0.30,                  # Sektör normalize edildi
+    "ev_ebitda": 0.25,           # Bankalar için zaten NaN
+    "peg": 0.15,                 # PEG Türkiye'de daha az güvenilir
+}
+
+BIST_MOMENTUM_WEIGHTS = {
+    "return_3m": 0.35,           # Kısa vadeli momentum daha güvenilir (kur etkisi azalan)
+    "return_6m": 0.30,
+    "return_12m": 0.10,          # 12m TL momentum yanıltıcı
+    "distance_to_52w_high": 0.10,
+    "relative_return_vs_index": 0.15,
 }
 
 REVERSE_SCORED_METRICS = {

@@ -1,0 +1,1845 @@
+[0m
+[34m[1m  You can now view your Streamlit app in your browser.[0m
+[0m
+[34m  Local URL: [0m[1mhttp://localhost:5000[0m
+[34m  Network URL: [0m[1mhttp://172.31.87.130:5000[0m
+[34m  External URL: [0m[1mhttp://34.73.80.227:5000[0m
+[0m
+INFO:stock_screener.fetcher:Twelve Data provider initialized
+INFO:stock_screener.fetcher:EOD cache refresh for BIST: {'total': 611, 'fresh': 611, 'updated': 0, 'failed': 0}
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for A1CAP:BIST: revenue=26983702528.0, net_income=3824446720.0, equity=9182700000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for A1YEN:BIST: revenue=477299840.0, net_income=76665488.0, equity=3256275000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ACSEL:BIST: revenue=685775808.0, net_income=-67173608.0, equity=575015492.7
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ADEL:BIST: revenue=2099613056.0, net_income=-502366016.0, equity=1215695250.0
+INFO:stock_screener.fetcher:Fetched ACSEL: price=110.8, source=twelve_data
+INFO:stock_screener.fetcher:Fetched A1YEN: price=32.38, source=twelve_data
+INFO:stock_screener.fetcher:Fetched A1CAP: price=14.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ACSEL: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for A1YEN: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for A1CAP: missing total_assets
+INFO:stock_screener.fetcher:Fetched ADEL: price=32.74, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ADEL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ADESE:BIST: revenue=1268726016.0, net_income=157260992.0, equity=12771359999.999998
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AFYON:BIST: revenue=3867990016.0, net_income=240983008.0, equity=7577200000.000001
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ADGYO:BIST: revenue=807299200.0, net_income=-606436480.0, equity=6109202836.52
+INFO:stock_screener.fetcher:Fetched AFYON: price=16.9, source=twelve_data
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AEFES:BIST: revenue=243847135232.0, net_income=8956856320.0, equity=108609868392.09
+INFO:stock_screener.fetcher:Fetched ADESE: price=0.96, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AFYON: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for ADESE: missing total_assets
+INFO:stock_screener.fetcher:Fetched AEFES: price=16.73, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AEFES: missing total_assets
+INFO:stock_screener.fetcher:Fetched ADGYO: price=56.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ADGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AGESA:BIST: revenue=45204066304.0, net_income=5555079168.0, equity=10091340000.0
+INFO:stock_screener.fetcher:Fetched AGESA: price=216.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AGESA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AGYO:BIST: revenue=354761504.0, net_income=-692751808.0, equity=5540673600.0
+INFO:stock_screener.fetcher:Fetched AGYO: price=7.93, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AGROT:BIST: revenue=2258801920.0, net_income=-621992576.0, equity=7365600000.0
+INFO:stock_screener.fetcher:Fetched AGROT: price=2.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AGROT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AGHOL:BIST: revenue=707202514944.0, net_income=2619294976.0, equity=114125145825.16
+INFO:stock_screener.fetcher:Fetched AGHOL: price=27.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AGHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AHGAZ:BIST: revenue=43125137408.0, net_income=2261885184.0, equity=44164222907.951996
+INFO:stock_screener.fetcher:Fetched AHGAZ: price=21.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AHGAZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AHSGY:BIST: revenue=523843648.0, net_income=3124905728.0, equity=9183252000.0
+INFO:stock_screener.fetcher:Fetched AHSGY: price=17.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AHSGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKCNS:BIST: revenue=24608534528.0, net_income=726200000.0, equity=25040510706.128
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKBNK:BIST: revenue=190306549760.0, net_income=57254821888.0, equity=310185200000.0
+INFO:stock_screener.fetcher:Fetched AKCNS: price=199.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKCNS: missing total_assets
+INFO:stock_screener.fetcher:Fetched AKBNK: price=670.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKBNK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKENR:BIST: revenue=22710366208.0, net_income=-5367908864.0, equity=12872661256.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKFGY:BIST: revenue=1645399424.0, net_income=2611965952.0, equity=33091499999.999996
+INFO:stock_screener.fetcher:Fetched AKENR: price=9.18, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKENR: missing total_assets
+INFO:stock_screener.fetcher:Fetched AKFGY: price=2.72, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKFGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKFIS:BIST: revenue=9732579328.0, net_income=1685693952.0, equity=31984530415.032
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKFYE:BIST: revenue=5795914240.0, net_income=1949771008.0, equity=55812303973.99999
+INFO:stock_screener.fetcher:Fetched AKFIS: price=41.08, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKFIS: missing total_assets
+INFO:stock_screener.fetcher:Fetched AKFYE: price=19.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKFYE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKGRT:BIST: revenue=16098655232.0, net_income=2485797888.0, equity=7645716000.000001
+INFO:stock_screener.fetcher:Fetched AKGRT: price=7.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKGRT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKMGY:BIST: revenue=1101619712.0, net_income=663652672.0, equity=9589815872.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKHAN:BIST: revenue=7297854976.0, net_income=156403888.0, equity=4673738300.0
+INFO:stock_screener.fetcher:Fetched AKHAN: price=25.44, source=twelve_data
+INFO:stock_screener.fetcher:Fetched AKMGY: price=275.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKHAN: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for AKMGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKSA:BIST: revenue=32444223488.0, net_income=4016418048.0, equity=32723355000.0
+INFO:stock_screener.fetcher:Fetched AKSA: price=10.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKSEN:BIST: revenue=42385313792.0, net_income=3652368384.0, equity=59559569107.812
+INFO:stock_screener.fetcher:Fetched AKSEN: price=71.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKSEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKSGY:BIST: revenue=4459664896.0, net_income=3230027008.0, equity=44626785000.0
+INFO:stock_screener.fetcher:Fetched AKSGY: price=8.86, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKSGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKSUE:BIST: revenue=73082704.0, net_income=-37472652.0, equity=760518000.0
+INFO:stock_screener.fetcher:Fetched AKSUE: price=27.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKSUE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AKYHO:BIST: revenue=74999592.0, net_income=-147905200.0, equity=621440512.0
+INFO:stock_screener.fetcher:Fetched AKYHO: price=2.53, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AKYHO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALARK:BIST: revenue=8669089792.0, net_income=-1223149056.0, equity=78409496517.6
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALBRK:BIST: revenue=31220985856.0, net_income=15017428992.0, equity=28680000000.0
+INFO:stock_screener.fetcher:Fetched ALARK: price=86.95, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALARK: missing total_assets
+INFO:stock_screener.fetcher:Fetched ALBRK: price=8.12, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALBRK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALCAR:BIST: revenue=7503878656.0, net_income=-686246976.0, equity=1895378400.0
+INFO:stock_screener.fetcher:Fetched ALCAR: price=722.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALCAR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALCTL:BIST: revenue=5393299968.0, net_income=-66856356.0, equity=3306942266.628
+INFO:stock_screener.fetcher:Fetched ALCTL: price=134.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALCTL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALGYO:BIST: revenue=554616256.0, net_income=-2032343936.0, equity=15977253600.0
+INFO:stock_screener.fetcher:Fetched ALGYO: price=5.57, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALFAS:BIST: revenue=8236539904.0, net_income=-10754513.0, equity=5286320000.0
+INFO:stock_screener.fetcher:Fetched ALFAS: price=36.06, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALFAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALKA:BIST: revenue=2885759232.0, net_income=-107701128.0, equity=2079315000.0000002
+INFO:stock_screener.fetcher:Fetched ALKA: price=10.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALKA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALKIM:BIST: revenue=5099297280.0, net_income=-408293248.0, equity=4254600000.0
+INFO:stock_screener.fetcher:Fetched ALKIM: price=17.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALKIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALKLC:BIST: revenue=4974646272.0, net_income=-121746720.0, equity=2649808000.0
+INFO:stock_screener.fetcher:Fetched ALKLC: price=313.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALKLC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALTNY:BIST: revenue=3139850240.0, net_income=163432192.0, equity=4622000000.0
+INFO:stock_screener.fetcher:Fetched ALTNY: price=14.29, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALTNY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ALVES:BIST: revenue=9665356800.0, net_income=102895872.0, equity=2716800000.0
+INFO:stock_screener.fetcher:Fetched ALVES: price=3.03, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ALVES: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ANGEN:BIST: revenue=739628608.0, net_income=-312725856.0, equity=1737780000.0
+INFO:stock_screener.fetcher:Fetched ANGEN: price=10.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ANGEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ANSGR:BIST: revenue=88313470976.0, net_income=13431244800.0, equity=35554000000.0
+INFO:stock_screener.fetcher:Fetched ANSGR: price=26.94, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ANSGR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ANELE:BIST: revenue=7994646528.0, net_income=-478925792.0, equity=2397985000.0
+INFO:stock_screener.fetcher:Fetched ANELE: price=14.49, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ANELE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ANHYT:BIST: revenue=37817405440.0, net_income=5994213376.0, equity=13657230000.0
+INFO:stock_screener.fetcher:Fetched ANHYT: price=107.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ANHYT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARASE:BIST: revenue=32719669248.0, net_income=2239980288.0, equity=19952000000.0
+INFO:stock_screener.fetcher:Fetched ARASE: price=86.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARASE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARCLK:BIST: revenue=523933319168.0, net_income=-8355687936.0, equity=75423810347.316
+INFO:stock_screener.fetcher:Fetched ARCLK: price=670.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARCLK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARENA:BIST: revenue=36221669376.0, net_income=-772013824.0, equity=2470900000.0
+INFO:stock_screener.fetcher:Fetched ARENA: price=25.32, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARENA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARDYZ:BIST: revenue=4224605440.0, net_income=511689216.0, equity=2065481770.405
+INFO:stock_screener.fetcher:Fetched ARDYZ: price=39.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARDYZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARFYE:BIST: revenue=252678608.0, net_income=-121464480.0, equity=1624693145.2859998
+INFO:stock_screener.fetcher:Fetched ARFYE: price=24.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARFYE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARMGD:BIST: revenue=12155055104.0, net_income=689586624.0, equity=5997116791.274
+INFO:stock_screener.fetcher:Fetched ARMGD: price=86.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARMGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARSAN:BIST: revenue=105872280.0, net_income=-556517504.0, equity=9467226000.0
+INFO:stock_screener.fetcher:Fetched ARSAN: price=3.71, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARSAN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARTMS:BIST: revenue=637121344.0, net_income=243592272.0, equity=2196530000.0
+INFO:stock_screener.fetcher:Fetched ARTMS: price=10.61, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARTMS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ARZUM:BIST: revenue=5284273664.0, net_income=-931168960.0, equity=155400000.0
+INFO:stock_screener.fetcher:Fetched ARZUM: price=10.61, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ARZUM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ASELS:BIST: revenue=180444938240.0, net_income=29949517824.0, equity=250430640000.0
+INFO:stock_screener.fetcher:Fetched ASELS: price=670.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ASELS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ASGYO:BIST: revenue=225741680.0, net_income=650131008.0, equity=20005922000.0
+INFO:stock_screener.fetcher:Fetched ASGYO: price=10.61, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ASGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ASTOR:BIST: revenue=35290767360.0, net_income=7668909568.0, equity=33280306000.0
+INFO:stock_screener.fetcher:Fetched ASTOR: price=10.61, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ASTOR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ASUZU:BIST: revenue=26686840832.0, net_income=904947200.0, equity=2395298670.7580004
+INFO:stock_screener.fetcher:Fetched ASUZU: price=11.94, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ASUZU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATAGY:BIST: revenue=44351352.0, net_income=-6389637.0, equity=706515000.0
+INFO:stock_screener.fetcher:Fetched ATAGY: price=11.94, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATAGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATAKP:BIST: revenue=3920548864.0, net_income=-79751040.0, equity=6301871184.0
+INFO:stock_screener.fetcher:Fetched ATAKP: price=11.94, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATAKP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATATP:BIST: revenue=5660458496.0, net_income=2053605888.0, equity=1189394631.4720001
+INFO:stock_screener.fetcher:Fetched ATATP: price=11.94, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATATP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATATR:BIST: revenue=2529171200.0, net_income=377185984.0, equity=3742867539.18
+INFO:stock_screener.fetcher:Fetched ATATR: price=10.86, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATATR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATEKS:BIST: revenue=1190251392.0, net_income=1716816768.0, equity=7424474400.0
+INFO:stock_screener.fetcher:Fetched ATEKS: price=10.86, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATEKS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AVGYO:BIST: revenue=3268804.0, net_income=-87511480.0, equity=1926216000.0000002
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATLAS:BIST: revenue=5380525568.0, net_income=-23204572.0, equity=450720000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ATSYH:BIST: revenue=66936328.0, net_income=7221782.0, equity=111736000.0
+INFO:stock_screener.fetcher:Fetched AVGYO: price=95.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AVGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched ATLAS: price=10.86, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATLAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched ATSYH: price=10.86, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ATSYH: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AVHOL:BIST: revenue=430295680.0, net_income=325636448.0, equity=1099024000.0
+INFO:stock_screener.fetcher:Fetched AVHOL: price=95.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AVHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AVOD:BIST: revenue=1831773312.0, net_income=-171577968.0, equity=1229850000.0
+INFO:stock_screener.fetcher:Fetched AVOD: price=95.5, source=twelve_data
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AVPGY:BIST: revenue=6837570560.0, net_income=1608988672.0, equity=43191200000.0
+INFO:stock_screener.fetcher:Incomplete data for AVOD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AVTUR:BIST: revenue=25706120.0, net_income=60410912.0, equity=1185120000.0
+INFO:stock_screener.fetcher:Fetched AVTUR: price=50.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AVTUR: missing total_assets
+INFO:stock_screener.fetcher:Fetched AVPGY: price=95.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AVPGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AYCES:BIST: revenue=380029312.0, net_income=-68159240.0, equity=4794450000.0
+INFO:stock_screener.fetcher:Fetched AYCES: price=50.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AYCES: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AYDEM:BIST: revenue=12920463360.0, net_income=-2804072960.0, equity=37115430000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AYEN:BIST: revenue=7869154816.0, net_income=236457408.0, equity=17340697500.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AYES:BIST: revenue=12060553216.0, net_income=1030196160.0, equity=1673550000.0
+INFO:stock_screener.fetcher:Fetched AYDEM: price=50.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AYDEM: missing total_assets
+INFO:stock_screener.fetcher:Fetched AYEN: price=50.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AYEN: missing total_assets
+INFO:stock_screener.fetcher:Fetched AYES: price=775.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AYES: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AYGAZ:BIST: revenue=89657786368.0, net_income=4996552192.0, equity=64496578662.344
+INFO:stock_screener.fetcher:Fetched AYGAZ: price=775.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AYGAZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for AZTEK:BIST: revenue=9009234944.0, net_income=-409740192.0, equity=1878000000.0
+INFO:stock_screener.fetcher:Fetched AZTEK: price=775.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for AZTEK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BAHKM:BIST: revenue=979867520.0, net_income=-274371488.0, equity=1212255000.0
+INFO:stock_screener.fetcher:Fetched BAHKM: price=35.82, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BAHKM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BAGFS:BIST: revenue=4266616576.0, net_income=481377536.0, equity=6907815000.0
+INFO:stock_screener.fetcher:Fetched BAGFS: price=775.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BAGFS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BAKAB:BIST: revenue=5774151680.0, net_income=-175418384.0, equity=2757168000.0
+INFO:stock_screener.fetcher:Fetched BAKAB: price=103.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BAKAB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BALAT:BIST: revenue=4562461.0, net_income=-65135216.0, equity=101090899.308
+INFO:stock_screener.fetcher:Fetched BALAT: price=103.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BALAT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BALSU:BIST: revenue=13055351808.0, net_income=-796205888.0, equity=5061824000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BANVT:BIST: revenue=33492361216.0, net_income=-3115211008.0, equity=11071009818.036
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BARMA:BIST: revenue=3380104448.0, net_income=-21588404.0, equity=4336762500.0
+INFO:stock_screener.fetcher:Fetched BALSU: price=103.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BALSU: missing total_assets
+INFO:stock_screener.fetcher:Fetched BANVT: price=151.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BANVT: missing total_assets
+INFO:stock_screener.fetcher:Fetched BARMA: price=13.88, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BARMA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BASCM:BIST: revenue=11254602752.0, net_income=392044768.0, equity=7835520000.0
+INFO:stock_screener.fetcher:Fetched BASCM: price=13.88, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BASCM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BEGYO:BIST: revenue=156252400.0, net_income=-97541208.0, equity=5202145000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BASGZ:BIST: revenue=47753195520.0, net_income=3401609728.0, equity=28592199999.999996
+INFO:stock_screener.fetcher:Fetched BEGYO: price=22.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BEGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched BASGZ: price=13.88, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BASGZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BAYRK:BIST: revenue=230640800.0, net_income=-195613232.0, equity=211999993.216
+INFO:stock_screener.fetcher:Fetched BAYRK: price=13.88, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BAYRK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BERA:BIST: revenue=19129878528.0, net_income=164262784.0, equity=29864038400.000004
+INFO:stock_screener.fetcher:Fetched BERA: price=22.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BERA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BESLR:BIST: revenue=32493955072.0, net_income=524447808.0, equity=16711528000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BEYAZ:BIST: revenue=20209807360.0, net_income=132333248.0, equity=1334217500.0
+INFO:stock_screener.fetcher:Fetched BESLR: price=22.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BESLR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BESTE:BIST: revenue=448686816.0, net_income=190257696.0, equity=3839635350.0
+INFO:stock_screener.fetcher:Fetched BEYAZ: price=22.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BEYAZ: missing total_assets
+INFO:stock_screener.fetcher:Fetched BESTE: price=22.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BESTE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BFREN:BIST: revenue=2933192960.0, net_income=108501304.0, equity=575489619.7820001
+INFO:stock_screener.fetcher:Fetched BFREN: price=22.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BFREN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIGEN:BIST: revenue=1522681856.0, net_income=-55567576.0, equity=3951873000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIGCH:BIST: revenue=4610500096.0, net_income=10670085.0, equity=1319310000.0
+INFO:stock_screener.fetcher:Fetched BIGEN: price=9.45, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIGEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIENY:BIST: revenue=11996122112.0, net_income=-1612953088.0, equity=12989141000.0
+INFO:stock_screener.fetcher:Fetched BIGCH: price=22.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIGCH: missing total_assets
+INFO:stock_screener.fetcher:Fetched BIENY: price=22.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIENY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIGTK:BIST: revenue=584353152.0, net_income=-64578772.0, equity=1165727084.1639998
+INFO:stock_screener.fetcher:Fetched BIGTK: price=342.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIGTK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIMAS:BIST: revenue=721062526976.0, net_income=18632108032.0, equity=165584690760.0
+INFO:stock_screener.fetcher:Fetched BIMAS: price=670.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIMAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BINHO:BIST: revenue=nan, net_income=1461685504.0, equity=13529803050.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BINBN:BIST: revenue=541178368.0, net_income=-400331648.0, equity=1548176000.0
+INFO:stock_screener.fetcher:Fetched BINHO: price=9.28, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BINHO: missing revenue, total_assets
+INFO:stock_screener.fetcher:Fetched BINBN: price=159.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BINBN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIOEN:BIST: revenue=2942904064.0, net_income=-1382308096.0, equity=2788500000.0
+INFO:stock_screener.fetcher:Fetched BIOEN: price=15.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIOEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BIZIM:BIST: revenue=39410925568.0, net_income=-792547008.0, equity=333573326.72999996
+INFO:stock_screener.fetcher:Fetched BIZIM: price=15.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BIZIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BJKAS:BIST: revenue=5955621888.0, net_income=-1119024384.0, equity=3085750425.8139997
+INFO:stock_screener.fetcher:Fetched BJKAS: price=15.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BJKAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BLCYT:BIST: revenue=407073216.0, net_income=312065760.0, equity=3945900000.0000005
+INFO:stock_screener.fetcher:Fetched BLCYT: price=15.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BLCYT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BLUME:BIST: revenue=227567248.0, net_income=2253204.0, equity=940814728.56
+INFO:stock_screener.fetcher:Fetched BLUME: price=5.93, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BLUME: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BMSCH:BIST: revenue=2521676544.0, net_income=-76830536.0, equity=1429400000.0
+INFO:stock_screener.fetcher:Fetched BMSCH: price=5.93, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BMSCH: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BMSTL:BIST: revenue=2486444800.0, net_income=-70252176.0, equity=1451700000.0000002
+INFO:stock_screener.fetcher:Fetched BMSTL: price=5.93, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BMSTL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BNTAS:BIST: revenue=1337887104.0, net_income=240391680.0, equity=1516618954.305
+INFO:stock_screener.fetcher:Fetched BNTAS: price=5.93, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BNTAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BOBET:BIST: revenue=11300495360.0, net_income=-1147323904.0, equity=6714600000.000001
+INFO:stock_screener.fetcher:Fetched BOBET: price=19.03, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BOBET: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BORSK:BIST: revenue=4476371456.0, net_income=-186480944.0, equity=7050240000.0
+INFO:stock_screener.fetcher:Fetched BORSK: price=19.03, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BORSK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BORLS:BIST: revenue=6300405760.0, net_income=-2259777024.0, equity=1128717732.222
+INFO:stock_screener.fetcher:Fetched BORLS: price=19.03, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BORLS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BOSSA:BIST: revenue=6908200448.0, net_income=285034752.0, equity=10396687116.518002
+INFO:stock_screener.fetcher:Fetched BOSSA: price=19.03, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BOSSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRISA:BIST: revenue=41347698688.0, net_income=-1102798976.0, equity=23562040438.125
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRKO:BIST: revenue=160698160.0, net_income=138147568.0, equity=2127020000.0
+INFO:stock_screener.fetcher:Fetched BRISA: price=12.3, source=twelve_data
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRKSN:BIST: revenue=809979520.0, net_income=19610018.0, equity=791481600.0
+INFO:stock_screener.fetcher:Incomplete data for BRISA: missing total_assets
+INFO:stock_screener.fetcher:Fetched BRKO: price=12.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRKO: missing total_assets
+INFO:stock_screener.fetcher:Fetched BRKSN: price=12.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRKSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRKVY:BIST: revenue=1518274048.0, net_income=314264000.0, equity=1300768000.0
+INFO:stock_screener.fetcher:Fetched BRKVY: price=12.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRKVY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRMEN:BIST: revenue=200225504.0, net_income=-34881612.0, equity=-26240688.641999997
+INFO:stock_screener.fetcher:Fetched BRMEN: price=9.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRMEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRLSM:BIST: revenue=4675369472.0, net_income=-200768000.0, equity=1759520000.0
+INFO:stock_screener.fetcher:Fetched BRLSM: price=9.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRLSM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRSAN:BIST: revenue=71453573120.0, net_income=1271661056.0, equity=37734916666.19399
+INFO:stock_screener.fetcher:Fetched BRSAN: price=9.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRSAN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BRYAT:BIST: revenue=89680728.0, net_income=4640572928.0, equity=34291786652.694004
+INFO:stock_screener.fetcher:Fetched BRYAT: price=9.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BRYAT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BTCIM:BIST: revenue=14289482752.0, net_income=-228756992.0, equity=19931760000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BUCIM:BIST: revenue=12143972352.0, net_income=-802900032.0, equity=15790499999.999998
+INFO:stock_screener.fetcher:Fetched BTCIM: price=41.28, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BTCIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BSOKE:BIST: revenue=5814769152.0, net_income=-120381000.0, equity=12627200000.0
+INFO:stock_screener.fetcher:Fetched BUCIM: price=41.28, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BUCIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BULGS:BIST: revenue=1329374720.0, net_income=877532992.0, equity=6506236000.0
+INFO:stock_screener.fetcher:Fetched BSOKE: price=41.28, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BSOKE: missing total_assets
+INFO:stock_screener.fetcher:Fetched BULGS: price=41.28, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BULGS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BURVA:BIST: revenue=140880768.0, net_income=-44837000.0, equity=84233711.808
+INFO:stock_screener.fetcher:Fetched BURVA: price=910.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BURVA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BYDNR:BIST: revenue=3963529984.0, net_income=-100950752.0, equity=1467228000.0
+INFO:stock_screener.fetcher:Fetched BYDNR: price=910.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BYDNR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BURCE:BIST: revenue=580678848.0, net_income=-45424588.0, equity=1093014000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for BVSAN:BIST: revenue=3150489600.0, net_income=182051344.0, equity=2463852800.0
+INFO:stock_screener.fetcher:Fetched BVSAN: price=910.5, source=twelve_data
+INFO:stock_screener.fetcher:Fetched BURCE: price=910.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for BVSAN: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for BURCE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CANTE:BIST: revenue=6160091648.0, net_income=-1708552960.0, equity=39806934081.265
+INFO:stock_screener.fetcher:Fetched CANTE: price=89.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CANTE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CATES:BIST: revenue=6499754496.0, net_income=1787908864.0, equity=12771612000.0
+INFO:stock_screener.fetcher:Fetched CATES: price=89.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CATES: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CCOLA:BIST: revenue=187184513024.0, net_income=14072350720.0, equity=75839122428.608
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CASA:BIST: revenue=1141650816.0, net_income=-5736743.0, equity=225413474.856
+INFO:stock_screener.fetcher:Fetched CCOLA: price=89.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CCOLA: missing total_assets
+INFO:stock_screener.fetcher:Fetched CASA: price=89.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CASA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CELHA:BIST: revenue=2135086592.0, net_income=-661524672.0, equity=5490286058.026
+INFO:stock_screener.fetcher:Fetched CELHA: price=5.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CELHA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CEMTS:BIST: revenue=6271396864.0, net_income=-115959912.0, equity=6524500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CEMZY:BIST: revenue=2801265920.0, net_income=-497123136.0, equity=4243110000.0
+INFO:stock_screener.fetcher:Fetched CEMTS: price=5.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CEMTS: missing total_assets
+INFO:stock_screener.fetcher:Fetched CEMZY: price=5.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CEMZY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CEMAS:BIST: revenue=1301730688.0, net_income=-590819264.0, equity=4091843000.0
+INFO:stock_screener.fetcher:Fetched CEMAS: price=5.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CEMAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CEOEM:BIST: revenue=884571520.0, net_income=-798409.0, equity=410124000.0
+INFO:stock_screener.fetcher:Fetched CEOEM: price=35.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CEOEM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CIMSA:BIST: revenue=45906817024.0, net_income=3102161920.0, equity=33223343087.69
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CGCAM:BIST: revenue=2454926080.0, net_income=455497952.0, equity=4618656000.0
+INFO:stock_screener.fetcher:Fetched CIMSA: price=35.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CIMSA: missing total_assets
+INFO:stock_screener.fetcher:Fetched CGCAM: price=35.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CGCAM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CLEBI:BIST: revenue=18227730432.0, net_income=3362161920.0, equity=8392077900.0
+INFO:stock_screener.fetcher:Fetched CLEBI: price=35.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CLEBI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CMBTN:BIST: revenue=5036527104.0, net_income=-300417120.0, equity=388123830.0
+INFO:stock_screener.fetcher:Fetched CMBTN: price=194.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CMBTN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CMENT:BIST: revenue=17030749184.0, net_income=1200254976.0, equity=15827150411.046
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CONSE:BIST: revenue=1684563328.0, net_income=121350176.0, equity=2305290000.0
+INFO:stock_screener.fetcher:Fetched CMENT: price=318.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CMENT: missing total_assets
+INFO:stock_screener.fetcher:Fetched CONSE: price=3.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CONSE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for COSMO:BIST: revenue=638571072.0, net_income=12733327.0, equity=157802876.856
+INFO:stock_screener.fetcher:Fetched COSMO: price=194.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for COSMO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CRDFA:BIST: revenue=1034958784.0, net_income=916250624.0, equity=1460300000.0
+INFO:stock_screener.fetcher:Fetched CRDFA: price=120.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CRDFA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CUSAN:BIST: revenue=2808424704.0, net_income=-584763648.0, equity=875235000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CVKMD:BIST: revenue=3277373696.0, net_income=141411392.0, equity=8894200000.0
+INFO:stock_screener.fetcher:Fetched CUSAN: price=120.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CUSAN: missing total_assets
+INFO:stock_screener.fetcher:Fetched CVKMD: price=120.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CVKMD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CRFSA:BIST: revenue=83611590656.0, net_income=-6539269120.0, equity=-986541247.286
+INFO:stock_screener.fetcher:Fetched CRFSA: price=120.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CRFSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for CWENE:BIST: revenue=16355768320.0, net_income=2215087616.0, equity=13949837846.432999
+INFO:stock_screener.fetcher:Fetched CWENE: price=1.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for CWENE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DAPGM:BIST: revenue=8010133504.0, net_income=1043609920.0, equity=14678350000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DARDL:BIST: revenue=13992502272.0, net_income=-1206892800.0, equity=7131656075.544
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DAGI:BIST: revenue=2364372736.0, net_income=-194025072.0, equity=1590400000.0
+INFO:stock_screener.fetcher:Fetched DAPGM: price=1.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DAPGM: missing total_assets
+INFO:stock_screener.fetcher:Fetched DARDL: price=1.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DARDL: missing total_assets
+INFO:stock_screener.fetcher:Fetched DAGI: price=1.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DAGI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DCTTR:BIST: revenue=2709231104.0, net_income=-119702832.0, equity=2904720000.0
+INFO:stock_screener.fetcher:Fetched DCTTR: price=2.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DCTTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DENGE:BIST: revenue=602646528.0, net_income=-454260768.0, equity=1375170253.408
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DERIM:BIST: revenue=4508626944.0, net_income=93039600.0, equity=628938000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DERHL:BIST: revenue=4331770368.0, net_income=9155882.0, equity=1700762285.5830002
+INFO:stock_screener.fetcher:Fetched DENGE: price=2.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DENGE: missing total_assets
+INFO:stock_screener.fetcher:Fetched DERHL: price=2.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DERHL: missing total_assets
+INFO:stock_screener.fetcher:Fetched DERIM: price=34.66, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DERIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DESA:BIST: revenue=3818227200.0, net_income=580509056.0, equity=3834250000.0
+INFO:stock_screener.fetcher:Fetched DESA: price=38.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DESA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DESPC:BIST: revenue=10932543488.0, net_income=-42702328.0, equity=404616000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DEVA:BIST: revenue=19245645824.0, net_income=-806988480.0, equity=26319938050.055996
+INFO:stock_screener.fetcher:Fetched DESPC: price=38.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DESPC: missing total_assets
+INFO:stock_screener.fetcher:Fetched DEVA: price=38.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DEVA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DGATE:BIST: revenue=15944503296.0, net_income=17344008.0, equity=326112938.88
+INFO:stock_screener.fetcher:Fetched DGATE: price=38.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DGATE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DGGYO:BIST: revenue=1148233728.0, net_income=-234907168.0, equity=13783635243.576
+INFO:stock_screener.fetcher:Fetched DGGYO: price=27.38, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DGGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DGNMO:BIST: revenue=12808491008.0, net_income=-2823797760.0, equity=2262421502.042
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DIRIT:BIST: revenue=3770235.0, net_income=-51952404.0, equity=159409200.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DMRGD:BIST: revenue=1210863616.0, net_income=106578160.0, equity=1722548800.0
+INFO:stock_screener.fetcher:Fetched DGNMO: price=3.56, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DGNMO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DITAS:BIST: revenue=1619646336.0, net_income=-297355104.0, equity=1972170000.0000002
+INFO:stock_screener.fetcher:Fetched DIRIT: price=28.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DIRIT: missing total_assets
+INFO:stock_screener.fetcher:Fetched DMRGD: price=4.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DMRGD: missing total_assets
+INFO:stock_screener.fetcher:Fetched DITAS: price=27.38, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DITAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DMSAS:BIST: revenue=3274867200.0, net_income=-211535120.0, equity=1301000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOCO:BIST: revenue=2391130112.0, net_income=104050000.0, equity=448399672.85
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DNISI:BIST: revenue=542649600.0, net_income=23913952.0, equity=1387050328.125
+INFO:stock_screener.fetcher:Fetched DOCO: price=105.0, source=twelve_data
+INFO:stock_screener.fetcher:Fetched DMSAS: price=4.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOCO: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for DMSAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOAS:BIST: revenue=255780847616.0, net_income=3141080064.0, equity=67148400000.00001
+INFO:stock_screener.fetcher:Fetched DNISI: price=4.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DNISI: missing total_assets
+INFO:stock_screener.fetcher:Fetched DOAS: price=4.24, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOFRB:BIST: revenue=1011968704.0, net_income=244951328.0, equity=1999650000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOFER:BIST: revenue=6891384320.0, net_income=17104192.0, equity=1489082500.0
+INFO:stock_screener.fetcher:Fetched DOFRB: price=105.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOFRB: missing total_assets
+INFO:stock_screener.fetcher:Fetched DOFER: price=105.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOFER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOGUB:BIST: revenue=67339344.0, net_income=-50583632.0, equity=59709000.0
+INFO:stock_screener.fetcher:Fetched DOGUB: price=105.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOGUB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOHOL:BIST: revenue=93680386048.0, net_income=1792286976.0, equity=83723152789.93399
+INFO:stock_screener.fetcher:Fetched DOHOL: price=1850.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DOKTA:BIST: revenue=13700431872.0, net_income=-1047229120.0, equity=6781968000.0
+INFO:stock_screener.fetcher:Fetched DOKTA: price=1850.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DOKTA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DSTKF:BIST: revenue=7014794240.0, net_income=3765779968.0, equity=12206333321.127
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DUNYH:BIST: revenue=19261262.0, net_income=794702080.0, equity=1570673148.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DURDO:BIST: revenue=2561000704.0, net_income=-287533280.0, equity=995000000.0
+INFO:stock_screener.fetcher:Fetched DSTKF: price=1850.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DSTKF: missing total_assets
+INFO:stock_screener.fetcher:Fetched DURDO: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DURDO: missing total_assets
+INFO:stock_screener.fetcher:Fetched DUNYH: price=1850.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DUNYH: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DURKN:BIST: revenue=1118052992.0, net_income=136706016.0, equity=2377580000.0
+INFO:stock_screener.fetcher:Fetched DURKN: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DURKN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EBEBK:BIST: revenue=27675019264.0, net_income=55498376.0, equity=4565920000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DYOBY:BIST: revenue=10217900032.0, net_income=-427345600.0, equity=7373100000.000001
+INFO:stock_screener.fetcher:Fetched EBEBK: price=33.96, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EBEBK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for DZGYO:BIST: revenue=110744736.0, net_income=283764096.0, equity=5671600000.0
+INFO:stock_screener.fetcher:Fetched DYOBY: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DYOBY: missing total_assets
+INFO:stock_screener.fetcher:Fetched DZGYO: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for DZGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ECILC:BIST: revenue=9871045632.0, net_income=2088765952.0, equity=61040228667.6
+INFO:stock_screener.fetcher:Fetched ECILC: price=33.96, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ECILC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ECOGR:BIST: revenue=6263413760.0, net_income=451395776.0, equity=16757820000.0
+INFO:stock_screener.fetcher:Fetched ECOGR: price=33.96, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ECOGR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EDATA:BIST: revenue=2443133184.0, net_income=-13600371.0, equity=889600040.0000001
+INFO:stock_screener.fetcher:Fetched EDATA: price=33.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EDATA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ECZYT:BIST: revenue=nan, net_income=820434240.0, equity=27777225000.0
+INFO:stock_screener.fetcher:Fetched ECZYT: price=33.96, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ECZYT: missing revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EDIP:BIST: revenue=766719040.0, net_income=662031104.0, equity=6818240000.0
+INFO:stock_screener.fetcher:Fetched EDIP: price=33.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EDIP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EFOR:BIST: revenue=12334739456.0, net_income=2248383.0, equity=4610826000.0
+INFO:stock_screener.fetcher:Fetched EFOR: price=33.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EFOR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGEEN:BIST: revenue=4730015232.0, net_income=-94883000.0, equity=7815883950.000001
+INFO:stock_screener.fetcher:Fetched EGEEN: price=33.44, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGEEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGEGY:BIST: revenue=2413587968.0, net_income=811875328.0, equity=1716000000.0
+INFO:stock_screener.fetcher:Fetched EGEGY: price=29.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGEGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGEPO:BIST: revenue=1345512832.0, net_income=2662766.0, equity=1907500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGGUB:BIST: revenue=3597219840.0, net_income=715392896.0, equity=8548399999.999999
+INFO:stock_screener.fetcher:Fetched EGEPO: price=29.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGEPO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGPRO:BIST: revenue=12382242816.0, net_income=1124663552.0, equity=8884590000.0
+INFO:stock_screener.fetcher:Fetched EGGUB: price=29.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGGUB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EGSER:BIST: revenue=4515677696.0, net_income=-1167441024.0, equity=1990800000.0
+INFO:stock_screener.fetcher:Fetched EGPRO: price=29.42, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGPRO: missing total_assets
+INFO:stock_screener.fetcher:Fetched EGSER: price=5.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EGSER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EKGYO:BIST: revenue=99829170176.0, net_income=6002283008.0, equity=126023077390.236
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EKIZ:BIST: revenue=427586080.0, net_income=-53818020.0, equity=328958056.57
+INFO:stock_screener.fetcher:Fetched EKGYO: price=5.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EKGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched EKIZ: price=5.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EKIZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EKOS:BIST: revenue=2322993920.0, net_income=-462516192.0, equity=3138240000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EKSUN:BIST: revenue=9156030464.0, net_income=-343893120.0, equity=2251800000.0
+INFO:stock_screener.fetcher:Fetched EKOS: price=5.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EKOS: missing total_assets
+INFO:stock_screener.fetcher:Fetched EKSUN: price=5.21, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EKSUN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ELITE:BIST: revenue=2150186752.0, net_income=247056336.0, equity=2249985600.0
+INFO:stock_screener.fetcher:Fetched ELITE: price=5.21, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ELITE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EMKEL:BIST: revenue=876130816.0, net_income=-56667892.0, equity=979800000.0
+INFO:stock_screener.fetcher:Fetched EMKEL: price=5.21, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EMKEL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EMNIS:BIST: revenue=475847840.0, net_income=-31616298.0, equity=205350200.0
+INFO:stock_screener.fetcher:Fetched EMNIS: price=5.21, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EMNIS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EMPAE:BIST: revenue=nan, net_income=nan, equity=1285030000.0
+INFO:stock_screener.fetcher:Fetched EMPAE: price=45.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EMPAE: missing net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENDAE:BIST: revenue=1214006528.0, net_income=-571089024.0, equity=9792152770.806
+INFO:stock_screener.fetcher:Fetched ENDAE: price=45.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ENDAE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENJSA:BIST: revenue=233065037824.0, net_income=3171281920.0, equity=95768158501.42
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENERY:BIST: revenue=26356955136.0, net_income=3273095680.0, equity=48357000000.0
+INFO:stock_screener.fetcher:Fetched ENERY: price=45.0, source=twelve_data
+INFO:stock_screener.fetcher:Fetched ENJSA: price=45.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ENERY: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for ENJSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENKAI:BIST: revenue=156507111424.0, net_income=36183302144.0, equity=373216393686.53796
+INFO:stock_screener.fetcher:Fetched ENKAI: price=5.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ENKAI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENSRI:BIST: revenue=462354528.0, net_income=-75830816.0, equity=1409538255.504
+INFO:stock_screener.fetcher:Fetched ENSRI: price=5.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ENSRI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EPLAS:BIST: revenue=1531010176.0, net_income=-248572656.0, equity=3320135954.2139997
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ENTRA:BIST: revenue=4205548032.0, net_income=-1818598016.0, equity=35195220000.0
+INFO:stock_screener.fetcher:Fetched EPLAS: price=5.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EPLAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ERBOS:BIST: revenue=5579677184.0, net_income=-129795160.0, equity=3511900000.0
+INFO:stock_screener.fetcher:Fetched ENTRA: price=5.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ENTRA: missing total_assets
+INFO:stock_screener.fetcher:Fetched ERBOS: price=47.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ERBOS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ERCB:BIST: revenue=7076537344.0, net_income=-405835680.0, equity=3552711113.0420003
+INFO:stock_screener.fetcher:Fetched ERCB: price=47.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ERCB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EREGL:BIST: revenue=208909910016.0, net_income=511800992.0, equity=328504801947.129
+INFO:stock_screener.fetcher:Fetched EREGL: price=2.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EREGL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ERSU:BIST: revenue=162196752.0, net_income=-123051784.0, equity=426492000.0
+INFO:stock_screener.fetcher:Fetched ERSU: price=47.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ERSU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ESCAR:BIST: revenue=3710826752.0, net_income=-1867111168.0, equity=5794000000.0
+INFO:stock_screener.fetcher:Fetched ESCAR: price=47.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ESCAR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ESCOM:BIST: revenue=1668149120.0, net_income=1151633664.0, equity=3321921217.905
+INFO:stock_screener.fetcher:Fetched ESCOM: price=3.81, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ESCOM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ETYAT:BIST: revenue=63225664.0, net_income=-20781046.0, equity=66920000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ETILR:BIST: revenue=2124357888.0, net_income=11383391.0, equity=516720000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ESEN:BIST: revenue=1483134848.0, net_income=-822295360.0, equity=11345880000.0
+INFO:stock_screener.fetcher:Fetched ETYAT: price=3.81, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ETYAT: missing total_assets
+INFO:stock_screener.fetcher:Fetched ETILR: price=3.81, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ETILR: missing total_assets
+INFO:stock_screener.fetcher:Fetched ESEN: price=3.81, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ESEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EUHOL:BIST: revenue=-402352.0, net_income=-27062748.0, equity=1364400000.0
+INFO:stock_screener.fetcher:Fetched EUHOL: price=13.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EUHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EUKYO:BIST: revenue=64269440.0, net_income=-19840976.0, equity=78580000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EUREN:BIST: revenue=7300618752.0, net_income=835341312.0, equity=10231200000.0
+INFO:stock_screener.fetcher:Fetched EUKYO: price=13.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EUKYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched EUREN: price=13.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EUREN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EUPWR:BIST: revenue=12999678976.0, net_income=600390016.0, equity=8866125000.0
+INFO:stock_screener.fetcher:Fetched EUPWR: price=13.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EUPWR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EUYO:BIST: revenue=65656320.0, net_income=-16708911.0, equity=79520000.0
+INFO:stock_screener.fetcher:Fetched EUYO: price=16.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EUYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for EYGYO:BIST: revenue=709515520.0, net_income=-656331520.0, equity=1826300000.0
+INFO:stock_screener.fetcher:Fetched EYGYO: price=16.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for EYGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FADE:BIST: revenue=1033295616.0, net_income=31400106.0, equity=1807769459.9999998
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FENER:BIST: revenue=9415200768.0, net_income=-1426744320.0, equity=-1006250000.0
+INFO:stock_screener.fetcher:Fetched FADE: price=16.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FADE: missing total_assets
+INFO:stock_screener.fetcher:Fetched FENER: price=16.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FENER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FLAP:BIST: revenue=358178016.0, net_income=17072384.0, equity=1007812500.0
+INFO:stock_screener.fetcher:Fetched FLAP: price=2.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FLAP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FORMT:BIST: revenue=923422656.0, net_income=-108030848.0, equity=2110549593.7440002
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FMIZP:BIST: revenue=636156928.0, net_income=72688232.0, equity=666826030.53
+INFO:stock_screener.fetcher:Fetched FORMT: price=2.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FORMT: missing total_assets
+INFO:stock_screener.fetcher:Fetched FMIZP: price=2.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FMIZP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FONET:BIST: revenue=855070464.0, net_income=222880800.0, equity=1691352000.0
+INFO:stock_screener.fetcher:Fetched FONET: price=2.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FONET: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FORTE:BIST: revenue=1781510144.0, net_income=1884183040.0, equity=1943402000.0
+INFO:stock_screener.fetcher:Fetched FORTE: price=30.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FORTE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FRIGO:BIST: revenue=1226722304.0, net_income=-296513440.0, equity=2492210131.45
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FRMPL:BIST: revenue=3455288576.0, net_income=162796432.0, equity=2957120000.0
+INFO:stock_screener.fetcher:Fetched FRIGO: price=30.84, source=twelve_data
+INFO:stock_screener.fetcher:Fetched FRMPL: price=30.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FRIGO: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for FRMPL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FROTO:BIST: revenue=830827921408.0, net_income=33986134016.0, equity=156021604200.0
+INFO:stock_screener.fetcher:Fetched FROTO: price=2.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FROTO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for FZLGY:BIST: revenue=1326731264.0, net_income=-425349984.0, equity=4088750000.0
+INFO:stock_screener.fetcher:Fetched FZLGY: price=30.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for FZLGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GARAN:BIST: revenue=328837300224.0, net_income=109816315904.0, equity=444074400000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GATEG:BIST: revenue=41792704.0, net_income=13100791.0, equity=70333278.633
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GARFA:BIST: revenue=3427255040.0, net_income=2130075008.0, equity=5303445000.0
+INFO:stock_screener.fetcher:Fetched GARAN: price=2.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GARAN: missing total_assets
+INFO:stock_screener.fetcher:Fetched GATEG: price=293.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GATEG: missing total_assets
+INFO:stock_screener.fetcher:Fetched GARFA: price=26.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GARFA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GEDIK:BIST: revenue=433596661760.0, net_income=1507707136.0, equity=5284000000.0
+INFO:stock_screener.fetcher:Fetched GEDIK: price=5.33, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GEDIK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GENIL:BIST: revenue=19181445120.0, net_income=814437248.0, equity=5850000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GENKM:BIST: revenue=4689738240.0, net_income=249181168.0, equity=6094263000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GEDZA:BIST: revenue=1066938240.0, net_income=16355260.0, equity=1052979264.0
+INFO:stock_screener.fetcher:Fetched GENIL: price=9.61, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GENIL: missing total_assets
+INFO:stock_screener.fetcher:Fetched GENKM: price=26.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GENKM: missing total_assets
+INFO:stock_screener.fetcher:Fetched GEDZA: price=27.38, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GEDZA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GENTS:BIST: revenue=5077942784.0, net_income=259927744.0, equity=3464250000.0
+INFO:stock_screener.fetcher:Fetched GENTS: price=26.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GENTS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GESAN:BIST: revenue=20597209088.0, net_income=903414016.0, equity=13639000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GEREL:BIST: revenue=1815476736.0, net_income=-212103808.0, equity=2782763690.987
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GIPTA:BIST: revenue=2260492032.0, net_income=223835680.0, equity=3317292000.0
+INFO:stock_screener.fetcher:Fetched GESAN: price=44.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GESAN: missing total_assets
+INFO:stock_screener.fetcher:Fetched GIPTA: price=44.04, source=twelve_data
+INFO:stock_screener.fetcher:Fetched GEREL: price=26.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GIPTA: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for GEREL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GLBMD:BIST: revenue=27374555136.0, net_income=-71348248.0, equity=569114000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GLCVY:BIST: revenue=7708781056.0, net_income=1498372992.0, equity=3846639500.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GLRYH:BIST: revenue=34047322112.0, net_income=1195392256.0, equity=5266800000.0
+INFO:stock_screener.fetcher:Fetched GLBMD: price=44.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GLBMD: missing total_assets
+INFO:stock_screener.fetcher:Fetched GLRYH: price=4.02, source=twelve_data
+INFO:stock_screener.fetcher:Fetched GLCVY: price=44.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GLRYH: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for GLCVY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GLRMK:BIST: revenue=45532848128.0, net_income=4279432704.0, equity=17746548600.0
+INFO:stock_screener.fetcher:Fetched GLRMK: price=4.02, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GLRMK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GLYHO:BIST: revenue=28237907968.0, net_income=5088821760.0, equity=14369550000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GMTAS:BIST: revenue=nan, net_income=nan, equity=3846599999.9999995
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GOKNR:BIST: revenue=15130476544.0, net_income=468067808.0, equity=9793000000.0
+INFO:stock_screener.fetcher:Fetched GMTAS: price=26.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GMTAS: missing net_income, revenue, total_assets
+INFO:stock_screener.fetcher:Fetched GLYHO: price=4.02, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GLYHO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GOLTS:BIST: revenue=6790769664.0, net_income=370279776.0, equity=9716634000.0
+INFO:stock_screener.fetcher:Fetched GOKNR: price=19.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GOKNR: missing total_assets
+INFO:stock_screener.fetcher:Fetched GOLTS: price=19.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GOLTS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GOZDE:BIST: revenue=463920.0, net_income=-6409959424.0, equity=25396525000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GRSEL:BIST: revenue=11555018752.0, net_income=2889090304.0, equity=10490598000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GOODY:BIST: revenue=27032471552.0, net_income=-2972589056.0, equity=2002320000.0
+INFO:stock_screener.fetcher:Fetched GOZDE: price=19.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GOZDE: missing total_assets
+INFO:stock_screener.fetcher:Fetched GRSEL: price=315.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GRSEL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GRNYO:BIST: revenue=521233408.0, net_income=-21488870.0, equity=88687500.00000001
+INFO:stock_screener.fetcher:Fetched GOODY: price=19.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GOODY: missing total_assets
+INFO:stock_screener.fetcher:Fetched GRNYO: price=232.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GRNYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GSDDE:BIST: revenue=584830976.0, net_income=187098000.0, equity=2780700000.0
+INFO:stock_screener.fetcher:Fetched GSDDE: price=232.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GSDDE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GSDHO:BIST: revenue=5378480128.0, net_income=208288992.0, equity=11872800000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GSRAY:BIST: revenue=12779452416.0, net_income=-1003121024.0, equity=13135500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GRTHO:BIST: revenue=7272336384.0, net_income=1796484864.0, equity=9016750000.0
+INFO:stock_screener.fetcher:Fetched GSDHO: price=4.23, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GSDHO: missing total_assets
+INFO:stock_screener.fetcher:Fetched GRTHO: price=232.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GRTHO: missing total_assets
+INFO:stock_screener.fetcher:Fetched GSRAY: price=1.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GSRAY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GUBRF:BIST: revenue=56662892544.0, net_income=6056978432.0, equity=27475842000.0
+INFO:stock_screener.fetcher:Fetched GUBRF: price=460.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GUBRF: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GZNMI:BIST: revenue=3465061376.0, net_income=-129712912.0, equity=1365520000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GUNDG:BIST: revenue=1359811840.0, net_income=-83924640.0, equity=761826000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for GWIND:BIST: revenue=2939691776.0, net_income=845427584.0, equity=14129100000.0
+INFO:stock_screener.fetcher:Fetched GZNMI: price=56.25, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GZNMI: missing total_assets
+INFO:stock_screener.fetcher:Fetched GUNDG: price=869.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GUNDG: missing total_assets
+INFO:stock_screener.fetcher:Fetched GWIND: price=56.25, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for GWIND: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HALKB:BIST: revenue=147759382528.0, net_income=27130695680.0, equity=218366959000.113
+INFO:stock_screener.fetcher:Fetched HALKB: price=56.25, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HALKB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HATEK:BIST: revenue=994290112.0, net_income=-73177536.0, equity=1564668000.0
+INFO:stock_screener.fetcher:Fetched HATEK: price=56.25, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HATEK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HATSN:BIST: revenue=4728937472.0, net_income=-191349424.0, equity=5802857000.0
+INFO:stock_screener.fetcher:Fetched HATSN: price=37.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HATSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HDFGS:BIST: revenue=1099550720.0, net_income=296221344.0, equity=3745950000.0
+INFO:stock_screener.fetcher:Fetched HDFGS: price=2.89, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HDFGS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HEDEF:BIST: revenue=2624698112.0, net_income=1554196608.0, equity=5760642181.545
+INFO:stock_screener.fetcher:Fetched HEDEF: price=126.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HEDEF: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HEKTS:BIST: revenue=6127914496.0, net_income=-4046103552.0, equity=13960080000.0
+INFO:stock_screener.fetcher:Fetched HEKTS: price=2.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HEKTS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HKTM:BIST: revenue=793619328.0, net_income=-117934048.0, equity=986790000.0
+INFO:stock_screener.fetcher:Fetched HKTM: price=11.72, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HKTM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HLGYO:BIST: revenue=19783251968.0, net_income=13278610432.0, equity=54290307514.722
+INFO:stock_screener.fetcher:Fetched HLGYO: price=54.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HLGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HOROZ:BIST: revenue=12026305536.0, net_income=-68094096.0, equity=3761046723.376
+INFO:stock_screener.fetcher:Fetched HOROZ: price=54.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HOROZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HRKET:BIST: revenue=5948037120.0, net_income=-1585711104.0, equity=6665241600.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HTTBT:BIST: revenue=1652786048.0, net_income=388878912.0, equity=2967900000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HUBVC:BIST: revenue=2200299.0, net_income=-550312000.0, equity=525000000.0
+INFO:stock_screener.fetcher:Fetched HTTBT: price=54.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HTTBT: missing total_assets
+INFO:stock_screener.fetcher:Fetched HRKET: price=54.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HRKET: missing total_assets
+INFO:stock_screener.fetcher:Fetched HUBVC: price=36.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HUBVC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HUNER:BIST: revenue=995812480.0, net_income=-234891088.0, equity=5059000000.0
+INFO:stock_screener.fetcher:Fetched HUNER: price=36.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HUNER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for HURGZ:BIST: revenue=1218500352.0, net_income=-810190720.0, equity=2542640000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ICUGS:BIST: revenue=259143632.0, net_income=86778744.0, equity=546617500.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ICBCT:BIST: revenue=3506536960.0, net_income=85397000.0, equity=4791920000.0
+INFO:stock_screener.fetcher:Fetched HURGZ: price=36.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for HURGZ: missing total_assets
+INFO:stock_screener.fetcher:Fetched ICUGS: price=4.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ICUGS: missing total_assets
+INFO:stock_screener.fetcher:Fetched ICBCT: price=36.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ICBCT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IDGYO:BIST: revenue=26534148.0, net_income=58506856.0, equity=297600000.0
+INFO:stock_screener.fetcher:Fetched IDGYO: price=6.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IDGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHAAS:BIST: revenue=546710272.0, net_income=-85831240.0, equity=339203000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHEVA:BIST: revenue=3728145152.0, net_income=26571248.0, equity=2036404999.9999998
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IEYHO:BIST: revenue=2746256640.0, net_income=-711342912.0, equity=3097408486.6340003
+INFO:stock_screener.fetcher:Fetched IHAAS: price=6.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHAAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched IHEVA: price=6.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHEVA: missing total_assets
+INFO:stock_screener.fetcher:Fetched IEYHO: price=6.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IEYHO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHGZT:BIST: revenue=2486140160.0, net_income=231310752.0, equity=4101600000.0
+INFO:stock_screener.fetcher:Fetched IHGZT: price=2.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHGZT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHLAS:BIST: revenue=17160320000.0, net_income=-3231574784.0, equity=2589574345.19
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHLGM:BIST: revenue=1722595200.0, net_income=654764032.0, equity=1155000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IHYAY:BIST: revenue=3372746496.0, net_income=-339908704.0, equity=711000000.0
+INFO:stock_screener.fetcher:Fetched IHLAS: price=2.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHLAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched IHLGM: price=2.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHLGM: missing total_assets
+INFO:stock_screener.fetcher:Fetched IHYAY: price=2.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IHYAY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IMASM:BIST: revenue=1603997056.0, net_income=-130743000.0, equity=3097825000.0
+INFO:stock_screener.fetcher:Fetched IMASM: price=1.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IMASM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INDES:BIST: revenue=91599659008.0, net_income=519274080.0, equity=6685500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INGRM:BIST: revenue=27185969152.0, net_income=-143391648.0, equity=1939800000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INFO:BIST: revenue=29953591296.0, net_income=633880192.0, equity=2974160592.0
+INFO:stock_screener.fetcher:Fetched INDES: price=1.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INDES: missing total_assets
+INFO:stock_screener.fetcher:Fetched INGRM: price=1.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INGRM: missing total_assets
+INFO:stock_screener.fetcher:Fetched INFO: price=1.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INFO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INTEK:BIST: revenue=265740224.0, net_income=121692200.0, equity=207336000.0
+INFO:stock_screener.fetcher:Fetched INTEK: price=3.11, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INTEK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INVES:BIST: revenue=53328808.0, net_income=-2091889536.0, equity=23517000000.0
+INFO:stock_screener.fetcher:Fetched INVES: price=3.11, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INVES: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INVEO:BIST: revenue=-556385216.0, net_income=28955064.0, equity=10318000000.0
+INFO:stock_screener.fetcher:Fetched INVEO: price=3.11, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INVEO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISATR:BIST: revenue=354460696576.0, net_income=67873333248.0, equity=17122.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for INTEM:BIST: revenue=1914736256.0, net_income=-9810190.0, equity=848246749.902
+INFO:stock_screener.fetcher:Fetched ISATR: price=4950000.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISATR: missing total_assets
+INFO:stock_screener.fetcher:Fetched INTEM: price=3.11, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for INTEM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISBIR:BIST: revenue=8983456768.0, net_income=-327345696.0, equity=7204561822.08
+INFO:stock_screener.fetcher:Fetched ISBIR: price=7.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISBIR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISBTR:BIST: revenue=354460696576.0, net_income=67873333248.0, equity=496538.0
+INFO:stock_screener.fetcher:Fetched ISBTR: price=7.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISBTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISDMR:BIST: revenue=120955396096.0, net_income=6111894016.0, equity=147578100000.0
+INFO:stock_screener.fetcher:Fetched ISDMR: price=42.74, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISDMR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISCTR:BIST: revenue=354460696576.0, net_income=67873333248.0, equity=428049486340.0
+INFO:stock_screener.fetcher:Fetched ISCTR: price=7.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISCTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISFIN:BIST: revenue=4594646016.0, net_income=3630137088.0, equity=12077406943.650002
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISGSY:BIST: revenue=6070222848.0, net_income=4440837632.0, equity=8582347710.72
+INFO:stock_screener.fetcher:Fetched ISFIN: price=69.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISFIN: missing total_assets
+INFO:stock_screener.fetcher:Fetched ISGSY: price=69.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISGSY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISGYO:BIST: revenue=3150815488.0, net_income=-958319744.0, equity=50250005000.0
+INFO:stock_screener.fetcher:Fetched ISGYO: price=69.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISKPL:BIST: revenue=2527986944.0, net_income=222810992.0, equity=2851500000.0
+INFO:stock_screener.fetcher:Fetched ISKPL: price=19.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISKPL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISMEN:BIST: revenue=1643807113216.0, net_income=7445432832.0, equity=32383499999.999996
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISKUR:BIST: revenue=354460696576.0, net_income=67873333248.0, equity=77038388195.328
+INFO:stock_screener.fetcher:Fetched ISMEN: price=19.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISMEN: missing total_assets
+INFO:stock_screener.fetcher:Fetched ISKUR: price=19.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISKUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISSEN:BIST: revenue=4928015872.0, net_income=-485402432.0, equity=5897009959.889999
+INFO:stock_screener.fetcher:Fetched ISSEN: price=19.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISSEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ISYAT:BIST: revenue=898180032.0, net_income=-16112596.0, equity=620716232.6600001
+INFO:stock_screener.fetcher:Fetched ISYAT: price=14.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ISYAT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IZFAS:BIST: revenue=329768256.0, net_income=-50133788.0, equity=268439062.5
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IZENR:BIST: revenue=9107543040.0, net_income=695093760.0, equity=16940075000.0
+INFO:stock_screener.fetcher:Fetched IZFAS: price=14.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IZFAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched IZENR: price=14.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IZENR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IZINV:BIST: revenue=82841192.0, net_income=-55745948.0, equity=357043952.92800003
+INFO:stock_screener.fetcher:Fetched IZINV: price=14.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IZINV: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for IZMDC:BIST: revenue=63552847872.0, net_income=-1884059392.0, equity=17821500000.0
+INFO:stock_screener.fetcher:Fetched IZMDC: price=43.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for IZMDC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KAPLM:BIST: revenue=2349067008.0, net_income=-413338432.0, equity=1413580000.0
+INFO:stock_screener.fetcher:Fetched KAPLM: price=43.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KAPLM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for JANTS:BIST: revenue=6079070208.0, net_income=-80765496.0, equity=6605200000.0
+INFO:stock_screener.fetcher:Fetched JANTS: price=43.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for JANTS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KAREL:BIST: revenue=18001922048.0, net_income=-1512098560.0, equity=1268463824.22
+INFO:stock_screener.fetcher:Fetched KAREL: price=43.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KAREL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KARSN:BIST: revenue=16599037952.0, net_income=179091008.0, equity=7233300000.000001
+INFO:stock_screener.fetcher:Fetched KARSN: price=68.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KARSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KARTN:BIST: revenue=4019169280.0, net_income=-1161717632.0, equity=2472975000.0
+INFO:stock_screener.fetcher:Fetched KARTN: price=68.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KARTN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KATMR:BIST: revenue=2248296448.0, net_income=662041024.0, equity=8645298750.0
+INFO:stock_screener.fetcher:Fetched KATMR: price=68.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KATMR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KAYSE:BIST: revenue=19538661376.0, net_income=-1732069632.0, equity=91836000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KBORU:BIST: revenue=5287314432.0, net_income=643593472.0, equity=4447200000.0
+INFO:stock_screener.fetcher:Fetched KAYSE: price=68.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KAYSE: missing total_assets
+INFO:stock_screener.fetcher:Fetched KBORU: price=4.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KBORU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KCAER:BIST: revenue=24111738880.0, net_income=473482688.0, equity=12292385000.0
+INFO:stock_screener.fetcher:Fetched KCAER: price=4.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KCAER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KCHOL:BIST: revenue=2757295079424.0, net_income=22001000448.0, equity=677110663312.7999
+WARNING:stock_screener.yahoo:Yahoo fundamentals: no data for KERVT:BIST (resolved: KERVT.IS)
+INFO:stock_screener.fetcher:Fetched KERVT: price=12.99, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KERVT: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.fetcher:Fetched KCHOL: price=192.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KCHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KENT:BIST: revenue=17191198720.0, net_income=-644432896.0, equity=10222410000.0
+INFO:stock_screener.fetcher:Fetched KENT: price=4.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KENT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KERVN:BIST: revenue=537668.0, net_income=-46512220.0, equity=2457597214.08
+INFO:stock_screener.fetcher:Fetched KERVN: price=4.26, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KERVN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KGYO:BIST: revenue=420444160.0, net_income=-754621248.0, equity=806149453.292
+INFO:stock_screener.fetcher:Fetched KGYO: price=17.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KFEIN:BIST: revenue=2844268032.0, net_income=47295632.0, equity=1302117500.0
+INFO:stock_screener.fetcher:Fetched KFEIN: price=17.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KFEIN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KIMMR:BIST: revenue=13983809536.0, net_income=650808256.0, equity=4404480000.0
+INFO:stock_screener.fetcher:Fetched KIMMR: price=3.43, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KIMMR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLGYO:BIST: revenue=5242194944.0, net_income=-1707000.0, equity=22575285000.0
+INFO:stock_screener.fetcher:Fetched KLGYO: price=17.63, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLKIM:BIST: revenue=10696443904.0, net_income=1136637952.0, equity=6504860000.0
+INFO:stock_screener.fetcher:Fetched KLKIM: price=8.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLKIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLMSN:BIST: revenue=7030406144.0, net_income=-293247168.0, equity=4285987200.0
+INFO:stock_screener.fetcher:Fetched KLMSN: price=8.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLMSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLNMA:BIST: revenue=15502393344.0, net_income=9006859264.0, equity=33630000000.0
+INFO:stock_screener.fetcher:Fetched KLNMA: price=8.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLNMA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLRHO:BIST: revenue=12145174528.0, net_income=1549742976.0, equity=29661125000.0
+INFO:stock_screener.fetcher:Fetched KLRHO: price=11.63, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLRHO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLSER:BIST: revenue=14062800896.0, net_income=-3561702400.0, equity=1871735211.3960001
+INFO:stock_screener.fetcher:Fetched KLSER: price=56.55, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLSER: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLSYN:BIST: revenue=1982520192.0, net_income=80040832.0, equity=3428493277.752
+INFO:stock_screener.fetcher:Fetched KLSYN: price=9.9, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLSYN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KLYPV:BIST: revenue=8121300480.0, net_income=-691390400.0, equity=13294482173.616
+INFO:stock_screener.fetcher:Fetched KLYPV: price=56.55, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KLYPV: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KMPUR:BIST: revenue=13421833216.0, net_income=-353662784.0, equity=3436947800.0
+INFO:stock_screener.fetcher:Fetched KMPUR: price=56.55, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KMPUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KNFRT:BIST: revenue=6173979136.0, net_income=-297611968.0, equity=1460712000.0
+INFO:stock_screener.fetcher:Fetched KNFRT: price=10.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KNFRT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KOCMT:BIST: revenue=19945949184.0, net_income=-981717312.0, equity=11838254471.645
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KONKA:BIST: revenue=3258593024.0, net_income=-469165568.0, equity=8193120000.0
+INFO:stock_screener.fetcher:Fetched KOCMT: price=10.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KOCMT: missing total_assets
+INFO:stock_screener.fetcher:Fetched KONKA: price=10.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KONKA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KONTR:BIST: revenue=16893125632.0, net_income=-730196544.0, equity=11683100000.0
+INFO:stock_screener.fetcher:Fetched KONTR: price=10.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KONTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KONYA:BIST: revenue=6300826112.0, net_income=269441696.0, equity=4493370161.28
+INFO:stock_screener.fetcher:Fetched KONYA: price=3862.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KONYA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KOPOL:BIST: revenue=5090334208.0, net_income=155124896.0, equity=4342222080.0
+INFO:stock_screener.fetcher:Fetched KOPOL: price=5.43, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KOPOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KOTON:BIST: revenue=32872814592.0, net_income=-963673920.0, equity=6691127250.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KORDS:BIST: revenue=31042539520.0, net_income=-1453719168.0, equity=17354133399.036
+INFO:stock_screener.fetcher:Fetched KOTON: price=14.51, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KOTON: missing total_assets
+INFO:stock_screener.fetcher:Fetched KORDS: price=56.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KORDS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRDMA:BIST: revenue=66718973952.0, net_income=-1679514752.0, equity=17844227841.022
+INFO:stock_screener.fetcher:Fetched KRDMA: price=2.67, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRDMA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRDMB:BIST: revenue=66718973952.0, net_income=-1679514752.0, equity=8871509928.464
+INFO:stock_screener.fetcher:Fetched KRDMB: price=2.67, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRDMB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRGYO:BIST: revenue=317295584.0, net_income=142229408.0, equity=3963959999.9999995
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRDMD:BIST: revenue=66718973952.0, net_income=-1679514752.0, equity=57937242230.51401
+INFO:stock_screener.fetcher:Fetched KRGYO: price=2.67, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched KRDMD: price=2.67, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRDMD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRONT:BIST: revenue=536690464.0, net_income=146894736.0, equity=740022158.232
+INFO:stock_screener.fetcher:Fetched KRONT: price=8.32, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRONT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRPLS:BIST: revenue=1919998848.0, net_income=-126887248.0, equity=869508000.0000001
+INFO:stock_screener.fetcher:Fetched KRPLS: price=8.32, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRPLS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRSTL:BIST: revenue=3230063872.0, net_income=251777152.0, equity=1741056000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRTEK:BIST: revenue=1457631488.0, net_income=-46392104.0, equity=1691492998.62
+INFO:stock_screener.fetcher:Fetched KRSTL: price=8.32, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRSTL: missing total_assets
+INFO:stock_screener.fetcher:Fetched KRTEK: price=8.32, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRTEK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KRVGD:BIST: revenue=15706465280.0, net_income=-91738000.0, equity=6361087206.5
+INFO:stock_screener.fetcher:Fetched KRVGD: price=72.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KRVGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KSTUR:BIST: revenue=457542816.0, net_income=84300832.0, equity=849235744.025
+INFO:stock_screener.fetcher:Fetched KSTUR: price=72.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KSTUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KTSKR:BIST: revenue=1463779456.0, net_income=-97135768.0, equity=5721204000.0
+INFO:stock_screener.fetcher:Fetched KTSKR: price=72.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KTSKR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KTLEV:BIST: revenue=14456285184.0, net_income=8620499968.0, equity=11382930000.0
+INFO:stock_screener.fetcher:Fetched KTLEV: price=72.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KTLEV: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KUTPO:BIST: revenue=4223696384.0, net_income=233205552.0, equity=4368015590.4
+INFO:stock_screener.fetcher:Fetched KUTPO: price=76.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KUTPO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KUVVA:BIST: revenue=532559136.0, net_income=194694112.0, equity=632853396.709
+INFO:stock_screener.fetcher:Fetched KUVVA: price=76.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KUVVA: missing total_assets
+ERROR:yfinance:HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: KOZAL.IS"}}}
+WARNING:stock_screener.yahoo:Yahoo fundamentals: no data for KOZAL:BIST (resolved: KOZAL.IS)
+INFO:stock_screener.fetcher:Fetched KOZAL: price=42.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KOZAL: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KUYAS:BIST: revenue=1189922560.0, net_income=-1311891328.0, equity=1433600000.0
+INFO:stock_screener.fetcher:Fetched KUYAS: price=76.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KUYAS: missing total_assets
+WARNING:stock_screener.yahoo:Yahoo fundamentals: no data for KZGYO:BIST (resolved: KZGYO.IS)
+INFO:stock_screener.fetcher:Fetched KZGYO: price=23.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KZGYO: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for KZBGY:BIST: revenue=1934182912.0, net_income=853378304.0, equity=21936000000.0
+INFO:stock_screener.fetcher:Fetched KZBGY: price=3.34, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for KZBGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LILAK:BIST: revenue=13603656704.0, net_income=1704007936.0, equity=16226180000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LIDFA:BIST: revenue=4711993856.0, net_income=969396992.0, equity=2873348478.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LIDER:BIST: revenue=2048075136.0, net_income=1819565952.0, equity=9385870675.0
+INFO:stock_screener.fetcher:Fetched LILAK: price=23.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LILAK: missing total_assets
+INFO:stock_screener.fetcher:Fetched LIDER: price=23.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LIDER: missing total_assets
+INFO:stock_screener.fetcher:Fetched LIDFA: price=23.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LIDFA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LINK:BIST: revenue=1425172736.0, net_income=320192256.0, equity=1622994019.92
+INFO:stock_screener.fetcher:Fetched LINK: price=5.22, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LINK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LKMNH:BIST: revenue=4234023168.0, net_income=150344048.0, equity=2366064000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LMKDC:BIST: revenue=8726196224.0, net_income=2023711232.0, equity=7575453277.2
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LOGO:BIST: revenue=5800666112.0, net_income=1500717056.0, equity=4539005000.0
+INFO:stock_screener.fetcher:Fetched LKMNH: price=5.22, source=twelve_data
+INFO:stock_screener.fetcher:Fetched LMKDC: price=5.22, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LKMNH: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for LMKDC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LRSHO:BIST: revenue=6257317888.0, net_income=-398012992.0, equity=6744007566.9
+INFO:stock_screener.fetcher:Fetched LOGO: price=5.22, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LOGO: missing total_assets
+INFO:stock_screener.fetcher:Fetched LRSHO: price=20.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LRSHO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals: no financial data for LXGYO:BIST
+INFO:stock_screener.fetcher:Fetched LXGYO: price=20.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LXGYO: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LYDHO:BIST: revenue=63462948.0, net_income=385930848.0, equity=6471008316.576
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LUKSK:BIST: revenue=470647520.0, net_income=39125936.0, equity=1494500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for LYDYE:BIST: revenue=53229196.0, net_income=2055155968.0, equity=3548447242.61
+INFO:stock_screener.fetcher:Fetched LYDHO: price=20.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LYDHO: missing total_assets
+INFO:stock_screener.fetcher:Fetched LUKSK: price=20.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LUKSK: missing total_assets
+INFO:stock_screener.fetcher:Fetched LYDYE: price=51.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for LYDYE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MAKIM:BIST: revenue=1397052288.0, net_income=19825756.0, equity=1123248000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MAALT:BIST: revenue=49895248.0, net_income=29644648.0, equity=6080252338.992001
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MACKO:BIST: revenue=1099748352.0, net_income=321560320.0, equity=695700000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MAGEN:BIST: revenue=1375486080.0, net_income=-1615841792.0, equity=12953450000.0
+INFO:stock_screener.fetcher:Fetched MAALT: price=51.1, source=twelve_data
+INFO:stock_screener.fetcher:Fetched MAKIM: price=21.72, source=twelve_data
+INFO:stock_screener.fetcher:Fetched MACKO: price=51.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MAALT: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for MAKIM: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for MACKO: missing total_assets
+INFO:stock_screener.fetcher:Fetched MAGEN: price=51.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MAGEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MARKA:BIST: revenue=123271816.0, net_income=84977776.0, equity=223228650.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MANAS:BIST: revenue=516521408.0, net_income=-410744128.0, equity=1228548816.0
+INFO:stock_screener.fetcher:Fetched MARKA: price=1.37, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MARKA: missing total_assets
+INFO:stock_screener.fetcher:Fetched MANAS: price=21.72, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MANAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MAKTK:BIST: revenue=1067376768.0, net_income=-29157816.0, equity=1713800000.0000002
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MARBL:BIST: revenue=3235159808.0, net_income=1186118.0, equity=2376525600.0
+INFO:stock_screener.fetcher:Fetched MARBL: price=21.72, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MARBL: missing total_assets
+INFO:stock_screener.fetcher:Fetched MAKTK: price=21.72, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MAKTK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MARMR:BIST: revenue=nan, net_income=nan, equity=4515365426.490001
+INFO:stock_screener.fetcher:Fetched MARMR: price=1.37, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MARMR: missing net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MARTI:BIST: revenue=1531456768.0, net_income=18469166.0, equity=14566500000.0
+INFO:stock_screener.fetcher:Fetched MARTI: price=1.37, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MARTI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MAVI:BIST: revenue=47729209344.0, net_income=2293527040.0, equity=13887275248.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MCARD:BIST: revenue=2435644672.0, net_income=766284096.0, equity=1881724600.0000002
+INFO:stock_screener.fetcher:Fetched MAVI: price=1.37, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MAVI: missing total_assets
+INFO:stock_screener.fetcher:Fetched MCARD: price=138.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MCARD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MEDTR:BIST: revenue=2873632256.0, net_income=-9271831.0, equity=2905742000.0
+INFO:stock_screener.fetcher:Fetched MEDTR: price=138.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEDTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MEGAP:BIST: revenue=10610100224.0, net_income=445763552.0, equity=3042875000.0
+INFO:stock_screener.fetcher:Fetched MEGAP: price=138.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEGAP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MEGMT:BIST: revenue=23015510016.0, net_income=1469561984.0, equity=3970230000.0
+INFO:stock_screener.fetcher:Fetched MEGMT: price=138.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEGMT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MEKAG:BIST: revenue=2875634432.0, net_income=-59843360.0, equity=1415200000.0
+INFO:stock_screener.fetcher:Fetched MEKAG: price=24.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEKAG: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MEPET:BIST: revenue=3912024576.0, net_income=163327408.0, equity=2641295267.785
+INFO:stock_screener.fetcher:Fetched MEPET: price=24.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEPET: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MERIT:BIST: revenue=324834272.0, net_income=754960256.0, equity=17280707400.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MERCN:BIST: revenue=2900312576.0, net_income=141906208.0, equity=2438461447.3139997
+INFO:stock_screener.fetcher:Fetched MERIT: price=24.68, source=twelve_data
+INFO:stock_screener.fetcher:Fetched MERCN: price=24.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MERIT: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for MERCN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MERKO:BIST: revenue=647851840.0, net_income=415691072.0, equity=2212440963.096
+INFO:stock_screener.fetcher:Fetched MERKO: price=13.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MERKO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for METRO:BIST: revenue=-1953082.0, net_income=-762193024.0, equity=4370278578.034
+INFO:stock_screener.fetcher:Fetched METRO: price=13.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for METRO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals: no financial data for MEYSU:BIST
+INFO:stock_screener.fetcher:Fetched MEYSU: price=13.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MEYSU: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MGROS:BIST: revenue=412756443136.0, net_income=6467129856.0, equity=77741839465.542
+INFO:stock_screener.fetcher:Fetched MGROS: price=603.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MGROS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MHRGY:BIST: revenue=379452640.0, net_income=488860640.0, equity=8207148000.0
+INFO:stock_screener.fetcher:Fetched MHRGY: price=13.27, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MHRGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MIATK:BIST: revenue=2757037056.0, net_income=-729884928.0, equity=5462158000.0
+INFO:stock_screener.fetcher:Fetched MIATK: price=94.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MIATK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MNDRS:BIST: revenue=8829512704.0, net_income=307379712.0, equity=14949397357.312
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MMCAS:BIST: revenue=8059295.0, net_income=-4158915.0, equity=-1120297.8360000001
+INFO:stock_screener.fetcher:Fetched MNDRS: price=94.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MNDRS: missing total_assets
+INFO:stock_screener.fetcher:Fetched MMCAS: price=94.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MMCAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MNDTR:BIST: revenue=15793917952.0, net_income=-1763415424.0, equity=7268803744.774
+INFO:stock_screener.fetcher:Fetched MNDTR: price=94.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MNDTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MOBTL:BIST: revenue=11353450496.0, net_income=274057408.0, equity=7589100000.0
+INFO:stock_screener.fetcher:Fetched MOBTL: price=420.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MOBTL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MOPAS:BIST: revenue=18079449088.0, net_income=234031776.0, equity=4851756000.0
+INFO:stock_screener.fetcher:Fetched MOPAS: price=420.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MOPAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MOGAN:BIST: revenue=9714768896.0, net_income=-8699514880.0, equity=68620717176.0
+INFO:stock_screener.fetcher:Fetched MOGAN: price=420.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MOGAN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MPARK:BIST: revenue=55092969472.0, net_income=5536663040.0, equity=17204736837.976
+INFO:stock_screener.fetcher:Fetched MPARK: price=420.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MPARK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MRGYO:BIST: revenue=205937888.0, net_income=1194263296.0, equity=23528729268.000004
+INFO:stock_screener.fetcher:Fetched MRGYO: price=1.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MRGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MRSHL:BIST: revenue=4374595584.0, net_income=-291490816.0, equity=879244872.516
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MSGYO:BIST: revenue=1105880192.0, net_income=62594260.0, equity=4795392948.544
+INFO:stock_screener.fetcher:Fetched MRSHL: price=1.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MRSHL: missing total_assets
+INFO:stock_screener.fetcher:Fetched MSGYO: price=1.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MSGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MTRKS:BIST: revenue=1277007488.0, net_income=241120640.0, equity=954858357.8299999
+INFO:stock_screener.fetcher:Fetched MTRKS: price=1.36, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MTRKS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MTRYO:BIST: revenue=5310630400.0, net_income=-19026060.0, equity=453810000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for MZHLD:BIST: revenue=2246195712.0, net_income=-46123216.0, equity=61444393.99999999
+INFO:stock_screener.fetcher:Fetched MTRYO: price=6.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MTRYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched MZHLD: price=6.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for MZHLD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NATEN:BIST: revenue=1606559872.0, net_income=-1114480256.0, equity=6519150000.0
+INFO:stock_screener.fetcher:Fetched NATEN: price=6.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NATEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NETAS:BIST: revenue=12030341120.0, net_income=-349942400.0, equity=-301296996.0
+INFO:stock_screener.fetcher:Fetched NETAS: price=6.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NETAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NETCD:BIST: revenue=1404441984.0, net_income=868164224.0, equity=2988655000.0
+INFO:stock_screener.fetcher:Fetched NETCD: price=153.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NETCD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NIBAS:BIST: revenue=104930488.0, net_income=-399636256.0, equity=414720000.0
+INFO:stock_screener.fetcher:Fetched NIBAS: price=153.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NIBAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NTGAZ:BIST: revenue=7950629376.0, net_income=900596288.0, equity=5041830000.0
+INFO:stock_screener.fetcher:Fetched NTGAZ: price=153.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NTGAZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NTHOL:BIST: revenue=25015928832.0, net_income=1665869056.0, equity=78067496608.252
+INFO:stock_screener.fetcher:Fetched NTHOL: price=153.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NTHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NUGYO:BIST: revenue=372710368.0, net_income=-177891264.0, equity=6439016948.0
+INFO:stock_screener.fetcher:Fetched NUGYO: price=8.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NUGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for NUHCM:BIST: revenue=17643655168.0, net_income=746272896.0, equity=24450117458.4
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OBAMS:BIST: revenue=22772242432.0, net_income=-2046572032.0, equity=10988346716.279999
+INFO:stock_screener.fetcher:Fetched NUHCM: price=8.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for NUHCM: missing total_assets
+INFO:stock_screener.fetcher:Fetched OBAMS: price=8.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OBAMS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OBASE:BIST: revenue=855955328.0, net_income=6647663.0, equity=710391500.0
+INFO:stock_screener.fetcher:Fetched OBASE: price=8.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OBASE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ODAS:BIST: revenue=8912508928.0, net_income=467121792.0, equity=15541400000.000002
+INFO:stock_screener.fetcher:Fetched ODAS: price=251.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ODAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ODINE:BIST: revenue=1883544192.0, net_income=16260661.0, equity=2151214000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OFSYM:BIST: revenue=18464667648.0, net_income=385868768.0, equity=4121325000.0
+INFO:stock_screener.fetcher:Fetched ODINE: price=251.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ODINE: missing total_assets
+INFO:stock_screener.fetcher:Fetched OFSYM: price=251.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OFSYM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ONCSM:BIST: revenue=709077120.0, net_income=50393704.0, equity=407000250.00000006
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ONRYT:BIST: revenue=1033087616.0, net_income=-97457344.0, equity=2598962950.0
+INFO:stock_screener.fetcher:Fetched ONCSM: price=251.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ONCSM: missing total_assets
+INFO:stock_screener.fetcher:Fetched ONRYT: price=55.65, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ONRYT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ORGE:BIST: revenue=3495512064.0, net_income=593290560.0, equity=3925870127.5039997
+INFO:stock_screener.fetcher:Fetched ORGE: price=69.7, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ORGE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ORCAY:BIST: revenue=661593088.0, net_income=-161395840.0, equity=712320000.0
+INFO:stock_screener.fetcher:Fetched ORCAY: price=3.22, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ORCAY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ORMA:BIST: revenue=4464476672.0, net_income=-21429788.0, equity=6909616000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OSMEN:BIST: revenue=20810162176.0, net_income=208076112.0, equity=2510800000.0
+INFO:stock_screener.fetcher:Fetched ORMA: price=154.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ORMA: missing total_assets
+INFO:stock_screener.fetcher:Fetched OSMEN: price=2.64, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OSMEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OSTIM:BIST: revenue=426976928.0, net_income=4082295.0, equity=2703970000.0
+INFO:stock_screener.fetcher:Fetched OSTIM: price=2.64, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OSTIM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OTKAR:BIST: revenue=51962380288.0, net_income=-1458958976.0, equity=8548799999.999999
+INFO:stock_screener.fetcher:Fetched OTKAR: price=2.64, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OTKAR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OYAKC:BIST: revenue=56502599680.0, net_income=8762754048.0, equity=62953580734.067
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OTTO:BIST: revenue=199692432.0, net_income=22235016.0, equity=555082743.778
+INFO:stock_screener.fetcher:Fetched OYAKC: price=7.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OYAKC: missing total_assets
+INFO:stock_screener.fetcher:Fetched OTTO: price=2.64, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OTTO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OYAYO:BIST: revenue=540269248.0, net_income=6563850.0, equity=154240000.0
+INFO:stock_screener.fetcher:Fetched OYAYO: price=7.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OYAYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OYLUM:BIST: revenue=769085120.0, net_income=-102912432.0, equity=1077290000.0
+INFO:stock_screener.fetcher:Fetched OYLUM: price=7.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OYLUM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OYYAT:BIST: revenue=27442388992.0, net_income=2268228352.0, equity=12146100000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZATD:BIST: revenue=2457169408.0, net_income=-127228336.0, equity=4340791300.0
+INFO:stock_screener.fetcher:Fetched OYYAT: price=7.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OYYAT: missing total_assets
+INFO:stock_screener.fetcher:Fetched OZATD: price=217.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZATD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZGYO:BIST: revenue=216543632.0, net_income=70299144.0, equity=7158000000.0
+INFO:stock_screener.fetcher:Fetched OZGYO: price=217.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZKGY:BIST: revenue=5779569152.0, net_income=358310208.0, equity=63430791698.84799
+INFO:stock_screener.fetcher:Fetched OZKGY: price=217.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZKGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZRDN:BIST: revenue=554402112.0, net_income=-58581184.0, equity=323988000.0
+INFO:stock_screener.fetcher:Fetched OZRDN: price=217.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZRDN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZYSR:BIST: revenue=7221188096.0, net_income=-247367568.0, equity=3005390400.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PAGYO:BIST: revenue=1111859840.0, net_income=1570249344.0, equity=13550424000.0
+INFO:stock_screener.fetcher:Fetched OZYSR: price=1.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZYSR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for OZSUB:BIST: revenue=2963966208.0, net_income=294005728.0, equity=1029840000.0000001
+INFO:stock_screener.fetcher:Fetched PAGYO: price=1.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PAGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched OZSUB: price=1.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for OZSUB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PAHOL:BIST: revenue=7469166080.0, net_income=4566020608.0, equity=39780000000.0
+INFO:stock_screener.fetcher:Fetched PAHOL: price=1.52, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PAHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PAMEL:BIST: revenue=79465696.0, net_income=-289531936.0, equity=675141826.672
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PARSN:BIST: revenue=5021127168.0, net_income=-1235506560.0, equity=14902578243.342001
+INFO:stock_screener.fetcher:Fetched PAMEL: price=120.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PAMEL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PAPIL:BIST: revenue=233085792.0, net_income=-7669297.0, equity=512118750.0
+INFO:stock_screener.fetcher:Fetched PARSN: price=120.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PARSN: missing total_assets
+INFO:stock_screener.fetcher:Fetched PAPIL: price=120.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PAPIL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PASEU:BIST: revenue=2452511232.0, net_income=1099516544.0, equity=3509184000.0000005
+INFO:stock_screener.fetcher:Fetched PASEU: price=120.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PASEU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PEKGY:BIST: revenue=1260102144.0, net_income=-95057160.0, equity=8209999999.999999
+INFO:stock_screener.fetcher:Fetched PEKGY: price=10.06, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PEKGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PCILT:BIST: revenue=10882014208.0, net_income=467056480.0, equity=1834425000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PATEK:BIST: revenue=2990786816.0, net_income=1165805568.0, equity=4774486171.967999
+INFO:stock_screener.fetcher:Fetched PCILT: price=10.06, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PCILT: missing total_assets
+INFO:stock_screener.fetcher:Fetched PATEK: price=10.06, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PATEK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PENGD:BIST: revenue=3159124224.0, net_income=-246202528.0, equity=4264225000.0
+INFO:stock_screener.fetcher:Fetched PENGD: price=10.06, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PENGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PETUN:BIST: revenue=10475403264.0, net_income=187863792.0, equity=9862352640.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PENTA:BIST: revenue=32335972352.0, net_income=112195264.0, equity=4245644124.0
+INFO:stock_screener.fetcher:Fetched PETUN: price=11.46, source=twelve_data
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PETKM:BIST: revenue=89075556352.0, net_income=-10233897984.0, equity=63963187200.0
+INFO:stock_screener.fetcher:Incomplete data for PETUN: missing total_assets
+INFO:stock_screener.fetcher:Fetched PENTA: price=11.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PENTA: missing total_assets
+INFO:stock_screener.fetcher:Fetched PETKM: price=11.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PETKM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PGSUS:BIST: revenue=154127548416.0, net_income=13750218752.0, equity=116854000000.0
+INFO:stock_screener.fetcher:Fetched PGSUS: price=177.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PGSUS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PINSU:BIST: revenue=2686213376.0, net_income=4289837.0, equity=2452269366.25
+INFO:stock_screener.fetcher:Fetched PINSU: price=11.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PINSU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PKENT:BIST: revenue=1337987968.0, net_income=178499984.0, equity=1791590400.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PKART:BIST: revenue=2285190144.0, net_income=68884264.0, equity=458890250.0
+INFO:stock_screener.fetcher:Fetched PKENT: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PKENT: missing total_assets
+INFO:stock_screener.fetcher:Fetched PKART: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PKART: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PLTUR:BIST: revenue=7708004352.0, net_income=709255552.0, equity=7937242500.0
+INFO:stock_screener.fetcher:Fetched PLTUR: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PLTUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for POLHO:BIST: revenue=6402284032.0, net_income=-889229696.0, equity=2725290500.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PNSUT:BIST: revenue=15848775680.0, net_income=-941748608.0, equity=10948502806.405
+INFO:stock_screener.fetcher:Fetched POLHO: price=75.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for POLHO: missing total_assets
+INFO:stock_screener.fetcher:Fetched PNSUT: price=75.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PNSUT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PNLSN:BIST: revenue=2907014656.0, net_income=257826096.0, equity=3016200000.0
+INFO:stock_screener.fetcher:Fetched PNLSN: price=12.79, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PNLSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for POLTK:BIST: revenue=874324608.0, net_income=-35245632.0, equity=315435000.0
+INFO:stock_screener.fetcher:Fetched POLTK: price=75.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for POLTK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PRKAB:BIST: revenue=16168262656.0, net_income=-268243664.0, equity=907375740.312
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PRDGS:BIST: revenue=65158740.0, net_income=39230236.0, equity=2272620000.0
+INFO:stock_screener.fetcher:Fetched PRKAB: price=10.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PRKAB: missing total_assets
+INFO:stock_screener.fetcher:Fetched PRDGS: price=75.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PRDGS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PRKME:BIST: revenue=622387840.0, net_income=-229850448.0, equity=4806030073.012
+INFO:stock_screener.fetcher:Fetched PRKME: price=10.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PRKME: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PRZMA:BIST: revenue=110735624.0, net_income=183716.0, equity=535718820.94699997
+INFO:stock_screener.fetcher:Fetched PRZMA: price=10.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PRZMA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PSGYO:BIST: revenue=307961696.0, net_income=2897763584.0, equity=45890634385.4
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for PSDTC:BIST: revenue=77017008.0, net_income=54579640.0, equity=221740200.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for QNBFK:BIST: revenue=2797872896.0, net_income=1828947968.0, equity=6454000000.0
+INFO:stock_screener.fetcher:Fetched PSGYO: price=17.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PSGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched PSDTC: price=10.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for PSDTC: missing total_assets
+INFO:stock_screener.fetcher:Fetched QNBFK: price=17.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for QNBFK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for QNBTR:BIST: revenue=124801245184.0, net_income=47814713344.0, equity=172876000000.0
+INFO:stock_screener.fetcher:Fetched QNBTR: price=17.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for QNBTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for QUAGR:BIST: revenue=10600992768.0, net_income=-1245917312.0, equity=9556800000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RALYH:BIST: revenue=6390386688.0, net_income=2317482752.0, equity=7070256000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RAYSG:BIST: revenue=29789128704.0, net_income=3737213184.0, equity=8440658816.416
+INFO:stock_screener.fetcher:Fetched QUAGR: price=17.46, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for QUAGR: missing total_assets
+INFO:stock_screener.fetcher:Fetched RALYH: price=2.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RALYH: missing total_assets
+INFO:stock_screener.fetcher:Fetched RAYSG: price=2.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RAYSG: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for REEDR:BIST: revenue=1470706816.0, net_income=-865627904.0, equity=7733000000.000001
+INFO:stock_screener.fetcher:Fetched REEDR: price=2.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for REEDR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RNPOL:BIST: revenue=1579778560.0, net_income=-31026014.0, equity=1096800000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RGYAS:BIST: revenue=12728845312.0, net_income=16306362368.0, equity=132987194000.0
+INFO:stock_screener.fetcher:Fetched RNPOL: price=1.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RNPOL: missing total_assets
+INFO:stock_screener.fetcher:Fetched RGYAS: price=2.76, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RGYAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RODRG:BIST: revenue=88605384.0, net_income=4132148.0, equity=69603040.0
+INFO:stock_screener.fetcher:Fetched RODRG: price=2.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RODRG: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RTALB:BIST: revenue=239563248.0, net_income=881178880.0, equity=2965000000.0
+INFO:stock_screener.fetcher:Fetched RTALB: price=2.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RTALB: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RUBNS:BIST: revenue=2139525888.0, net_income=-152831312.0, equity=3954825050.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RUZYE:BIST: revenue=278060896.0, net_income=-4864247.0, equity=1502050000.0
+INFO:stock_screener.fetcher:Fetched RUBNS: price=2.01, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RUBNS: missing total_assets
+INFO:stock_screener.fetcher:Fetched RUZYE: price=18.87, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RUZYE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RYGYO:BIST: revenue=2596702720.0, net_income=17179774976.0, equity=67262000000.0
+INFO:stock_screener.fetcher:Fetched RYGYO: price=18.87, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RYGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for RYSAS:BIST: revenue=9228355584.0, net_income=-1378184832.0, equity=20610000000.0
+INFO:stock_screener.fetcher:Fetched RYSAS: price=18.87, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for RYSAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SAHOL:BIST: revenue=254994087936.0, net_income=3830964992.0, equity=360684182302.79395
+INFO:stock_screener.fetcher:Fetched SAHOL: price=292.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SAHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SAMAT:BIST: revenue=43067840.0, net_income=18117770.0, equity=560314000.0
+INFO:stock_screener.fetcher:Fetched SAMAT: price=7.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SAMAT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SAFKR:BIST: revenue=1774498432.0, net_income=162964416.0, equity=1163800000.0
+INFO:stock_screener.fetcher:Fetched SAFKR: price=18.87, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SAFKR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SANEL:BIST: revenue=343473664.0, net_income=115142224.0, equity=140766872.763
+INFO:stock_screener.fetcher:Fetched SANEL: price=7.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SANEL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SANFM:BIST: revenue=1150867584.0, net_income=1801854.0, equity=571875000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SANKO:BIST: revenue=6825576448.0, net_income=-66055012.0, equity=2298300000.0
+INFO:stock_screener.fetcher:Fetched SANFM: price=7.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SANFM: missing total_assets
+INFO:stock_screener.fetcher:Fetched SANKO: price=7.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SANKO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SASA:BIST: revenue=53119377408.0, net_income=-21985556480.0, equity=154318597301.442
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SARKY:BIST: revenue=79114452992.0, net_income=346921824.0, equity=11568000000.0
+INFO:stock_screener.fetcher:Fetched SASA: price=2.33, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SASA: missing total_assets
+INFO:stock_screener.fetcher:Fetched SARKY: price=2.33, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SARKY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SAYAS:BIST: revenue=2021511552.0, net_income=153872944.0, equity=1231442250.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SDTTR:BIST: revenue=2159813632.0, net_income=30226428.0, equity=2432810000.0
+INFO:stock_screener.fetcher:Fetched SAYAS: price=2.33, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SAYAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched SDTTR: price=2.33, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SDTTR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SEGYO:BIST: revenue=426650336.0, net_income=-1274228352.0, equity=6444074493.188001
+INFO:stock_screener.fetcher:Fetched SEGYO: price=4.41, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SEGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SEGMN:BIST: revenue=2890219008.0, net_income=285617920.0, equity=5016654000.0
+INFO:stock_screener.fetcher:Fetched SEGMN: price=4.41, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SEGMN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SEKFK:BIST: revenue=648584000.0, net_income=196848000.0, equity=944500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SELEC:BIST: revenue=172011110400.0, net_income=-379802176.0, equity=29972565000.0
+INFO:stock_screener.fetcher:Fetched SEKFK: price=4.41, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SEKFK: missing total_assets
+INFO:stock_screener.fetcher:Fetched SELEC: price=2.12, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SELEC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SELVA:BIST: revenue=2008952064.0, net_income=-453966016.0, equity=2296329750.0
+INFO:stock_screener.fetcher:Fetched SELVA: price=2.12, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SELVA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SEKUR:BIST: revenue=1618362880.0, net_income=-13208018.0, equity=786217428.2900001
+INFO:stock_screener.fetcher:Fetched SEKUR: price=4.41, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SEKUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SERNT:BIST: revenue=2860227328.0, net_income=-1656403712.0, equity=1074700000.0
+INFO:stock_screener.fetcher:Fetched SERNT: price=2.12, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SERNT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SEYKM:BIST: revenue=242207232.0, net_income=-39473160.0, equity=495000000.0
+INFO:stock_screener.fetcher:Fetched SEYKM: price=2.12, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SEYKM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SISE:BIST: revenue=224527040512.0, net_income=9877536768.0, equity=248126464964.112
+INFO:stock_screener.fetcher:Fetched SISE: price=292.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SISE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SILVR:BIST: revenue=1827997696.0, net_income=-246512464.0, equity=1600200000.0
+INFO:stock_screener.fetcher:Fetched SILVR: price=2.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SILVR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SKBNK:BIST: revenue=15479574528.0, net_income=2698563072.0, equity=19360000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SKTAS:BIST: revenue=1788155520.0, net_income=-240241456.0, equity=2254500000.0
+INFO:stock_screener.fetcher:Fetched SKBNK: price=2.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SKBNK: missing total_assets
+INFO:stock_screener.fetcher:Fetched SKTAS: price=2.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SKTAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SKYLP:BIST: revenue=224955776.0, net_income=-29658128.0, equity=229301500.0
+INFO:stock_screener.fetcher:Fetched SKYLP: price=2.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SKYLP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SKYMD:BIST: revenue=46557450240.0, net_income=-113848520.0, equity=1148860000.0
+INFO:stock_screener.fetcher:Fetched SKYMD: price=31.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SKYMD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SMRTG:BIST: revenue=10581001216.0, net_income=-434718336.0, equity=4638617280.0
+INFO:stock_screener.fetcher:Fetched SMRTG: price=31.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SMRTG: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SMART:BIST: revenue=192245360.0, net_income=-7632884.0, equity=455824925.0
+INFO:stock_screener.fetcher:Fetched SMART: price=31.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SMART: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SMRVA:BIST: revenue=1867282048.0, net_income=679726976.0, equity=2353746000.0
+INFO:stock_screener.fetcher:Fetched SMRVA: price=31.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SMRVA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SNGYO:BIST: revenue=5439814656.0, net_income=671703296.0, equity=51953103300.0
+INFO:stock_screener.fetcher:Fetched SNGYO: price=3.97, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SNGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SNPAM:BIST: revenue=853897152.0, net_income=-338207904.0, equity=14424145550.495998
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SNICA:BIST: revenue=3345988608.0, net_income=-859894272.0, equity=4754400000.0
+INFO:stock_screener.fetcher:Fetched SNPAM: price=3.97, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SNPAM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SODSN:BIST: revenue=270081920.0, net_income=-37672824.0, equity=190320000.0
+INFO:stock_screener.fetcher:Fetched SNICA: price=3.97, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SNICA: missing total_assets
+INFO:stock_screener.fetcher:Fetched SODSN: price=3.97, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SODSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SOKE:BIST: revenue=5313027072.0, net_income=-274152160.0, equity=3990612499.9999995
+INFO:stock_screener.fetcher:Fetched SOKE: price=21.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SOKE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SONME:BIST: revenue=60609912.0, net_income=-225047008.0, equity=4356084000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SRVGY:BIST: revenue=4030144256.0, net_income=3338733824.0, equity=27872000000.0
+INFO:stock_screener.fetcher:Fetched SONME: price=21.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SONME: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SOKM:BIST: revenue=278811705344.0, net_income=-1928206720.0, equity=35462130358.176
+INFO:stock_screener.fetcher:Fetched SRVGY: price=21.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SRVGY: missing total_assets
+INFO:stock_screener.fetcher:Fetched SOKM: price=21.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SOKM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SUMAS:BIST: revenue=589353792.0, net_income=15019123.0, equity=453960810.756
+INFO:stock_screener.fetcher:Fetched SUMAS: price=48.18, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SUMAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SUNTK:BIST: revenue=13043618816.0, net_income=693213120.0, equity=7063471800.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SURGY:BIST: revenue=nan, net_income=976650240.0, equity=9060410000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SUWEN:BIST: revenue=5954274304.0, net_income=111088168.0, equity=1201898490.316
+INFO:stock_screener.fetcher:Fetched SUNTK: price=48.18, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SUNTK: missing total_assets
+INFO:stock_screener.fetcher:Fetched SUWEN: price=48.18, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SUWEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for SVGYO:BIST: revenue=nan, net_income=nan, equity=3890136000.0
+INFO:stock_screener.fetcher:Fetched SURGY: price=48.18, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SURGY: missing revenue, total_assets
+INFO:stock_screener.fetcher:Fetched SVGYO: price=8.23, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for SVGYO: missing net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TATEN:BIST: revenue=2611124480.0, net_income=833372992.0, equity=4297251976.005
+INFO:stock_screener.fetcher:Fetched TATEN: price=260.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TATEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TATGD:BIST: revenue=8190096384.0, net_income=132159184.0, equity=4295016000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TARKM:BIST: revenue=2039743616.0, net_income=-97105960.0, equity=2708811000.0000005
+INFO:stock_screener.fetcher:Fetched TATGD: price=11.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TATGD: missing total_assets
+INFO:stock_screener.fetcher:Fetched TARKM: price=260.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TARKM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TABGD:BIST: revenue=47636606976.0, net_income=2627825920.0, equity=22278278504.0
+INFO:stock_screener.fetcher:Fetched TABGD: price=247.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TABGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TAVHL:BIST: revenue=82151161856.0, net_income=2827264000.0, equity=79574578125.0
+INFO:stock_screener.fetcher:Fetched TAVHL: price=292.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TAVHL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TCELL:BIST: revenue=241470816256.0, net_income=17791410176.0, equity=259499475333.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TBORG:BIST: revenue=40911462400.0, net_income=3376018944.0, equity=23586963591.407997
+INFO:stock_screener.fetcher:Fetched TCELL: price=292.75, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TCELL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TCKRC:BIST: revenue=2988208384.0, net_income=1222117504.0, equity=5159160000.0
+INFO:stock_screener.fetcher:Fetched TBORG: price=11.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TBORG: missing total_assets
+INFO:stock_screener.fetcher:Fetched TCKRC: price=11.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TCKRC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TDGYO:BIST: revenue=26789686.0, net_income=13110560.0, equity=391644000.0
+INFO:stock_screener.fetcher:Fetched TDGYO: price=11.2, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TDGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TEHOL:BIST: revenue=77191816.0, net_income=1469067008.0, equity=7783776000.0
+INFO:stock_screener.fetcher:Fetched TEHOL: price=141.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TEHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TEKTU:BIST: revenue=123157280.0, net_income=-676621312.0, equity=5852365801.084
+INFO:stock_screener.fetcher:Fetched TEKTU: price=141.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TEKTU: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TERA:BIST: revenue=397764329472.0, net_income=37334827008.0, equity=32728500000.0
+INFO:stock_screener.fetcher:Fetched TERA: price=141.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TERA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TGSAS:BIST: revenue=236340576.0, net_income=90396064.0, equity=324000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TEZOL:BIST: revenue=5587469824.0, net_income=183154000.0, equity=6073000000.0
+INFO:stock_screener.fetcher:Fetched TGSAS: price=20.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TGSAS: missing total_assets
+INFO:stock_screener.fetcher:Fetched TEZOL: price=141.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TEZOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TKFEN:BIST: revenue=53909397504.0, net_income=-5721463808.0, equity=32385826819.999996
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for THYAO:BIST: revenue=24096000000.0, net_income=2910000128.0, equity=21208908567.132
+INFO:stock_screener.fetcher:Fetched THYAO: price=294.0, source=twelve_data
+INFO:stock_screener.fetcher:Fetched TKFEN: price=20.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for THYAO: missing total_assets
+INFO:stock_screener.fetcher:Incomplete data for TKFEN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TLMAN:BIST: revenue=808349760.0, net_income=58552464.0, equity=1781367000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TKNSA:BIST: revenue=83519250432.0, net_income=-2250984960.0, equity=721992000.0
+INFO:stock_screener.fetcher:Fetched TLMAN: price=20.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TLMAN: missing total_assets
+INFO:stock_screener.fetcher:Fetched TKNSA: price=20.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TKNSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TMPOL:BIST: revenue=927551808.0, net_income=-16436104.0, equity=835020900.0
+INFO:stock_screener.fetcher:Fetched TMPOL: price=40.78, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TMPOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TMSN:BIST: revenue=3454240512.0, net_income=4525145088.0, equity=17423765000.0
+INFO:stock_screener.fetcher:Fetched TMSN: price=40.78, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TMSN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TNZTP:BIST: revenue=3429826048.0, net_income=695677696.0, equity=8008000000.0
+INFO:stock_screener.fetcher:Fetched TNZTP: price=40.78, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TNZTP: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TOASO:BIST: revenue=332245008384.0, net_income=8353932800.0, equity=60031000000.0
+INFO:stock_screener.fetcher:Fetched TOASO: price=294.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TOASO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRCAS:BIST: revenue=nan, net_income=615786432.0, equity=13690823508.18
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRALT:BIST: revenue=16935166976.0, net_income=4104324096.0, equity=42778995000.0
+INFO:stock_screener.fetcher:Fetched TRCAS: price=90.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRCAS: missing revenue, total_assets
+INFO:stock_screener.fetcher:Fetched TRALT: price=40.78, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRALT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRGYO:BIST: revenue=15945232384.0, net_income=7729930752.0, equity=131350000000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRENJ:BIST: revenue=17727547392.0, net_income=705700992.0, equity=12378522196.089
+INFO:stock_screener.fetcher:Fetched TRGYO: price=90.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched TRENJ: price=90.05, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRENJ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRHOL:BIST: revenue=476985728.0, net_income=62377124.0, equity=134610000.0
+INFO:stock_screener.fetcher:Fetched TRHOL: price=973.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRHOL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRILC:BIST: revenue=4539019264.0, net_income=-622649728.0, equity=1622256930.0
+INFO:stock_screener.fetcher:Fetched TRILC: price=6.62, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRILC: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TRMET:BIST: revenue=17705459712.0, net_income=1951629056.0, equity=24531312960.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TSGYO:BIST: revenue=252088272.0, net_income=15618196.0, equity=6203600000.0
+INFO:stock_screener.fetcher:Fetched TSGYO: price=6.62, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TSGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched TRMET: price=6.62, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TRMET: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TSKB:BIST: revenue=18411567104.0, net_income=11323716608.0, equity=45687600000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TSPOR:BIST: revenue=2472243200.0, net_income=-1787151744.0, equity=11190000000.0
+INFO:stock_screener.fetcher:Fetched TSKB: price=6.62, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TSKB: missing total_assets
+INFO:stock_screener.fetcher:Fetched TSPOR: price=11.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TSPOR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TTRAK:BIST: revenue=53837291520.0, net_income=454804640.0, equity=16714770532.5
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TTKOM:BIST: revenue=242228625408.0, net_income=22980532224.0, equity=212467500000.0
+INFO:stock_screener.fetcher:Fetched TTRAK: price=11.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TTRAK: missing total_assets
+INFO:stock_screener.fetcher:Fetched TTKOM: price=11.1, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TTKOM: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TUCLK:BIST: revenue=1984058752.0, net_income=-127008376.0, equity=1342440000.0
+INFO:stock_screener.fetcher:Fetched TUCLK: price=0.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TUCLK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TUKAS:BIST: revenue=8695075840.0, net_income=512290944.0, equity=17446500000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TUPRS:BIST: revenue=830356127744.0, net_income=29523183616.0, equity=364098856971.668
+INFO:stock_screener.fetcher:Fetched TUKAS: price=0.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TUKAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TURGG:BIST: revenue=nan, net_income=179513088.0, equity=2220717168.15
+INFO:stock_screener.fetcher:Fetched TUPRS: price=294.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TUPRS: missing total_assets
+INFO:stock_screener.fetcher:Fetched TURGG: price=0.92, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TURGG: missing revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TUREX:BIST: revenue=7923862016.0, net_income=608940992.0, equity=7371000000.0
+INFO:stock_screener.fetcher:Fetched TUREX: price=58.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TUREX: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for TURSG:BIST: revenue=88051007488.0, net_income=19527051264.0, equity=49650000000.0
+INFO:stock_screener.fetcher:Fetched TURSG: price=7.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for TURSG: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for UCAYM:BIST: revenue=3464004096.0, net_income=190956336.0, equity=3932550000.0000005
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for UFUK:BIST: revenue=nan, net_income=509631232.0, equity=2133327233.464
+INFO:stock_screener.fetcher:Fetched UCAYM: price=27.08, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for UCAYM: missing total_assets
+INFO:stock_screener.fetcher:Fetched UFUK: price=7.15, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for UFUK: missing revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ULAS:BIST: revenue=nan, net_income=21936292.0, equity=442182870.675
+INFO:stock_screener.fetcher:Fetched ULAS: price=37.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ULAS: missing revenue, total_assets
+WARNING:stock_screener.yahoo:Yahoo fundamentals: no data for ULUFA:BIST (resolved: ULUFA.IS)
+INFO:stock_screener.fetcher:Fetched ULUFA: price=37.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ULUFA: missing equity, net_income, revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ULKER:BIST: revenue=111904604160.0, net_income=4874523136.0, equity=43301656033.155
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ULUSE:BIST: revenue=7249406976.0, net_income=-241016768.0, equity=170400000.0
+INFO:stock_screener.fetcher:Fetched ULKER: price=37.4, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ULKER: missing total_assets
+INFO:stock_screener.fetcher:Fetched ULUSE: price=12.77, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ULUSE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ULUUN:BIST: revenue=43894538240.0, net_income=-258412080.0, equity=12916500000.000002
+INFO:stock_screener.fetcher:Fetched ULUUN: price=12.77, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ULUUN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for UMPAS:BIST: revenue=nan, net_income=-1015001.0, equity=813455999.9999999
+INFO:stock_screener.fetcher:Fetched UMPAS: price=9.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for UMPAS: missing revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for UNLU:BIST: revenue=48058802176.0, net_income=-205944768.0, equity=2975981160.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for USAK:BIST: revenue=4764497408.0, net_income=-23456460.0, equity=9893613490.644
+INFO:stock_screener.fetcher:Fetched UNLU: price=7.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for UNLU: missing total_assets
+INFO:stock_screener.fetcher:Fetched USAK: price=7.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for USAK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VAKBN:BIST: revenue=232671182848.0, net_income=77158891520.0, equity=328494648213.94403
+INFO:stock_screener.fetcher:Fetched VAKBN: price=7.35, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VAKBN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VAKFA:BIST: revenue=9574436864.0, net_income=1924857984.0, equity=7009200000.0
+INFO:stock_screener.fetcher:Fetched VAKFA: price=31.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VAKFA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VAKFN:BIST: revenue=1583687040.0, net_income=1529245952.0, equity=7455000000.000001
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VAKKO:BIST: revenue=19852574720.0, net_income=56985704.0, equity=9766240000.0
+INFO:stock_screener.fetcher:Fetched VAKFN: price=31.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VAKFN: missing total_assets
+INFO:stock_screener.fetcher:Fetched VAKKO: price=31.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VAKKO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VANGD:BIST: revenue=143016240.0, net_income=223868128.0, equity=470824999.99999994
+INFO:stock_screener.fetcher:Fetched VANGD: price=31.04, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VANGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VBTYZ:BIST: revenue=2427623936.0, net_income=175035360.0, equity=910728000.0
+INFO:stock_screener.fetcher:Fetched VBTYZ: price=11.71, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VBTYZ: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VERUS:BIST: revenue=761518208.0, net_income=-293214208.0, equity=4681670000.0
+INFO:stock_screener.fetcher:Fetched VERUS: price=11.71, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VERUS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VERTU:BIST: revenue=nan, net_income=-246669312.0, equity=4571459057.355
+INFO:stock_screener.fetcher:Fetched VERTU: price=77.6, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VERTU: missing revenue, total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VESBE:BIST: revenue=74360045568.0, net_income=-6321583104.0, equity=36675200000.0
+INFO:stock_screener.fetcher:Fetched VESBE: price=11.71, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VESBE: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VESTL:BIST: revenue=138249519104.0, net_income=-29681104896.0, equity=26878434034.375
+INFO:stock_screener.fetcher:Fetched VESTL: price=294.0, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VESTL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VKFYO:BIST: revenue=152709264.0, net_income=-18754828.0, equity=55320000.0
+INFO:stock_screener.fetcher:Fetched VKFYO: price=19.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VKFYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VKGYO:BIST: revenue=1697252608.0, net_income=780510592.0, equity=24557100000.0
+INFO:stock_screener.fetcher:Fetched VKGYO: price=19.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VKGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VKING:BIST: revenue=760210240.0, net_income=-982794112.0, equity=60144000.0
+INFO:stock_screener.fetcher:Fetched VKING: price=19.3, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VKING: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VRGYO:BIST: revenue=393495584.0, net_income=-392278560.0, equity=5107780000.0
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for VSNMD:BIST: revenue=1424929024.0, net_income=64575044.0, equity=3643848000.0
+INFO:stock_screener.fetcher:Fetched VRGYO: price=36.84, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VRGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched VSNMD: price=73.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for VSNMD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YAPRK:BIST: revenue=316396288.0, net_income=23599792.0, equity=692718600.0
+INFO:stock_screener.fetcher:Fetched YAPRK: price=32.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YAPRK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YATAS:BIST: revenue=16403573760.0, net_income=-147798656.0, equity=10061411175.228
+INFO:stock_screener.fetcher:Fetched YATAS: price=32.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YATAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YBTAS:BIST: revenue=1816492800.0, net_income=-70757336.0, equity=1633800000.0
+INFO:stock_screener.fetcher:Fetched YBTAS: price=73.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YBTAS: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YEOTK:BIST: revenue=16733157376.0, net_income=1523575040.0, equity=4128650000.0000005
+INFO:stock_screener.fetcher:Fetched YEOTK: price=73.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YEOTK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YAYLA:BIST: revenue=80660384.0, net_income=-43162920.0, equity=791366625.0
+INFO:stock_screener.fetcher:Fetched YAYLA: price=73.5, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YAYLA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YESIL:BIST: revenue=-2572572.0, net_income=-71623880.0, equity=1221630000.0
+INFO:stock_screener.fetcher:Fetched YESIL: price=1.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YESIL: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YGGYO:BIST: revenue=3122616320.0, net_income=5362720256.0, equity=25699393816.299
+INFO:stock_screener.fetcher:Fetched YGGYO: price=1.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YGGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YGYO:BIST: revenue=-3745123328.0, net_income=-5450032640.0, equity=12136931397.33
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YIGIT:BIST: revenue=11834942464.0, net_income=186745232.0, equity=6959279500.0
+INFO:stock_screener.fetcher:Fetched YGYO: price=1.8, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YGYO: missing total_assets
+INFO:stock_screener.fetcher:Fetched YIGIT: price=1.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YIGIT: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YKBNK:BIST: revenue=187655176192.0, net_income=47090151424.0, equity=255607763260.0
+INFO:stock_screener.fetcher:Fetched YKBNK: price=1.68, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YKBNK: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YKSLN:BIST: revenue=1131220224.0, net_income=-187741600.0, equity=769500000.0
+INFO:stock_screener.fetcher:Fetched YKSLN: price=3.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YKSLN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YONGA:BIST: revenue=443489632.0, net_income=4772795.0, equity=604413600.0
+INFO:stock_screener.fetcher:Fetched YONGA: price=3.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YONGA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YUNSA:BIST: revenue=3024785920.0, net_income=378465120.0, equity=4407840000.0
+INFO:stock_screener.fetcher:Fetched YUNSA: price=3.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YUNSA: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YYAPI:BIST: revenue=-519547.0, net_income=681506432.0, equity=5220788258.596
+INFO:stock_screener.fetcher:Fetched YYAPI: price=3.16, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YYAPI: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ZEDUR:BIST: revenue=129382600.0, net_income=20731616.0, equity=2256372000.0
+INFO:stock_screener.fetcher:Fetched ZEDUR: price=25.56, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ZEDUR: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for YYLGD:BIST: revenue=22507722752.0, net_income=903382976.0, equity=13499204620.0
+INFO:stock_screener.fetcher:Fetched YYLGD: price=25.56, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for YYLGD: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ZERGY:BIST: revenue=332823488.0, net_income=57690136.0, equity=2413230000.0
+INFO:stock_screener.fetcher:Fetched ZERGY: price=25.56, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ZERGY: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ZGYO:BIST: revenue=11649948.0, net_income=140546832.0, equity=3144964333.7250004
+INFO:stock_screener.fetcher:Fetched ZGYO: price=25.56, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ZGYO: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ZOREN:BIST: revenue=36197416960.0, net_income=-14707183616.0, equity=57550000000.0
+INFO:stock_screener.fetcher:Fetched ZOREN: price=2.74, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ZOREN: missing total_assets
+INFO:stock_screener.yahoo:Yahoo fundamentals OK for ZRGYO:BIST: revenue=3466335232.0, net_income=7555651584.0, equity=79331565240.0
+INFO:stock_screener.fetcher:Fetched ZRGYO: price=2.74, source=twelve_data
+INFO:stock_screener.fetcher:Incomplete data for ZRGYO: missing total_assets
+INFO:stock_screener.fetcher:Fundamentals for BIST: 605/611 have data | providers: {'yahoo': 607, 'none': 4}
+[34m  Stopping...[0m
