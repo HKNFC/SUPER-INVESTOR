@@ -5,7 +5,9 @@ Backtest sırasında her rebalance tarihinde, o tarihe kadar mevcut olan
 en son yıllık bilanço verilerini döndürür.
 
 - USA hisseleri: FMP annual reports (5 yıl, 24s cache)
-- BIST hisseleri: boş dict (data_fetcher'daki Yahoo verisi kullanılır)
+- BIST hisseleri: Yahoo Finance yıllık gelir/bilanço tabloları (4 yıl, 24s cache)
+  Look-ahead bias önlemi: fiskal yıl bitiş tarihi + 90 gün geçmeden o yılın verisi kullanılmaz.
+  (BIST şirketleri genellikle yıl sonu raporunu 2-3 ay içinde yayınlar.)
 """
 
 import os
@@ -34,6 +36,13 @@ HIST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 HIST_CACHE_TTL_HOURS = 24
 _PARALLEL_WORKERS = 10
 
+# ---------------------------------------------------------------------------
+# RAM (in-memory) cache — disk'i yalnızca ilk yüklemede okur.
+# Backtest döngüsünde 78 000+ disk JSON okuma → sıfıra iner.
+# ---------------------------------------------------------------------------
+_MEM_CACHE: Dict[str, dict] = {}      # USA FMP  → {symbol: data}
+_MEM_BIST_CACHE: Dict[str, dict] = {} # BIST Yahoo → {symbol: data}
+
 
 # ---------------------------------------------------------------------------
 # Cache yardımcıları
@@ -45,6 +54,9 @@ def _cache_path(symbol: str) -> Path:
 
 
 def _load_cache(symbol: str) -> Optional[dict]:
+    # Önce RAM cache'e bak
+    if symbol in _MEM_CACHE:
+        return _MEM_CACHE[symbol]
     path = _cache_path(symbol)
     if not path.exists():
         return None
@@ -52,6 +64,7 @@ def _load_cache(symbol: str) -> Optional[dict]:
         with open(path) as f:
             data = json.load(f)
         if time.time() - data.get("_ts", 0) < HIST_CACHE_TTL_HOURS * 3600:
+            _MEM_CACHE[symbol] = data   # RAM'e al, bir daha diske gitme
             return data
     except Exception:
         pass
@@ -60,6 +73,7 @@ def _load_cache(symbol: str) -> Optional[dict]:
 
 def _save_cache(symbol: str, data: dict) -> None:
     data["_ts"] = time.time()
+    _MEM_CACHE[symbol] = data   # RAM'e de yaz
     try:
         with open(_cache_path(symbol), "w") as f:
             json.dump(data, f)
@@ -204,6 +218,231 @@ def _safe(val):
 
 
 # ---------------------------------------------------------------------------
+# BIST — Yahoo Finance tarihsel temel veri
+# ---------------------------------------------------------------------------
+
+# BIST için ayrı cache dizini
+BIST_HIST_CACHE_DIR = Path(os.path.expanduser("~/.cache/bist_hist"))
+BIST_HIST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+# Look-ahead bias koruma süresi (gün)
+# BIST şirketleri yıl sonu raporunu genellikle 60-90 gün içinde açıklar.
+BIST_FILING_LAG_DAYS = 90
+
+
+def _bist_cache_path(symbol: str) -> Path:
+    safe = symbol.replace(".", "_").replace("/", "_").replace(":", "_")
+    return BIST_HIST_CACHE_DIR / f"{safe}.json"
+
+
+def _load_bist_cache(symbol: str) -> Optional[dict]:
+    # Önce RAM cache'e bak
+    if symbol in _MEM_BIST_CACHE:
+        return _MEM_BIST_CACHE[symbol]
+    path = _bist_cache_path(symbol)
+    if not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        if time.time() - data.get("_ts", 0) < HIST_CACHE_TTL_HOURS * 3600:
+            _MEM_BIST_CACHE[symbol] = data  # RAM'e al
+            return data
+    except Exception:
+        pass
+    return None
+
+
+def _save_bist_cache(symbol: str, data: dict) -> None:
+    data["_ts"] = time.time()
+    _MEM_BIST_CACHE[symbol] = data  # RAM'e de yaz
+    try:
+        with open(_bist_cache_path(symbol), "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+
+def _fetch_bist_symbol_data(symbol: str) -> dict:
+    """
+    Yahoo Finance'ten bir BIST hissesinin yıllık gelir/bilanço geçmişini çeker.
+    symbol: 'THYAO' veya 'THYAO.IS' formatında kabul eder.
+    Çıktı: {'reports': [{date, revenue, net_income, ...}, ...]} — azalan tarih sırası
+    """
+    cached = _load_bist_cache(symbol)
+    if cached:
+        return cached
+
+    # Yahoo sembolü: THYAO → THYAO.IS
+    yahoo_sym = symbol if symbol.endswith(".IS") else f"{symbol}.IS"
+
+    try:
+        import yfinance as yf
+    except ImportError:
+        logger.warning("yfinance not installed — BIST historical fundamentals unavailable")
+        empty = {"reports": []}
+        _save_bist_cache(symbol, empty)
+        return empty
+
+    try:
+        ticker_obj = yf.Ticker(yahoo_sym)
+        inc_stmt = ticker_obj.income_stmt   # sütunlar = fiscal year end Timestamps
+        bs_stmt = ticker_obj.balance_sheet  # sütunlar = fiscal year end Timestamps
+        info = ticker_obj.info or {}
+
+        if inc_stmt is None or inc_stmt.empty:
+            empty = {"reports": []}
+            _save_bist_cache(symbol, empty)
+            return empty
+
+        # Ortak tarihleri bul (income & balance sheet kesişimi)
+        inc_dates = sorted(inc_stmt.columns.tolist(), reverse=True)
+        bs_dates  = set(bs_stmt.columns.tolist()) if bs_stmt is not None and not bs_stmt.empty else set()
+
+        # Yalnızca geçmiş tarihleri tut (bugünden sonrası forward estimate olabilir)
+        today_ts = pd.Timestamp.now().normalize()
+        inc_dates = [d for d in inc_dates if pd.Timestamp(d) <= today_ts]
+
+        def _row(stmt, label_candidates, col):
+            for label in label_candidates:
+                if label in stmt.index:
+                    val = stmt.at[label, col]
+                    return _safe(val)
+            return None
+
+        reports = []
+        for i, col in enumerate(inc_dates):
+            col_ts = pd.Timestamp(col)
+
+            # Gelir tablosu
+            revenue        = _row(inc_stmt, ["Total Revenue", "TotalRevenue"], col)
+            net_income     = _row(inc_stmt, ["Net Income", "Net Income Common Stockholders", "NetIncome"], col)
+            gross_profit   = _row(inc_stmt, ["Gross Profit", "GrossProfit"], col)
+            operating_inc  = _row(inc_stmt, ["Operating Income", "OperatingIncome", "EBIT"], col)
+            ebitda         = _row(inc_stmt, ["EBITDA", "Normalized EBITDA"], col)
+            eps_basic      = _row(inc_stmt, ["Basic EPS", "Diluted EPS", "EPS"], col)
+
+            # Bilanço
+            total_assets = total_debt = equity = None
+            if col in bs_dates:
+                total_assets = _row(bs_stmt, ["Total Assets", "TotalAssets"], col)
+                total_debt   = _row(bs_stmt, ["Total Debt", "Long Term Debt And Capital Lease Obligation",
+                                               "Long Term Debt"], col)
+                equity       = _row(bs_stmt, ["Total Equity Gross Minority Interest",
+                                               "Stockholders Equity", "Total Stockholders Equity",
+                                               "Common Stock Equity"], col)
+
+            # Önceki yıl büyüme (bir sonraki tarih = eski yıl)
+            prev_col = inc_dates[i + 1] if i + 1 < len(inc_dates) else None
+            revenue_prev = net_income_prev = None
+            if prev_col is not None:
+                revenue_prev    = _row(inc_stmt, ["Total Revenue", "TotalRevenue"], prev_col)
+                net_income_prev = _row(inc_stmt, ["Net Income", "Net Income Common Stockholders", "NetIncome"], prev_col)
+
+            revenue_growth = earnings_growth = None
+            if revenue is not None and revenue_prev and revenue_prev != 0:
+                revenue_growth = (revenue - revenue_prev) / abs(revenue_prev)
+            if net_income is not None and net_income_prev and net_income_prev != 0:
+                earnings_growth = (net_income - net_income_prev) / abs(net_income_prev)
+
+            # Temel oranlar (bilanço bazlı)
+            roe = roic = gross_margin = net_margin = operating_margin = None
+            debt_to_equity = None
+            if equity and equity != 0 and net_income is not None:
+                roe  = net_income / equity
+                roic = net_income / equity  # basit proxy (invested_capital yok)
+            if revenue and revenue != 0:
+                if gross_profit is not None:
+                    gross_margin = gross_profit / revenue
+                if net_income is not None:
+                    net_margin = net_income / revenue
+                if operating_inc is not None:
+                    operating_margin = operating_inc / revenue
+            if equity and equity != 0 and total_debt is not None:
+                debt_to_equity = total_debt / abs(equity)
+
+            report = {
+                "date": col_ts.strftime("%Y-%m-%d"),
+                "revenue": revenue,
+                "net_income": net_income,
+                "gross_profit": gross_profit,
+                "operating_income": operating_inc,
+                "ebitda": ebitda,
+                "eps": eps_basic,
+                "equity": equity,
+                "total_debt": total_debt,
+                "total_assets": total_assets,
+                "revenue_prev_year": revenue_prev,
+                "net_income_prev_year": net_income_prev,
+                "revenue_growth": revenue_growth,
+                "earnings_growth": earnings_growth,
+                "roe": roe,
+                "roic": roic,
+                "gross_margin": gross_margin,
+                "net_margin": net_margin,
+                "operating_margin": operating_margin,
+                "debt_to_equity": debt_to_equity,
+                # PE/PB/EV_EBITDA: static info'dan (fiyat bağımlı, tarihsel değil → None bırak)
+                "pe": None,
+                "pb": None,
+                "ev_ebitda": None,
+                "peg": None,
+                "current_ratio": None,
+            }
+            reports.append(report)
+
+        # 3 yıllık CAGR
+        for i, r in enumerate(reports):
+            if i + 3 < len(reports):
+                old = reports[i + 3]
+                rev_now = r.get("revenue"); rev_old = old.get("revenue")
+                eps_now = r.get("eps");     eps_old = old.get("eps")
+                if rev_now and rev_old and rev_old > 0:
+                    r["revenue_cagr_3y"] = (rev_now / rev_old) ** (1 / 3) - 1
+                if eps_now and eps_old and eps_old > 0:
+                    r["eps_cagr_3y"] = (eps_now / eps_old) ** (1 / 3) - 1
+
+        result = {"reports": reports, "source": "yahoo_bist"}
+        _save_bist_cache(symbol, result)
+        logger.info("BIST historical fundamentals cached for %s (%d reports)", symbol, len(reports))
+        return result
+
+    except Exception as e:
+        logger.warning("BIST historical fundamentals failed for %s: %s", symbol, e)
+        empty = {"reports": []}
+        _save_bist_cache(symbol, empty)
+        return empty
+
+
+def get_bist_snapshot(symbol: str, as_of_date) -> dict:
+    """
+    as_of_date tarihinde BIST hissesi için mevcut olan en son yıllık bilanço verisini döner.
+
+    Look-ahead bias önlemi:
+      Bir rapor yalnızca fiskal yıl bitiş tarihi + BIST_FILING_LAG_DAYS (90 gün) geçtikten
+      sonra "bilinen veri" sayılır.
+      Örnek: FY2023 bitiş=2023-12-31 → en erken 2024-03-31'de kullanılabilir.
+    """
+    as_of_ts = pd.Timestamp(as_of_date)
+    data = _fetch_bist_symbol_data(symbol)
+    reports = data.get("reports", [])
+
+    for report in reports:
+        rep_date_str = report.get("date")
+        if not rep_date_str:
+            continue
+        try:
+            fiscal_end = pd.Timestamp(rep_date_str)
+            available_date = fiscal_end + pd.Timedelta(days=BIST_FILING_LAG_DAYS)
+            if available_date <= as_of_ts:
+                return {k: v for k, v in report.items() if k not in ("date", "source")}
+        except Exception:
+            continue
+
+    return {}
+
+
+# ---------------------------------------------------------------------------
 # Dışa açık API
 # ---------------------------------------------------------------------------
 
@@ -211,21 +450,22 @@ def get_snapshot(symbol: str, market: str, as_of_date) -> dict:
     """
     as_of_date tarihinde mevcut olan en son yıllık temel veri snapshotını döner.
 
-    BIST için boş dict döner (yfinance current data kullanılır).
-    FMP_API_KEY yoksa boş dict döner.
+    - USA: FMP annual reports (FMP_API_KEY gerekli)
+    - BIST: Yahoo Finance yıllık tablolar (90 gün filing-lag ile look-ahead bias önlemi)
     """
+    is_bist = (market or "").upper() == "BIST"
+
+    if is_bist:
+        return get_bist_snapshot(symbol, as_of_date)
+
+    # USA — FMP
     if not FMP_API_KEY:
         return {}
-
-    is_bist = (market or "").upper() == "BIST"
-    if is_bist:
-        return {}  # BIST için historical FMP verisi yok
 
     as_of_ts = pd.Timestamp(as_of_date)
     data = _fetch_symbol_data(symbol)
     reports = data.get("reports", [])
 
-    # Azalan tarih sırası — as_of_date'e kadar olan en son raporu bul
     for report in reports:
         rep_date_str = report.get("date")
         if not rep_date_str:
@@ -241,10 +481,38 @@ def get_snapshot(symbol: str, market: str, as_of_date) -> dict:
 
 
 def batch_prefetch(symbols: list, market: str, progress_callback=None) -> None:
-    """Tüm sembollerin tarihsel temel verilerini paralel olarak önceden çeker ve cache'ler."""
-    if not FMP_API_KEY:
+    """
+    Tüm sembollerin tarihsel temel verilerini paralel olarak önceden çeker ve cache'ler.
+    - USA: FMP API (paralel, _PARALLEL_WORKERS thread)
+    - BIST: Yahoo Finance (paralel, maksimum 5 thread — rate limit önlemi)
+    """
+    is_bist = (market or "").upper() == "BIST"
+
+    if is_bist:
+        # BIST: Yahoo Finance'ten yıllık tablolar
+        to_fetch = [s for s in symbols if _load_bist_cache(s) is None]
+        if not to_fetch:
+            logger.info("BIST historical fundamentals: all %d symbols already cached", len(symbols))
+            return
+        total = len(to_fetch)
+        logger.info("BIST historical fundamentals: prefetching %d/%d symbols...", total, len(symbols))
+        done = 0
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(_fetch_bist_symbol_data, s): s for s in to_fetch}
+            for future in as_completed(futures):
+                done += 1
+                sym = futures[future]
+                if progress_callback:
+                    progress_callback(done / total, f"BIST tarihsel temel veri: {done}/{total}")
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.warning("BIST historical fundamentals failed for %s: %s", sym, e)
+        logger.info("BIST historical fundamentals: prefetch complete (%d symbols)", total)
         return
-    if (market or "").upper() == "BIST":
+
+    # USA — FMP
+    if not FMP_API_KEY:
         return
 
     to_fetch = [s for s in symbols if _load_cache(s) is None]
@@ -280,15 +548,16 @@ def inject_fundamentals_at_date(
     Her satır (hisse) için as_of_date tarihindeki tarihsel temel veriyi
     DataFrame'e enjekte eder.
 
-    - Mevcut NaN olmayan sütunlara dokunmaz (zaten BIST verisi var vs).
+    - USA: FMP historical data
+    - BIST: Yahoo Finance historical data (90 gün filing-lag)
+    - Mevcut NaN olmayan sütunlara dokunmaz.
     - Sadece NaN olan sütunları doldurur.
     """
-    if not FMP_API_KEY:
-        return df
-
     is_bist = (market or "").upper() == "BIST"
-    if is_bist:
-        return df  # BIST: zaten data_fetcher'dan Yahoo verisi geldi
+
+    # USA FMP key yoksa ve BIST değilse çık
+    if not is_bist and not FMP_API_KEY:
+        return df
 
     FUND_FIELDS = [
         "revenue", "net_income", "gross_profit", "operating_income", "ebitda",
@@ -319,7 +588,6 @@ def inject_fundamentals_at_date(
             val = snapshot.get(field)
             if val is None:
                 continue
-            # Sadece mevcut değer NaN ise yaz
             current = row.get(field)
             is_nan = current is None or (isinstance(current, float) and np.isnan(current))
             if is_nan:

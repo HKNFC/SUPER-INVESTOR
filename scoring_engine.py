@@ -299,35 +299,26 @@ def _weighted_sub_score(
     """
     Compute a weighted average sub-score from percentile-ranked metrics.
 
-    If a metric has NaN for a given stock, that metric's weight is
-    redistributed proportionally among the available metrics.
+    Vektörize: numpy matrix operasyonları ile satır-satır Python döngüsü yerine
+    tek seferlik matris çarpımı kullanılır. NaN olan metriklerin ağırlığı
+    kalanlar arasında orantılı olarak yeniden dağıtılır.
 
     Returns a Series of scores (0-100), or NaN if all metrics are NaN.
     """
-    cols = list(weights.keys())
+    cols = [c for c in weights.keys() if c in percentiles.columns]
+    if not cols:
+        return pd.Series(np.nan, index=percentiles.index)
+
     wts = np.array([weights[c] for c in cols])
+    mat = percentiles[cols].values.astype(float)  # shape (n_stocks, n_metrics)
 
-    scores = np.full(len(percentiles), np.nan)
+    valid_mask = ~np.isnan(mat)                    # bool matrix
+    active_wts = np.where(valid_mask, wts, 0.0)   # NaN sütunlara 0 ağırlık
+    total_wts  = active_wts.sum(axis=1)            # her satır için toplam ağırlık
+    weighted   = np.nansum(mat * active_wts, axis=1)  # ağırlıklı toplam
 
-    for i in range(len(percentiles)):
-        values = np.array([
-            percentiles[c].iloc[i] if c in percentiles.columns else np.nan
-            for c in cols
-        ])
-
-        valid = ~np.isnan(values)
-        if not valid.any():
-            continue
-
-        active_wts = wts[valid]
-        active_vals = values[valid]
-
-        total_wt = active_wts.sum()
-        if total_wt == 0:
-            continue
-
-        scores[i] = round(np.sum(active_vals * active_wts) / total_wt, 2)
-
+    scores = np.where(total_wts > 0, weighted / total_wts, np.nan)
+    scores = np.round(scores, 2)
     return pd.Series(scores, index=percentiles.index)
 
 

@@ -72,14 +72,17 @@ class BacktestResult:
 
 
 def _get_all_trading_dates(raw_data: pd.DataFrame) -> pd.DatetimeIndex:
-    all_dates = set()
-    for _, row in raw_data.iterrows():
-        pd_data = row.get("price_data")
+    # Vektörize: iterrows yerine price_data sütununu doğrudan işle
+    date_arrays = []
+    for pd_data in raw_data["price_data"]:
         if isinstance(pd_data, pd.DataFrame) and "datetime" in pd_data.columns:
-            all_dates.update(pd_data["datetime"].values)
-    if not all_dates:
+            date_arrays.append(pd_data["datetime"].values)
+    if not date_arrays:
         return pd.DatetimeIndex([])
-    return pd.DatetimeIndex(sorted(all_dates))
+    all_dates = pd.DatetimeIndex(
+        pd.unique(np.concatenate(date_arrays))
+    ).sort_values()
+    return all_dates
 
 
 def _generate_rebalance_dates(
@@ -117,21 +120,16 @@ def _generate_rebalance_dates(
 def _truncate_price_data(
     raw_data: pd.DataFrame, cutoff: pd.Timestamp
 ) -> pd.DataFrame:
-    result = raw_data.copy()
-    truncated = []
-    for _, row in result.iterrows():
-        pd_data = row.get("price_data")
+    # Vektörize: copy() + iterrows yerine doğrudan sütun listesi
+    def _slice(pd_data):
         if isinstance(pd_data, pd.DataFrame) and "datetime" in pd_data.columns:
-            sliced = pd_data[pd_data["datetime"] <= cutoff].copy()
-            if len(sliced) >= 20:
-                truncated.append(sliced.reset_index(drop=True))
-            else:
-                truncated.append(None)
-        else:
-            truncated.append(None)
-    result["price_data"] = truncated
-    result = result[result["price_data"].notna()].reset_index(drop=True)
-    return result
+            sliced = pd_data[pd_data["datetime"] <= cutoff]
+            return sliced.reset_index(drop=True) if len(sliced) >= 20 else None
+        return None
+
+    result = raw_data.copy()
+    result["price_data"] = result["price_data"].map(_slice)
+    return result[result["price_data"].notna()].reset_index(drop=True)
 
 
 def _get_forward_return(
@@ -284,50 +282,59 @@ def run_backtest(
         if progress_callback:
             progress_callback(pct * 0.3, text)
 
-    # BIST: teknik/momentum bazlı backtest — bugünkü bilanço verisi geçmiş dönemlere uygulanırsa
-    # look-ahead bias oluşur (CRDFA gibi hisseler her dönemde üstte çıkar). Bu yüzden
-    # BIST backtestinde temel veri atlanır; yalnızca fiyat/momentum/teknik skorlar kullanılır.
-    # USA: tarihsel FMP verisi loop içinde enjekte edilir (inject_fundamentals_at_date)
-    _use_current_fundamentals = False  # her iki piyasada da look-ahead bias önlenir
+    # Her iki piyasada da bugünkü bilanço verisi değil tarihsel veri kullanılır:
+    # - USA: FMP historical annual reports (inject_fundamentals_at_date)
+    # - BIST: Yahoo Finance yıllık tablolar, 90 gün filing-lag ile look-ahead bias önlemi
+    _use_current_fundamentals = False
     raw_data, prep_stats = fetch_backtest_data(
         market, progress_callback=_data_progress, skip_momentum=True,
         skip_fundamentals=True,  # backtest: her dönemde truncated price datadan hesaplanır
         universe=universe,  # sadece seçili evrendeki hisseleri yükle (BIST100, SP500 vb.)
     )
 
-    # USA: tarihsel temel verileri paralel olarak önceden cache'le
-    if market.upper() != "BIST" and FMP_API_KEY:
-        _hist_symbols = list({row.get("ticker") for _, row in raw_data.iterrows() if row.get("ticker")})
-        def _hist_progress(pct, text):
-            if progress_callback:
-                progress_callback(0.28 + pct * 0.04, text)
-        batch_prefetch(_hist_symbols, market, _hist_progress)
+    # BN-4 fix: iterrows yerine vektörize ticker listesi
+    _hist_symbols = raw_data["ticker"].dropna().unique().tolist()
+    def _hist_progress(pct, text):
+        if progress_callback:
+            progress_callback(0.28 + pct * 0.04, text)
+    batch_prefetch(_hist_symbols, market, _hist_progress)
 
     raw_data = _apply_universe_filter(raw_data, market, universe)
 
     # full_price_lookup: spike filtresiz orijinal veri — ileriye dönük getiri hesabı için
-    # Scoring (truncated) için spike filtresi uygulanır, ama forward return için ham veri gerekir
+    # BN-3 fix: import'lar döngü dışına çıkarıldı, paralel disk okuma
     full_price_lookup: Dict[str, pd.DataFrame] = {}
-    for _, row in raw_data.iterrows():
+    try:
+        from disk_cache import read_cache
+        from symbol_mapper import resolve_twelve_symbol
+    except Exception:
+        read_cache = None
+        resolve_twelve_symbol = None
+
+    def _build_price_entry(row_tuple):
+        _, row = row_tuple
         ticker = row.get("ticker")
         pd_data = row.get("price_data")
-        if ticker and isinstance(pd_data, pd.DataFrame):
-            # Cache'den orijinal veriyi al — spike filtresi uygulanmamış
+        if not ticker or not isinstance(pd_data, pd.DataFrame):
+            return None
+        if read_cache and resolve_twelve_symbol:
             try:
-                from disk_cache import read_cache
-                from symbol_mapper import resolve_twelve_symbol
                 market_val = row.get("market", market)
                 resolved = resolve_twelve_symbol(ticker, market_val)
                 raw_cached = read_cache(resolved)
                 if raw_cached is not None and not raw_cached.empty:
-                    from yahoo_provider import fetch_yahoo_history as _fyh
-                    # datetime sütunu tz-normalize
                     raw_cached["datetime"] = pd.to_datetime(raw_cached["datetime"]).dt.tz_localize(None)
-                    full_price_lookup[ticker] = raw_cached.sort_values("datetime").reset_index(drop=True)
-                else:
-                    full_price_lookup[ticker] = pd_data.copy()
+                    return ticker, raw_cached.sort_values("datetime").reset_index(drop=True)
             except Exception:
-                full_price_lookup[ticker] = pd_data.copy()
+                pass
+        return ticker, pd_data.copy()
+
+    from concurrent.futures import ThreadPoolExecutor as _TPE
+    with _TPE(max_workers=8) as _ex:
+        for result_item in _ex.map(_build_price_entry, raw_data.iterrows()):
+            if result_item:
+                ticker, df = result_item
+                full_price_lookup[ticker] = df
 
     trading_dates = _get_all_trading_dates(raw_data)
     rebalance_dates = _generate_rebalance_dates(
@@ -400,9 +407,8 @@ def run_backtest(
                     bench_trunc = None
         truncated = append_momentum_fields(truncated, benchmark_history=bench_trunc)
 
-        # USA: o rebalance tarihinde mevcut olan tarihsel temel verileri enjekte et
-        if market.upper() != "BIST":
-            truncated = inject_fundamentals_at_date(truncated, reb_date, market)
+        # Her piyasada tarihsel temel verileri enjekte et (USA: FMP, BIST: Yahoo 90-gün-lag)
+        truncated = inject_fundamentals_at_date(truncated, reb_date, market)
 
         scored = compute_rs_scores(truncated, market=market, inst_profile=inst_profile)
 

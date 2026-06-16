@@ -95,21 +95,14 @@ def calc_macd(price_data: pd.DataFrame) -> Dict[str, Optional[float]]:
     closes = _get_closes(price_data)
     if len(closes) < 35:
         return result
-    alpha12 = 2.0 / 13
-    alpha26 = 2.0 / 27
-    ema12 = np.empty_like(closes)
-    ema26 = np.empty_like(closes)
-    ema12[0] = closes[0]
-    ema26[0] = closes[0]
-    for i in range(1, len(closes)):
-        ema12[i] = alpha12 * closes[i] + (1 - alpha12) * ema12[i - 1]
-        ema26[i] = alpha26 * closes[i] + (1 - alpha26) * ema26[i - 1]
+
+    # Vektörize EMA (pandas ewm — Cython hızlı)
+    s = pd.Series(closes)
+    ema12 = s.ewm(span=12, adjust=False).mean().values
+    ema26 = s.ewm(span=26, adjust=False).mean().values
     macd_line = ema12 - ema26
-    alpha9 = 2.0 / 10
-    signal = np.empty_like(macd_line)
-    signal[0] = macd_line[0]
-    for i in range(1, len(macd_line)):
-        signal[i] = alpha9 * macd_line[i] + (1 - alpha9) * signal[i - 1]
+    signal = pd.Series(macd_line).ewm(span=9, adjust=False).mean().values
+
     result["macd_line"] = round(float(macd_line[-1]), 4)
     result["macd_signal"] = round(float(signal[-1]), 4)
     result["macd_histogram"] = round(float(macd_line[-1] - signal[-1]), 4)
@@ -123,16 +116,16 @@ def calc_atr(price_data: pd.DataFrame, period: int = 14) -> Optional[float]:
         return None
     if len(price_data) < period + 1:
         return None
-    high = price_data["high"].values.astype(float)
-    low = price_data["low"].values.astype(float)
+    high  = price_data["high"].values.astype(float)
+    low   = price_data["low"].values.astype(float)
     close = price_data["close"].values.astype(float)
-    tr_values = []
-    for i in range(1, len(high)):
-        tr = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
-        tr_values.append(tr)
-    if len(tr_values) < period:
+    # Vektörize True Range
+    tr = np.maximum(high[1:] - low[1:],
+         np.maximum(np.abs(high[1:] - close[:-1]),
+                    np.abs(low[1:]  - close[:-1])))
+    if len(tr) < period:
         return None
-    return round(float(np.mean(tr_values[-period:])), 4)
+    return round(float(np.mean(tr[-period:])), 4)
 
 
 def calc_obv(price_data: pd.DataFrame) -> Dict[str, Any]:
@@ -143,19 +136,16 @@ def calc_obv(price_data: pd.DataFrame) -> Dict[str, Any]:
         return result
     if "volume" not in price_data.columns:
         return result
-    close = _get_closes(price_data)
+    close  = _get_closes(price_data)
     volume = price_data["volume"].values.astype(float)
     if len(close) < 5:
         return result
-    obv = np.zeros(len(close))
+    # Vektörize OBV: np.sign karşılaştırması
+    diff = np.diff(close)
+    direction = np.sign(diff)          # +1, -1, 0
+    obv = np.empty(len(close))
     obv[0] = volume[0]
-    for i in range(1, len(close)):
-        if close[i] > close[i - 1]:
-            obv[i] = obv[i - 1] + volume[i]
-        elif close[i] < close[i - 1]:
-            obv[i] = obv[i - 1] - volume[i]
-        else:
-            obv[i] = obv[i - 1]
+    obv[1:] = np.cumsum(direction * volume[1:]) + volume[0]
     result["obv_latest"] = float(obv[-1])
     lookback = min(20, len(obv) - 1)
     if lookback >= 5:
